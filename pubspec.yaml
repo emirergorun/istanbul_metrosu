@@ -1,0 +1,53 @@
+name: istanbul_metro_game
+description: "İstanbul Metrosu Oyunu — yolculuk süresine göre ayarlanan, offline oynanabilen blok yerleştirme oyunu."
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.2
+
+# MVP dependency felsefesi: mümkün olduğunca az package.
+# Analytics / ads / crash / network SDK'sı bilinçli olarak YOKTUR.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Yalnızca local best score ve ayarlar için.
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    # OFL lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.
+    - assets/fonts/OFL-Raleway.txt
+    - assets/fonts/OFL-OpenSans.txt
+
+  # metro.istanbul tipografisi: başlıklarda Raleway, gövdede Open Sans.
+  # Her ikisi de SIL Open Font License 1.1 ile dağıtılır; statik ağırlıklar
+  # google/fonts değişken fontlarından üretilip latin + latin-ext'e daraltıldı.
+  fonts:
+    - family: Raleway
+      fonts:
+        - asset: assets/fonts/Raleway-400.ttf
+          weight: 400
+        - asset: assets/fonts/Raleway-600.ttf
+          weight: 600
+        - asset: assets/fonts/Raleway-700.ttf
+          weight: 700
+        - asset: assets/fonts/Raleway-800.ttf
+          weight: 800
+    - family: Open Sans
+      fonts:
+        - asset: assets/fonts/OpenSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/OpenSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/OpenSans-700.ttf
+          weight: 700
