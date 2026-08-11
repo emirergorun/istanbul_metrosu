@@ -2,8 +2,11 @@ import 'package:flutter/foundation.dart';
 
 /// Yolculuk süresinden türeyen oyun zorluk profili.
 ///
-/// Bu değerler **tuning başlangıç değerleridir**, nihai denge değildir.
-/// Tek dosyada toplanmıştır ki dengeleme tek yerden yapılabilsin.
+/// Profil **hedef skor içermez**: oyunun amacı o rotadaki kendi rekorunu
+/// geçmektir. Profil yalnızca tahtanın ne kadar sıkışık başladığını, hangi
+/// parçaların geldiğini ve geri alma hakkını belirler.
+///
+/// Bu değerler tuning başlangıç değerleridir, nihai denge değildir.
 @immutable
 class DifficultyProfile {
   const DifficultyProfile({
@@ -11,7 +14,6 @@ class DifficultyProfile {
     required this.label,
     required this.minMinutes,
     required this.maxMinutes,
-    required this.targetScore,
     required this.initialBlockerRatio,
     required this.hardPieceWeight,
     required this.undoCount,
@@ -23,9 +25,6 @@ class DifficultyProfile {
 
   /// `null` => üst sınır yok (maraton).
   final int? maxMinutes;
-
-  /// Yolculuk için önerilen hedef skor.
-  final int targetScore;
 
   /// Oyun başında rastgele dolu (engel) hücre oranı. 0.0 - 1.0
   final double initialBlockerRatio;
@@ -44,7 +43,7 @@ class DifficultyProfile {
   int get hashCode => id.hashCode;
 
   @override
-  String toString() => 'DifficultyProfile($id, hedef $targetScore)';
+  String toString() => 'DifficultyProfile($id)';
 }
 
 /// Prototip zorluk konfigürasyonu — `01 - MVP` tablosundan.
@@ -56,7 +55,6 @@ class DifficultyProfiles {
     label: 'Mini',
     minMinutes: 0,
     maxMinutes: 5,
-    targetScore: 120,
     initialBlockerRatio: 0.0,
     hardPieceWeight: 0.05,
     undoCount: 1,
@@ -67,7 +65,6 @@ class DifficultyProfiles {
     label: 'Kısa',
     minMinutes: 6,
     maxMinutes: 10,
-    targetScore: 260,
     initialBlockerRatio: 0.0,
     hardPieceWeight: 0.10,
     undoCount: 1,
@@ -78,7 +75,6 @@ class DifficultyProfiles {
     label: 'Standart',
     minMinutes: 11,
     maxMinutes: 20,
-    targetScore: 520,
     initialBlockerRatio: 0.04,
     hardPieceWeight: 0.18,
     undoCount: 1,
@@ -89,7 +85,6 @@ class DifficultyProfiles {
     label: 'Uzun',
     minMinutes: 21,
     maxMinutes: 35,
-    targetScore: 900,
     initialBlockerRatio: 0.08,
     hardPieceWeight: 0.25,
     undoCount: 0,
@@ -100,7 +95,6 @@ class DifficultyProfiles {
     label: 'Maraton',
     minMinutes: 36,
     maxMinutes: null,
-    targetScore: 1400,
     initialBlockerRatio: 0.12,
     hardPieceWeight: 0.32,
     undoCount: 0,

@@ -1,0 +1,741 @@
+{
+  "version": 1,
+  "source": "metro.istanbul — Hatlarımız sayfaları (istasyon sırası, sefer süresi) ve resmi ağ haritası (hat renkleri, Haziran 2026)",
+  "note": "Durak arası süreler resmi tek yön sefer süresinin durak sayısına bölünmesiyle türetilmiştir; kenar bazında resmi veri yayınlanmıyor.",
+  "lines": [
+    {
+      "id": "M1A",
+      "name": "Yenikapı – Atatürk Havalimanı",
+      "color": "#E2261C",
+      "oneWayMinutes": 35,
+      "segmentSeconds": 124,
+      "stations": [
+        {
+          "id": "m1a_yenikapi",
+          "name": "Yenikapı"
+        },
+        {
+          "id": "m1a_aksaray",
+          "name": "Aksaray"
+        },
+        {
+          "id": "m1a_emniyet_fatih",
+          "name": "Emniyet-Fatih"
+        },
+        {
+          "id": "m1a_topkapi_ulubatli",
+          "name": "Topkapı-Ulubatlı"
+        },
+        {
+          "id": "m1a_bayrampasa_maltepe",
+          "name": "Bayrampaşa-Maltepe"
+        },
+        {
+          "id": "m1a_sagmalcilar",
+          "name": "Sağmalcılar"
+        },
+        {
+          "id": "m1a_kocatepe",
+          "name": "Kocatepe"
+        },
+        {
+          "id": "m1a_otogar",
+          "name": "Otogar"
+        },
+        {
+          "id": "m1a_terazidere",
+          "name": "Terazidere"
+        },
+        {
+          "id": "m1a_davutpasa_ytu",
+          "name": "Davutpaşa-YTÜ"
+        },
+        {
+          "id": "m1a_merter",
+          "name": "Merter"
+        },
+        {
+          "id": "m1a_zeytinburnu",
+          "name": "Zeytinburnu"
+        },
+        {
+          "id": "m1a_bakirkoy_incirli",
+          "name": "Bakırköy-İncirli"
+        },
+        {
+          "id": "m1a_bahcelievler",
+          "name": "Bahçelievler"
+        },
+        {
+          "id": "m1a_atakoy_sirinevler",
+          "name": "Ataköy-Şirinevler"
+        },
+        {
+          "id": "m1a_yenibosna",
+          "name": "Yenibosna"
+        },
+        {
+          "id": "m1a_dtm_istanbul_fuar_merkezi",
+          "name": "DTM-İstanbul Fuar Merkezi"
+        },
+        {
+          "id": "m1a_ataturk_havalimani",
+          "name": "Atatürk Havalimanı"
+        }
+      ]
+    },
+    {
+      "id": "M1B",
+      "name": "Yenikapı – Kirazlı",
+      "color": "#E2261C",
+      "oneWayMinutes": 25,
+      "segmentSeconds": 125,
+      "stations": [
+        {
+          "id": "m1b_yenikapi",
+          "name": "Yenikapı"
+        },
+        {
+          "id": "m1b_aksaray",
+          "name": "Aksaray"
+        },
+        {
+          "id": "m1b_emniyet_fatih",
+          "name": "Emniyet-Fatih"
+        },
+        {
+          "id": "m1b_topkapi_ulubatli",
+          "name": "Topkapı-Ulubatlı"
+        },
+        {
+          "id": "m1b_bayrampasa_maltepe",
+          "name": "Bayrampaşa-Maltepe"
+        },
+        {
+          "id": "m1b_sagmalcilar",
+          "name": "Sağmalcılar"
+        },
+        {
+          "id": "m1b_kocatepe",
+          "name": "Kocatepe"
+        },
+        {
+          "id": "m1b_otogar",
+          "name": "Otogar"
+        },
+        {
+          "id": "m1b_esenler",
+          "name": "Esenler"
+        },
+        {
+          "id": "m1b_menderes",
+          "name": "Menderes"
+        },
+        {
+          "id": "m1b_ucyuzlu",
+          "name": "Üçyüzlü"
+        },
+        {
+          "id": "m1b_bagcilar_meydan",
+          "name": "Bağcılar Meydan"
+        },
+        {
+          "id": "m1b_kirazli_bagcilar",
+          "name": "Kirazlı-Bağcılar"
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Yenikapı – Hacıosman",
+      "color": "#019A44",
+      "oneWayMinutes": 32,
+      "segmentSeconds": 137,
+      "stations": [
+        {
+          "id": "m2_yenikapi",
+          "name": "Yenikapı"
+        },
+        {
+          "id": "m2_vezneciler_istanbul_u",
+          "name": "Vezneciler-İstanbul Ü."
+        },
+        {
+          "id": "m2_halic",
+          "name": "Haliç"
+        },
+        {
+          "id": "m2_sishane",
+          "name": "Şişhane"
+        },
+        {
+          "id": "m2_taksim",
+          "name": "Taksim"
+        },
+        {
+          "id": "m2_osmanbey",
+          "name": "Osmanbey"
+        },
+        {
+          "id": "m2_sisli_mecidiyekoy",
+          "name": "Şişli-Mecidiyeköy"
+        },
+        {
+          "id": "m2_gayrettepe",
+          "name": "Gayrettepe"
+        },
+        {
+          "id": "m2_levent",
+          "name": "Levent"
+        },
+        {
+          "id": "m2_4_levent",
+          "name": "4. Levent"
+        },
+        {
+          "id": "m2_sanayi_mahallesi",
+          "name": "Sanayi Mahallesi"
+        },
+        {
+          "id": "m2_itu_ayazaga",
+          "name": "İTÜ-Ayazağa"
+        },
+        {
+          "id": "m2_ataturk_oto_sanayi",
+          "name": "Atatürk Oto Sanayi"
+        },
+        {
+          "id": "m2_darussafaka",
+          "name": "Darüşşafaka"
+        },
+        {
+          "id": "m2_haciosman",
+          "name": "Hacıosman"
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "Bakırköy – Kayaşehir",
+      "color": "#05A8E2",
+      "oneWayMinutes": 44,
+      "segmentSeconds": 139,
+      "stations": [
+        {
+          "id": "m3_bakirkoy_sahil",
+          "name": "Bakırköy Sahil"
+        },
+        {
+          "id": "m3_ozgurluk_meydani",
+          "name": "Özgürlük Meydanı"
+        },
+        {
+          "id": "m3_incirli",
+          "name": "İncirli"
+        },
+        {
+          "id": "m3_haznedar",
+          "name": "Haznedar"
+        },
+        {
+          "id": "m3_ilkyuva",
+          "name": "İlkyuva"
+        },
+        {
+          "id": "m3_yildiztepe",
+          "name": "Yıldıztepe"
+        },
+        {
+          "id": "m3_molla_gurani",
+          "name": "Molla Gürani"
+        },
+        {
+          "id": "m3_kirazli_bagcilar",
+          "name": "Kirazlı-Bağcılar"
+        },
+        {
+          "id": "m3_yenimahalle",
+          "name": "Yenimahalle"
+        },
+        {
+          "id": "m3_mahmutbey",
+          "name": "Mahmutbey"
+        },
+        {
+          "id": "m3_istoc",
+          "name": "İSTOÇ"
+        },
+        {
+          "id": "m3_ikitelli_sanayi",
+          "name": "İkitelli Sanayi"
+        },
+        {
+          "id": "m3_turgut_ozal",
+          "name": "Turgut Özal"
+        },
+        {
+          "id": "m3_siteler",
+          "name": "Siteler"
+        },
+        {
+          "id": "m3_basak_konutlari",
+          "name": "Başak Konutları"
+        },
+        {
+          "id": "m3_basaksehir_metrokent",
+          "name": "Başakşehir-Metrokent"
+        },
+        {
+          "id": "m3_onurkent",
+          "name": "Onurkent"
+        },
+        {
+          "id": "m3_sehir_hastanesi",
+          "name": "Şehir Hastanesi"
+        },
+        {
+          "id": "m3_toplu_konutlar",
+          "name": "Toplu Konutlar"
+        },
+        {
+          "id": "m3_kayasehir_merkez",
+          "name": "Kayaşehir Merkez"
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Kadıköy – Sabiha Gökçen Havalimanı",
+      "color": "#E72177",
+      "oneWayMinutes": 52,
+      "segmentSeconds": 142,
+      "stations": [
+        {
+          "id": "m4_kadikoy",
+          "name": "Kadıköy"
+        },
+        {
+          "id": "m4_ayrilik_cesmesi",
+          "name": "Ayrılık Çeşmesi"
+        },
+        {
+          "id": "m4_acibadem",
+          "name": "Acıbadem"
+        },
+        {
+          "id": "m4_unalan",
+          "name": "Ünalan"
+        },
+        {
+          "id": "m4_goztepe",
+          "name": "Göztepe"
+        },
+        {
+          "id": "m4_yenisahra",
+          "name": "Yenisahra"
+        },
+        {
+          "id": "m4_kozyatagi",
+          "name": "Kozyatağı"
+        },
+        {
+          "id": "m4_bostanci",
+          "name": "Bostancı"
+        },
+        {
+          "id": "m4_kucukyali",
+          "name": "Küçükyalı"
+        },
+        {
+          "id": "m4_maltepe",
+          "name": "Maltepe"
+        },
+        {
+          "id": "m4_huzurevi",
+          "name": "Huzurevi"
+        },
+        {
+          "id": "m4_gulsuyu",
+          "name": "Gülsuyu"
+        },
+        {
+          "id": "m4_esenkent",
+          "name": "Esenkent"
+        },
+        {
+          "id": "m4_hastane_adliye",
+          "name": "Hastane-Adliye"
+        },
+        {
+          "id": "m4_soganlik",
+          "name": "Soğanlık"
+        },
+        {
+          "id": "m4_kartal",
+          "name": "Kartal"
+        },
+        {
+          "id": "m4_yakacik_adnan_kahveci",
+          "name": "Yakacık-Adnan Kahveci"
+        },
+        {
+          "id": "m4_pendik",
+          "name": "Pendik"
+        },
+        {
+          "id": "m4_tavsantepe",
+          "name": "Tavşantepe"
+        },
+        {
+          "id": "m4_fevzi_cakmak_hastane",
+          "name": "Fevzi Çakmak-Hastane"
+        },
+        {
+          "id": "m4_yayalar_seyhli",
+          "name": "Yayalar-Şeyhli"
+        },
+        {
+          "id": "m4_kurtkoy",
+          "name": "Kurtköy"
+        },
+        {
+          "id": "m4_sabiha_gokcen_havalimani",
+          "name": "Sabiha Gökçen Havalimanı"
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "Üsküdar – Sultanbeyli",
+      "color": "#693064",
+      "oneWayMinutes": 50,
+      "segmentSeconds": 130,
+      "stations": [
+        {
+          "id": "m5_uskudar",
+          "name": "Üsküdar"
+        },
+        {
+          "id": "m5_fistikagaci",
+          "name": "Fıstıkağacı"
+        },
+        {
+          "id": "m5_baglarbasi",
+          "name": "Bağlarbaşı"
+        },
+        {
+          "id": "m5_altunizade",
+          "name": "Altunizade"
+        },
+        {
+          "id": "m5_kisikli",
+          "name": "Kısıklı"
+        },
+        {
+          "id": "m5_bulgurlu",
+          "name": "Bulgurlu"
+        },
+        {
+          "id": "m5_umraniye",
+          "name": "Ümraniye"
+        },
+        {
+          "id": "m5_carsi",
+          "name": "Çarşı"
+        },
+        {
+          "id": "m5_yamanevler",
+          "name": "Yamanevler"
+        },
+        {
+          "id": "m5_cakmak",
+          "name": "Çakmak"
+        },
+        {
+          "id": "m5_ihlamurkuyu",
+          "name": "Ihlamurkuyu"
+        },
+        {
+          "id": "m5_altinsehir",
+          "name": "Altınşehir"
+        },
+        {
+          "id": "m5_imam_hatip_lisesi",
+          "name": "İmam Hatip Lisesi"
+        },
+        {
+          "id": "m5_dudullu",
+          "name": "Dudullu"
+        },
+        {
+          "id": "m5_necip_fazil",
+          "name": "Necip Fazıl"
+        },
+        {
+          "id": "m5_cekmekoy",
+          "name": "Çekmeköy"
+        },
+        {
+          "id": "m5_meclis",
+          "name": "Meclis"
+        },
+        {
+          "id": "m5_sarigazi",
+          "name": "Sarıgazi"
+        },
+        {
+          "id": "m5_sancaktepe_sehir_hastanesi",
+          "name": "Sancaktepe Şehir Hastanesi"
+        },
+        {
+          "id": "m5_sancaktepe",
+          "name": "Sancaktepe"
+        },
+        {
+          "id": "m5_samandira_merkez",
+          "name": "Samandıra Merkez"
+        },
+        {
+          "id": "m5_veysel_karani",
+          "name": "Veysel Karani"
+        },
+        {
+          "id": "m5_hasanpasa",
+          "name": "Hasanpaşa"
+        },
+        {
+          "id": "m5_sultanbeyli",
+          "name": "Sultanbeyli"
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "Levent – Boğaziçi Ü./Hisarüstü",
+      "color": "#CBAA77",
+      "oneWayMinutes": 7,
+      "segmentSeconds": 140,
+      "stations": [
+        {
+          "id": "m6_levent",
+          "name": "Levent"
+        },
+        {
+          "id": "m6_nispetiye",
+          "name": "Nispetiye"
+        },
+        {
+          "id": "m6_etiler",
+          "name": "Etiler"
+        },
+        {
+          "id": "m6_bogazici_u_hisarustu",
+          "name": "Boğaziçi Ü.-Hisarüstü"
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "Yıldız – Mahmutbey",
+      "color": "#F39EC0",
+      "oneWayMinutes": 36,
+      "segmentSeconds": 135,
+      "stations": [
+        {
+          "id": "m7_yildiz",
+          "name": "Yıldız"
+        },
+        {
+          "id": "m7_fulya",
+          "name": "Fulya"
+        },
+        {
+          "id": "m7_mecidiyekoy",
+          "name": "Mecidiyeköy"
+        },
+        {
+          "id": "m7_caglayan",
+          "name": "Çağlayan"
+        },
+        {
+          "id": "m7_kagithane",
+          "name": "Kağıthane"
+        },
+        {
+          "id": "m7_nurtepe",
+          "name": "Nurtepe"
+        },
+        {
+          "id": "m7_alibeykoy",
+          "name": "Alibeyköy"
+        },
+        {
+          "id": "m7_circir_mahallesi",
+          "name": "Çırçır Mahallesi"
+        },
+        {
+          "id": "m7_veysel_karani_aksemsettin",
+          "name": "Veysel Karani-Akşemsettin"
+        },
+        {
+          "id": "m7_yesilpinar",
+          "name": "Yeşilpınar"
+        },
+        {
+          "id": "m7_kazim_karabekir",
+          "name": "Kazım Karabekir"
+        },
+        {
+          "id": "m7_yenimahalle",
+          "name": "Yenimahalle"
+        },
+        {
+          "id": "m7_karadeniz_mahallesi",
+          "name": "Karadeniz Mahallesi"
+        },
+        {
+          "id": "m7_giyimkent_tekstilkent",
+          "name": "Giyimkent-Tekstilkent"
+        },
+        {
+          "id": "m7_oruc_reis",
+          "name": "Oruç Reis"
+        },
+        {
+          "id": "m7_goztepe_mahallesi",
+          "name": "Göztepe Mahallesi"
+        },
+        {
+          "id": "m7_mahmutbey",
+          "name": "Mahmutbey"
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "name": "Bostancı – Parseller",
+      "color": "#447ABE",
+      "oneWayMinutes": 26,
+      "segmentSeconds": 130,
+      "stations": [
+        {
+          "id": "m8_bostanci",
+          "name": "Bostancı"
+        },
+        {
+          "id": "m8_emin_ali_pasa",
+          "name": "Emin Ali Paşa"
+        },
+        {
+          "id": "m8_aysekadin",
+          "name": "Ayşekadın"
+        },
+        {
+          "id": "m8_kozyatagi",
+          "name": "Kozyatağı"
+        },
+        {
+          "id": "m8_kucukbakkalkoy",
+          "name": "Küçükbakkalköy"
+        },
+        {
+          "id": "m8_icerenkoy",
+          "name": "İçerenköy"
+        },
+        {
+          "id": "m8_kayisdagi",
+          "name": "Kayışdağı"
+        },
+        {
+          "id": "m8_mevlana",
+          "name": "Mevlana"
+        },
+        {
+          "id": "m8_imes",
+          "name": "İMES"
+        },
+        {
+          "id": "m8_modoko_keyap",
+          "name": "MODOKO-KEYAP"
+        },
+        {
+          "id": "m8_dudullu",
+          "name": "Dudullu"
+        },
+        {
+          "id": "m8_huzur",
+          "name": "Huzur"
+        },
+        {
+          "id": "m8_parseller",
+          "name": "Parseller"
+        }
+      ]
+    },
+    {
+      "id": "M9",
+      "name": "Ataköy – Olimpiyat",
+      "color": "#FFD300",
+      "oneWayMinutes": 26,
+      "segmentSeconds": 120,
+      "stations": [
+        {
+          "id": "m9_atakoy",
+          "name": "Ataköy"
+        },
+        {
+          "id": "m9_yenibosna",
+          "name": "Yenibosna"
+        },
+        {
+          "id": "m9_cobancesme",
+          "name": "Çobançeşme"
+        },
+        {
+          "id": "m9_29_ekim_cumhuriyet",
+          "name": "29 Ekim Cumhuriyet"
+        },
+        {
+          "id": "m9_dogu_sanayi",
+          "name": "Doğu Sanayi"
+        },
+        {
+          "id": "m9_mimar_sinan",
+          "name": "Mimar Sinan"
+        },
+        {
+          "id": "m9_15_temmuz",
+          "name": "15 Temmuz"
+        },
+        {
+          "id": "m9_halkali_caddesi",
+          "name": "Halkalı Caddesi"
+        },
+        {
+          "id": "m9_ataturk_mahallesi",
+          "name": "Atatürk Mahallesi"
+        },
+        {
+          "id": "m9_bahariye",
+          "name": "Bahariye"
+        },
+        {
+          "id": "m9_masko",
+          "name": "MASKO"
+        },
+        {
+          "id": "m9_ikitelli_sanayi",
+          "name": "İkitelli Sanayi"
+        },
+        {
+          "id": "m9_ziya_gokalp_mahallesi",
+          "name": "Ziya Gökalp Mahallesi"
+        },
+        {
+          "id": "m9_olimpiyat",
+          "name": "Olimpiyat"
+        }
+      ]
+    }
+  ]
+}

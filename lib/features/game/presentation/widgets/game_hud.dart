@@ -8,9 +8,11 @@ class GameHud extends StatelessWidget {
   const GameHud({
     super.key,
     required this.score,
-    required this.targetScore,
+    required this.recordToBeat,
+    required this.recordBeaten,
+    required this.isSprint,
     required this.combo,
-    required this.targetProgress,
+    required this.recordProgress,
     required this.accent,
     required this.onPause,
     required this.onUndo,
@@ -19,9 +21,16 @@ class GameHud extends StatelessWidget {
   });
 
   final int score;
-  final int targetScore;
+
+  /// Geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
+  final int recordToBeat;
+  final bool recordBeaten;
+
+  /// Yolculuğun son dilimi — puanlar iki katı.
+  final bool isSprint;
+
   final int combo;
-  final double targetProgress;
+  final double recordProgress;
   final Color accent;
   final VoidCallback onPause;
   final VoidCallback onUndo;
@@ -37,24 +46,37 @@ class GameHud extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Text(
-                    'SKOR',
-                    style: TextStyle(
-                      fontSize: 11,
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+              child: Semantics(
+                liveRegion: true,
+                label: recordToBeat <= 0
+                    ? 'Skor ${Formatters.score(score)}, bu rotada ilk yolculuk'
+                    : recordBeaten
+                    ? 'Skor ${Formatters.score(score)}, rekor geçildi'
+                    : 'Skor ${Formatters.score(score)}, '
+                          'rekor ${Formatters.score(recordToBeat)}',
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
+                        recordToBeat <= 0
+                            ? 'SKOR · İLK YOLCULUK'
+                            : recordBeaten
+                            ? 'SKOR · REKOR GEÇİLDİ'
+                            : 'SKOR · REKOR ${Formatters.score(recordToBeat)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w700,
+                          color: recordBeaten ? accent : AppColors.textMuted,
+                        ),
+                      ),
+                      Text(
                         Formatters.score(score),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontFamily: AppFonts.display,
                           fontSize: 32,
@@ -63,24 +85,15 @@ class GameHud extends StatelessWidget {
                           height: 1.1,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Flexible(
-                        child: Text(
-                          '/ ${Formatters.score(targetScore)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
+            if (isSprint) ...<Widget>[
+              _SprintChip(accent: accent),
+              const SizedBox(width: AppSpacing.sm),
+            ],
             if (combo >= 2) _ComboChip(combo: combo, accent: accent),
             if (undoLeft > 0) ...<Widget>[
               const SizedBox(width: AppSpacing.sm),
@@ -99,16 +112,53 @@ class GameHud extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
+        // Çubuk rekora doğru dolar; rekor yoksa boş kalır.
         ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
-            value: targetProgress.clamp(0.0, 1.0),
+            value: recordProgress.clamp(0.0, 1.0),
             minHeight: 6,
             backgroundColor: AppColors.surfaceHigh,
-            valueColor: AlwaysStoppedAnimation<Color>(accent),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              recordBeaten ? AppColors.success : accent,
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Son durak sprinti: puanlar iki katı.
+class _SprintChip extends StatelessWidget {
+  const _SprintChip({required this.accent});
+
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.6)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.flag_rounded, size: 15, color: AppColors.warning),
+          SizedBox(width: 3),
+          Text(
+            'SON DURAK ×2',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: AppColors.warning,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -165,21 +215,28 @@ class _HudButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onPressed,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: AppColors.surfaceHigh,
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: 44,
-            height: 44,
-            child: Icon(
-              icon,
-              size: 22,
-              color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: ExcludeSemantics(
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+                ),
+              ),
             ),
           ),
         ),

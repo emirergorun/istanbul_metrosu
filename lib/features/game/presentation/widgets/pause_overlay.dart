@@ -16,6 +16,7 @@ class PauseOverlay extends StatelessWidget {
     required this.remainingSeconds,
     required this.onResume,
     required this.onRestart,
+    required this.onSettings,
     required this.onExit,
   });
 
@@ -24,6 +25,7 @@ class PauseOverlay extends StatelessWidget {
   final int remainingSeconds;
   final VoidCallback onResume;
   final VoidCallback onRestart;
+  final VoidCallback onSettings;
   final VoidCallback onExit;
 
   @override
@@ -52,6 +54,7 @@ class PauseOverlay extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         TextButton(onPressed: onRestart, child: const Text('Yeniden başlat')),
+        TextButton(onPressed: onSettings, child: const Text('Ayarlar')),
         TextButton(onPressed: onExit, child: const Text('Yeni rota seç')),
       ],
     );

@@ -5,17 +5,18 @@ import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../core/widgets/line_badge.dart';
-import '../models/difficulty_profile.dart';
+import '../models/journey.dart';
 import '../models/station.dart';
 import '../services/route_service.dart';
+import 'widgets/line_selector.dart';
 import 'widgets/station_picker.dart';
 
 /// Yolculuk kurulum ekranı.
 ///
-/// Düzen, metro.istanbul'daki "nasıl giderim" planlayıcısını izler:
-/// başlık şeridi, A/B işaretli çıkış–varış alanları, tam genişlik aksiyon
-/// butonu ve altta kırmızı vurgu şeridi.
+/// Düzen metro.istanbul'daki "nasıl giderim" planlayıcısını izler: başlık
+/// şeridi, A/B işaretli çıkış–varış alanları, tam genişlik aksiyon butonu ve
+/// altta kırmızı vurgu şeridi. Üstüne hat seçici eklenmiştir — MVP'de
+/// aktarma yok, yolculuk tek hat üzerinde kurulur.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -24,8 +25,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  MetroLine? _line;
   Station? _origin;
   Station? _destination;
+  MetroLine get _activeLine =>
+      _line ?? AppScope.of(context).metro.lines().first;
+
+  LineTheme get _lineTheme => LineTheme.from(_activeLine.color);
 
   RouteResult? get _route {
     final origin = _origin;
@@ -36,21 +42,26 @@ class _HomeScreenState extends State<HomeScreen> {
     ).routeService.estimate(origin.id, destination.id);
   }
 
-  Color get _accent {
-    final scope = AppScope.of(context);
-    final lineId = _origin?.lineId ?? scope.metro.stations().first.lineId;
-    final line = scope.metro.lineById(lineId);
-    return line == null ? AppColors.brandNavy : Color(line.colorValue);
+  void _selectLine(MetroLine line) {
+    if (line == _activeLine) return;
+    setState(() {
+      _line = line;
+      // Hat değişince eski duraklar geçersiz.
+      _origin = null;
+      _destination = null;
+    });
   }
 
   Future<void> _pick({required bool isOrigin}) async {
     final scope = AppScope.of(context);
+    final line = _activeLine;
     final picked = await showStationPicker(
       context,
       title: isOrigin ? 'Çıkış Noktası' : 'Gidilecek Yer',
       subtitle: isOrigin ? 'Nereden bindin?' : 'Nerede ineceksin?',
-      stations: scope.metro.stations(),
-      accent: _accent,
+      lineId: line.id,
+      stations: scope.metro.stationsOfLine(line.id),
+      accent: _lineTheme.accent,
       selected: isOrigin ? _origin : _destination,
     );
     if (picked == null) return;
@@ -74,7 +85,20 @@ class _HomeScreenState extends State<HomeScreen> {
   void _start() {
     final journey = _route?.journey;
     if (journey == null) return;
-    AppRoutes.openGame(context, journey);
+    _startJourney(journey);
+  }
+
+  /// Oyunu açar ve döndüğünde ekranı tazeler.
+  ///
+  /// `Navigator.pop` alttaki rotayı yeniden çizmez; beklemeden bırakılırsa
+  /// dönüşte ne "son rotan" kartı ne de yeni rekor görünür.
+  Future<void> _startJourney(Journey journey) async {
+    final store = AppScope.of(context).store;
+    await store.rememberRoute(journey.origin.id, journey.destination.id);
+    if (!mounted) return;
+
+    await AppRoutes.openGame(context, journey);
+    if (mounted) setState(() {});
   }
 
   @override
@@ -82,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final scope = AppScope.of(context);
     final route = _route;
     final journey = route?.journey;
-    final line = scope.metro.lineById(_origin?.lineId ?? 'M2');
+    final line = _activeLine;
 
     return Scaffold(
       body: SafeArea(
@@ -94,27 +118,61 @@ class _HomeScreenState extends State<HomeScreen> {
                 // IntrinsicHeight: scroll içinde Spacer'ın çalışması için
                 // Column'un yüksekliği sınırlı olmalı.
                 child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.xl,
-                      AppSpacing.lg,
-                      AppSpacing.xl,
-                      AppSpacing.lg,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        _TopBar(lineId: line?.id ?? 'M2', accent: _accent),
-                        const SizedBox(height: AppSpacing.xl),
-                        const _Hero(),
-                        const SizedBox(height: AppSpacing.xl),
-                        _PlannerCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.xl,
+                          AppSpacing.xs,
+                          AppSpacing.sm,
+                          0,
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () => AppRoutes.openSettings(context),
+                              tooltip: 'Ayarlar',
+                              icon: const Icon(Icons.settings_rounded),
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.xl,
+                          0,
+                          AppSpacing.xl,
+                          AppSpacing.lg,
+                        ),
+                        child: _Hero(),
+                      ),
+                      LineSelector(
+                        lines: scope.metro.lines(),
+                        selected: line,
+                        onSelected: _selectLine,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.xl,
+                          AppSpacing.lg,
+                          AppSpacing.xl,
+                          AppSpacing.lg,
+                        ),
+                        child: _PlannerCard(
+                          line: line,
+                          lineTheme: _lineTheme,
                           origin: _origin,
                           destination: _destination,
                           route: route,
                           bestScore: journey == null
                               ? 0
-                              : scope.store.bestScoreFor(journey.difficulty.id),
+                              : scope.store.bestScoreForRoute(
+                                  journey.origin.id,
+                                  journey.destination.id,
+                                ),
                           onPickOrigin: () => _pick(isOrigin: true),
                           onPickDestination: () => _pick(isOrigin: false),
                           onSwap: _origin == null && _destination == null
@@ -122,13 +180,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               : _swap,
                           onStart: journey == null ? null : _start,
                         ),
-                        const SizedBox(height: AppSpacing.xl),
-                        _DifficultyScale(active: journey?.difficulty),
-                        const Spacer(),
-                        const SizedBox(height: AppSpacing.lg),
-                        const _OfflineNote(),
-                      ],
-                    ),
+                      ),
+                      const Spacer(),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                        child: _OfflineNote(),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -136,48 +194,6 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.lineId, required this.accent});
-
-  final String lineId;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        LineBadge(label: lineId, color: accent),
-        const SizedBox(width: AppSpacing.md),
-        const Expanded(
-          child: Text(
-            'Yenikapı – Hacıosman',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.outline),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: const Text(
-            'ÇEVRİMDIŞI',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -196,7 +212,7 @@ class _Hero extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          '${AppConstants.appTitle} · bindiğin ve ineceğin durağı seç, '
+          '${AppConstants.appTitle} · hattını ve iki durağını seç, '
           'oyunun uzunluğu yolculuğuna göre ayarlansın.',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
@@ -207,6 +223,8 @@ class _Hero extends StatelessWidget {
 
 class _PlannerCard extends StatelessWidget {
   const _PlannerCard({
+    required this.line,
+    required this.lineTheme,
     required this.origin,
     required this.destination,
     required this.route,
@@ -217,6 +235,8 @@ class _PlannerCard extends StatelessWidget {
     required this.onStart,
   });
 
+  final MetroLine line;
+  final LineTheme lineTheme;
   final Station? origin;
   final Station? destination;
   final RouteResult? route;
@@ -238,13 +258,14 @@ class _PlannerCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const _CardHeader(),
+          _CardHeader(line: line, lineTheme: lineTheme),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 _OriginDestinationFields(
+                  lineTheme: lineTheme,
                   origin: origin,
                   destination: destination,
                   onPickOrigin: onPickOrigin,
@@ -260,18 +281,13 @@ class _PlannerCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(
                   onPressed: onStart,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.brandRed,
-                    disabledBackgroundColor: AppColors.surfaceHigh,
-                    disabledForegroundColor: AppColors.textMuted,
-                  ),
                   child: const Text('YOLCULUĞU BAŞLAT'),
                 ),
               ],
             ),
           ),
-          // Kurumsal arayüzdeki alt kırmızı şerit.
-          Container(height: 4, color: AppColors.brandRed),
+          // Kurumsal arayüzdeki alt vurgu şeridi — seçili hattın renginde.
+          Container(height: 4, color: lineTheme.accent),
         ],
       ),
     );
@@ -279,7 +295,10 @@ class _PlannerCard extends StatelessWidget {
 }
 
 class _CardHeader extends StatelessWidget {
-  const _CardHeader();
+  const _CardHeader({required this.line, required this.lineTheme});
+
+  final MetroLine line;
+  final LineTheme lineTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -291,22 +310,34 @@ class _CardHeader extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          const Expanded(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: lineTheme.color,
+              borderRadius: BorderRadius.circular(4),
+            ),
             child: Text(
-              'YOLCULUĞUNU PLANLA',
+              line.id,
               style: TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
-                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: lineTheme.onColor,
               ),
             ),
           ),
-          Icon(
-            Icons.alt_route_rounded,
-            size: 18,
-            color: Colors.white.withValues(alpha: 0.75),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              line.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -317,6 +348,7 @@ class _CardHeader extends StatelessWidget {
 /// A/B işaretli çıkış–varış alanları ve yön değiştirme butonu.
 class _OriginDestinationFields extends StatelessWidget {
   const _OriginDestinationFields({
+    required this.lineTheme,
     required this.origin,
     required this.destination,
     required this.onPickOrigin,
@@ -324,6 +356,7 @@ class _OriginDestinationFields extends StatelessWidget {
     required this.onSwap,
   });
 
+  final LineTheme lineTheme;
   final Station? origin;
   final Station? destination;
   final VoidCallback onPickOrigin;
@@ -341,6 +374,7 @@ class _OriginDestinationFields extends StatelessWidget {
               label: 'ÇIKIŞ NOKTASI',
               hint: 'Bindiğin durağı seç',
               station: origin,
+              lineTheme: lineTheme,
               onTap: onPickOrigin,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -349,6 +383,7 @@ class _OriginDestinationFields extends StatelessWidget {
               label: 'GİDİLECEK YER',
               hint: 'İneceğin durağı seç',
               station: destination,
+              lineTheme: lineTheme,
               onTap: onPickDestination,
             ),
           ],
@@ -389,6 +424,7 @@ class _StationField extends StatelessWidget {
     required this.label,
     required this.hint,
     required this.station,
+    required this.lineTheme,
     required this.onTap,
   });
 
@@ -396,6 +432,7 @@ class _StationField extends StatelessWidget {
   final String label;
   final String hint;
   final Station? station;
+  final LineTheme lineTheme;
   final VoidCallback onTap;
 
   @override
@@ -415,7 +452,7 @@ class _StationField extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              _AbMarker(letter: marker),
+              _AbMarker(letter: marker, lineTheme: lineTheme),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -456,11 +493,16 @@ class _StationField extends StatelessWidget {
   }
 }
 
-/// Planlayıcıdaki kırmızı A / B işareti.
+/// Planlayıcıdaki A / B işareti.
+///
+/// Seçili hattın rengini taşır — bu işaretler o hat üzerindeki iki noktayı
+/// gösterdiği için renk burada kimlik bilgisidir. Koyu zeminde kaybolmaması
+/// için resmi renk değil, düzeltilmiş [LineTheme.accent] kullanılır.
 class _AbMarker extends StatelessWidget {
-  const _AbMarker({required this.letter});
+  const _AbMarker({required this.letter, required this.lineTheme});
 
   final String letter;
+  final LineTheme lineTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -469,15 +511,15 @@ class _AbMarker extends StatelessWidget {
       height: 22,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.brandRed,
+        color: lineTheme.accent,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         letter,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: lineTheme.onAccent,
           height: 1,
         ),
       ),
@@ -510,11 +552,9 @@ class _JourneySummary extends StatelessWidget {
       return _InfoBanner(
         icon: Icons.error_outline_rounded,
         text: route?.message ?? 'Rota hesaplanamadı.',
-        color: AppColors.brandRed,
+        color: AppColors.danger,
       );
     }
-
-    final difficulty = journey.difficulty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,13 +569,11 @@ class _JourneySummary extends StatelessWidget {
             ),
             Container(width: 1, height: 32, color: AppColors.outline),
             Expanded(
-              child: _Metric(label: 'ZORLUK', value: difficulty.label),
-            ),
-            Container(width: 1, height: 32, color: AppColors.outline),
-            Expanded(
               child: _Metric(
-                label: 'HEDEF',
-                value: Formatters.score(difficulty.targetScore),
+                label: bestScore > 0 ? 'ROTA REKORUN' : 'BU ROTADA',
+                value: bestScore > 0
+                    ? Formatters.score(bestScore)
+                    : 'İlk yolculuk',
               ),
             ),
           ],
@@ -631,104 +669,6 @@ class _InfoBanner extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(fontSize: 13.5, color: color, height: 1.3),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Süre → zorluk skalası.
-///
-/// Oyunun ana fikrini ("yolculuk ne kadarsa oyun da o kadar") tek bakışta
-/// anlatır ve seçili rotanın hangi banda düştüğünü gösterir.
-class _DifficultyScale extends StatelessWidget {
-  const _DifficultyScale({required this.active});
-
-  final DifficultyProfile? active;
-
-  String _range(DifficultyProfile profile) => profile.maxMinutes == null
-      ? '${profile.minMinutes}+'
-      : '${profile.minMinutes}–${profile.maxMinutes}';
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const Text(
-          'YOLCULUK SÜRESİ  →  ZORLUK',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.9,
-            color: AppColors.textMuted,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: <Widget>[
-            for (final profile in DifficultyProfiles.all)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: _ScaleSegment(
-                    label: profile.label,
-                    range: _range(profile),
-                    isActive: profile == active,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ScaleSegment extends StatelessWidget {
-  const _ScaleSegment({
-    required this.label,
-    required this.range,
-    required this.isActive,
-  });
-
-  final String label;
-  final String range;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 2),
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.brandNavy : AppColors.surface,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: isActive ? AppColors.brandRed : AppColors.outline,
-        ),
-      ),
-      child: Column(
-        children: <Widget>[
-          FittedBox(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isActive
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 1),
-          FittedBox(
-            child: Text(
-              '$range dk',
-              style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
             ),
           ),
         ],

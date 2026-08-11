@@ -184,6 +184,13 @@ class PieceShapes {
 
   static const List<BlockPiece> all = <BlockPiece>[...easy, ...medium, ...hard];
 
+  static final Map<String, BlockPiece> _byId = <String, BlockPiece>{
+    for (final piece in all) piece.id: piece,
+  };
+
+  /// Kayıtlı oyunu geri yüklerken şekli id'sinden bulmak için.
+  static BlockPiece? byId(String id) => _byId[id];
+
   static List<BlockPiece> pool(PieceDifficulty difficulty) =>
       switch (difficulty) {
         PieceDifficulty.easy => easy,

@@ -115,6 +115,40 @@ void main() {
         expect(result.multiplier, 3);
       });
 
+      test('son durak sprintinde puanlar iki katı', () {
+        final normal = calculateScore(
+          placedCells: 4,
+          clearedRows: 1,
+          clearedColumns: 0,
+          currentCombo: 0,
+        );
+        final sprint = calculateScore(
+          placedCells: 4,
+          clearedRows: 1,
+          clearedColumns: 0,
+          currentCombo: 0,
+          isSprint: true,
+        );
+
+        expect(sprint.points, normal.points * 2);
+        expect(
+          sprint.combo,
+          normal.combo,
+          reason: 'sprint combo’yu değiştirmez',
+        );
+      });
+
+      test('sprint yerleştirme puanını da çarpar', () {
+        final sprint = calculateScore(
+          placedCells: 3,
+          clearedRows: 0,
+          clearedColumns: 0,
+          currentCombo: 0,
+          isSprint: true,
+        );
+        expect(sprint.points, 6);
+      });
+
       test('temizlik yoksa combo sıfırlanır', () {
         final result = calculateScore(
           placedCells: 2,

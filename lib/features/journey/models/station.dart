@@ -1,8 +1,12 @@
+import 'dart:ui' show Color;
+
 import 'package:flutter/foundation.dart';
 
 /// Tek bir metro istasyonu.
 ///
-/// MVP'de tek hat (M2) kullanılır; [order] hat üzerindeki sıradır.
+/// [order] istasyonun **kendi hattı üzerindeki** sırasıdır; şehir genelinde
+/// global bir sıra değildir. Aynı fiziksel durak birden fazla hatta hizmet
+/// veriyorsa (ör. Yenikapı) her hat için ayrı bir [Station] kaydı vardır.
 @immutable
 class Station {
   const Station({
@@ -28,22 +32,34 @@ class Station {
   String toString() => 'Station($id, $name, $lineId#$order)';
 }
 
-/// Bir metro hattı. MVP'de sadece M2 var.
+/// Bir metro hattı.
 @immutable
 class MetroLine {
   const MetroLine({
     required this.id,
     required this.name,
-    required this.colorValue,
+    required this.color,
+    required this.oneWayMinutes,
+    required this.stationCount,
   });
 
+  /// Hat kodu: `M2`, `M1A` ...
   final String id;
+
+  /// `Yenikapı – Hacıosman`
   final String name;
 
-  /// Hattın accent rengi (ARGB). Resmi marka görseli/logosu kullanılmaz;
-  /// yalnızca nötr bir accent rengi tutulur.
-  /// TODO(PROD): Resmi hat renklerini kullanmadan önce marka/kullanım hakkı incelemesi yapılmalı.
-  final int colorValue;
+  /// Hattın resmi rengi (Metro İstanbul ağ haritasından).
+  ///
+  /// Bu renk **kimlik** taşır: rozet, tren, ray ve ilerleme göstergesi.
+  /// Arayüzün aksiyon rengi değildir — o sabittir.
+  /// TODO(PROD): Resmi hat renklerinin ticari kullanımı için marka incelemesi.
+  final Color color;
+
+  /// Resmi tek yön sefer süresi (dakika).
+  final int oneWayMinutes;
+
+  final int stationCount;
 
   @override
   bool operator ==(Object other) =>
@@ -51,4 +67,7 @@ class MetroLine {
 
   @override
   int get hashCode => id.hashCode;
+
+  @override
+  String toString() => 'MetroLine($id, $name)';
 }

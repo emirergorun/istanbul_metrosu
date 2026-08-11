@@ -10,6 +10,7 @@ import '../domain/block_piece.dart';
 import '../domain/board.dart';
 import '../domain/game_state.dart';
 import '../domain/scoring.dart';
+import 'game_snapshot.dart';
 import 'piece_generator.dart';
 
 /// Bir yerleştirme denemesinin sonucu — UI geri bildirimi için.
@@ -22,6 +23,7 @@ class PlaceOutcome {
     this.clearedColumns = const <int>[],
     this.combo = 0,
     this.trayRefilled = false,
+    this.beatRecord = false,
   });
 
   const PlaceOutcome.rejected() : this(accepted: false);
@@ -32,6 +34,10 @@ class PlaceOutcome {
   final List<int> clearedColumns;
   final int combo;
   final bool trayRefilled;
+
+  /// Rotanın rekoru **bu hamlede** geçildi mi? Yalnızca bir kez `true` olur;
+  /// oyun durmaz, UI kısa bir bildirim gösterir.
+  final bool beatRecord;
 
   int get linesCleared => clearedRows.length + clearedColumns.length;
   bool get didClear => linesCleared > 0;
@@ -47,15 +53,20 @@ class GameController extends ChangeNotifier {
     PieceGenerator? generator,
     this.store,
     Random? random,
+    this.recordToBeat = 0,
     this.tick = AppConstants.playTick,
+    GameSession? resumeFrom,
   }) : _generator = generator ?? PieceGenerator(random: random) {
-    _session = _createSession(journey);
+    _session = resumeFrom ?? _createSession(journey);
   }
 
   final PieceGenerator _generator;
 
   /// En iyi skorun yazılacağı local depo. Test'te null bırakılabilir.
   final LocalStore? store;
+
+  /// Bu rotada geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
+  final int recordToBeat;
 
   /// Aktif oyun süresi sayacının periyodu (test'te kısaltılabilir).
   final Duration tick;
@@ -65,6 +76,14 @@ class GameController extends ChangeNotifier {
   Timer? _timer;
   bool _isNewBest = false;
   bool _scoreSaved = false;
+
+  /// Son durak geçişinden beri line temizlendi mi? Durak bonusunun koşulu.
+  bool _clearedSinceLastStation = false;
+
+  /// Kazanılan son durak bonusu ve onu tetikleyen sayaç. UI, sayaç değişince
+  /// kısa bir bildirim gösterir.
+  int lastStationBonus = 0;
+  int stationBonusPulse = 0;
 
   GameSession get session => _session;
   Journey get journey => _session.journey;
@@ -84,6 +103,7 @@ class GameController extends ChangeNotifier {
       journey: journey,
       board: board,
       tray: _generator.generateTray(board, profile),
+      recordToBeat: recordToBeat,
     );
   }
 
@@ -100,6 +120,7 @@ class GameController extends ChangeNotifier {
     if (_session.status != GameStatus.playing) return;
     _stopTimer();
     _session = _session.copyWith(status: GameStatus.paused);
+    _persistSnapshot();
     notifyListeners();
   }
 
@@ -116,25 +137,34 @@ class GameController extends ChangeNotifier {
     _undoSnapshot = null;
     _isNewBest = false;
     _scoreSaved = false;
-    _hasCelebratedTarget = false;
+    _clearedSinceLastStation = false;
+    lastStationBonus = 0;
     _session = _createSession(_session.journey);
+    _persistSnapshot();
     start();
   }
 
-  /// Hedefe ulaşıldıktan sonra endless devam.
-  void continueEndless() {
-    if (_session.status != GameStatus.victory) return;
-    _session = _session.copyWith(status: GameStatus.playing);
-    _startTimer();
-    notifyListeners();
-  }
-
   /// Kullanıcı rotadan çıktığında (ör. geri tuşu).
+  ///
+  /// Oyun bitmediyse kayıt korunur; kullanıcı açılış ekranından devam
+  /// edebilir.
   void abandon() {
     _stopTimer();
     if (_session.status.isFinished) return;
+    _persistSnapshot();
     _session = _session.copyWith(status: GameStatus.abandoned);
     notifyListeners();
+  }
+
+  /// Yarım kalan oyunu diske yazar. Oyun bittiyse kaydı siler.
+  void _persistSnapshot() {
+    final target = store;
+    if (target == null) return;
+    if (_session.status.isFinished) {
+      unawaited(target.clearSavedGame());
+      return;
+    }
+    unawaited(target.saveGame(GameSnapshot.encode(_session)));
   }
 
   void _startTimer() {
@@ -151,11 +181,46 @@ class GameController extends ChangeNotifier {
     if (_session.status != GameStatus.playing) return;
     _session = _session.copyWith(elapsedSeconds: _session.elapsedSeconds + 1);
 
+    _awardStationBonusIfPassed();
+
     if (_session.remainingSeconds <= 0) {
       _finish(GameStatus.arrived);
       return;
     }
     notifyListeners();
+  }
+
+  /// Tren yeni bir durağı geçtiyse, o duraktan beri line temizlendiyse bonus.
+  ///
+  /// İlerleme çubuğunu dekorasyon olmaktan çıkarır: her durak arası küçük
+  /// bir hedef olur.
+  void _awardStationBonusIfPassed() {
+    final stops = _session.journey.stopCount;
+    if (stops <= 0) return;
+
+    final passed = (_session.progress * stops).floor();
+    if (passed <= _session.stationsPassed) return;
+
+    final earned = _clearedSinceLastStation;
+    _clearedSinceLastStation = false;
+    _session = _session.copyWith(
+      stationsPassed: passed,
+      score: earned ? _session.score + ScoreRules.stationBonus : null,
+    );
+
+    if (earned) {
+      lastStationBonus = ScoreRules.stationBonus;
+      stationBonusPulse++;
+      _checkRecord();
+    }
+  }
+
+  /// Rekor bu anda geçildiyse işaretler ve geçildiğini döner.
+  bool _checkRecord() {
+    if (_session.recordBeaten || _session.isFirstRun) return false;
+    if (_session.score <= _session.recordToBeat) return false;
+    _session = _session.copyWith(recordBeaten: true);
+    return true;
   }
 
   // --- Oyun hamlesi ---
@@ -186,6 +251,7 @@ class GameController extends ChangeNotifier {
       clearedRows: completedRows.length,
       clearedColumns: completedColumns.length,
       currentCombo: _session.combo,
+      isSprint: _session.isSprint,
     );
 
     board = clearLines(board, rows: completedRows, columns: completedColumns);
@@ -201,6 +267,8 @@ class GameController extends ChangeNotifier {
       refilled = true;
     }
 
+    if (score.linesCleared > 0) _clearedSinceLastStation = true;
+
     final newScore = _session.score + score.points;
     _session = _session.copyWith(
       board: board,
@@ -213,8 +281,9 @@ class GameController extends ChangeNotifier {
       clearedRows: _session.clearedRows + completedRows.length,
       clearedColumns: _session.clearedColumns + completedColumns.length,
       placedPieces: _session.placedPieces + 1,
-      targetReached: _session.targetReached || newScore >= _session.targetScore,
     );
+
+    final beatRecord = _checkRecord();
 
     final outcome = PlaceOutcome(
       accepted: true,
@@ -223,9 +292,11 @@ class GameController extends ChangeNotifier {
       clearedColumns: completedColumns,
       combo: score.combo,
       trayRefilled: refilled,
+      beatRecord: beatRecord,
     );
 
     _evaluateEndConditions();
+    _persistSnapshot();
     notifyListeners();
     return outcome;
   }
@@ -245,26 +316,17 @@ class GameController extends ChangeNotifier {
   }
 
   void _evaluateEndConditions() {
-    // Hedefe ilk kez ulaşıldıysa: zafer.
-    if (_session.score >= _session.targetScore &&
-        _session.status == GameStatus.playing &&
-        !_hasCelebratedTarget) {
-      _hasCelebratedTarget = true;
-      _finish(GameStatus.victory);
-      return;
-    }
-
+    // Hedefe ulaşmak oyunu bitirmez — tek final varıştır.
     // Hiç legal hamle kalmadıysa: game over.
     if (!hasAnyLegalMove(_session.board, _session.tray)) {
       _finish(GameStatus.gameOver);
     }
   }
 
-  bool _hasCelebratedTarget = false;
-
   void _finish(GameStatus status) {
     _stopTimer();
     _session = _session.copyWith(status: status);
+    unawaited(store?.clearSavedGame() ?? Future<void>.value());
     notifyListeners();
     unawaited(_persistScore());
   }
@@ -272,15 +334,12 @@ class GameController extends ChangeNotifier {
   Future<void> _persistScore() async {
     final target = store;
     if (target == null || _scoreSaved) return;
-    // Zafer sonrası endless devam edilebilir; skor her bitişte güncellenir.
-    _isNewBest = await target.submitScore(
-      _session.journey.difficulty.id,
-      _session.score,
+    _isNewBest = await target.submitRouteScore(
+      originId: _session.journey.origin.id,
+      destinationId: _session.journey.destination.id,
+      score: _session.score,
     );
-    if (_session.status == GameStatus.gameOver ||
-        _session.status == GameStatus.arrived) {
-      _scoreSaved = true;
-    }
+    _scoreSaved = true;
     notifyListeners();
   }
 

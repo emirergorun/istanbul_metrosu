@@ -12,6 +12,7 @@ class OverlayPanel extends StatelessWidget {
     required this.accent,
     required this.children,
     this.icon,
+    this.showBackdrop = true,
   });
 
   final String title;
@@ -20,13 +21,18 @@ class OverlayPanel extends StatelessWidget {
   final List<Widget> children;
   final IconData? icon;
 
+  /// Varış sahnesi kendi karartmasını çizdiği için orada kapatılır.
+  final bool showBackdrop;
+
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
       opacity: 1,
       duration: AppConstants.overlayFadeDuration,
       child: ColoredBox(
-        color: Colors.black.withValues(alpha: 0.72),
+        color: showBackdrop
+            ? Colors.black.withValues(alpha: 0.72)
+            : Colors.transparent,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(

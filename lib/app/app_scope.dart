@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../core/audio/audio_service.dart';
 import '../core/storage/local_store.dart';
 import '../data/metro/metro_repository.dart';
 import '../features/journey/services/route_service.dart';
@@ -12,12 +13,14 @@ class AppScope extends InheritedWidget {
   const AppScope({
     super.key,
     required this.store,
+    required this.audio,
     required this.metro,
     required this.routeService,
     required super.child,
   });
 
   final LocalStore store;
+  final AudioService audio;
   final MetroRepository metro;
   final RouteService routeService;
 
@@ -30,6 +33,7 @@ class AppScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppScope oldWidget) =>
       store != oldWidget.store ||
+      audio != oldWidget.audio ||
       metro != oldWidget.metro ||
       routeService != oldWidget.routeService;
 }

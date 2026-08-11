@@ -16,6 +16,10 @@ dependencies:
   # Yalnızca local best score ve ayarlar için.
   shared_preferences: ^2.3.2
 
+  # Kısa arayüz sesleri. Ses dosyaları sentezlenip pakete gömülüdür;
+  # çalışma anında indirme yoktur.
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -25,6 +29,10 @@ flutter:
   uses-material-design: true
 
   assets:
+    # Metro ağı: hatlar, istasyon sırası, durak arası süreler, hat renkleri.
+    - assets/data/metro.json
+    # Sentezlenmiş arayüz sesleri.
+    - assets/audio/
     # OFL lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.
     - assets/fonts/OFL-Raleway.txt
     - assets/fonts/OFL-OpenSans.txt

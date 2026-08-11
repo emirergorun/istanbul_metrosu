@@ -3,29 +3,22 @@ import 'package:flutter/foundation.dart';
 import '../../journey/models/journey.dart';
 import 'block_piece.dart';
 import 'board.dart';
+import 'scoring.dart';
 
 /// Oyun oturumunun durumu.
 ///
-/// `02 - Oyun Tasarımı` notundaki state listesine ek olarak [arrived]
-/// eklenmiştir: yolculuk süresi dolduğunda oyun biter ve sonuç ekranı
-/// açılır ("Trip Complete / Result"). [victory] ise hedef skora
-/// yolculuk bitmeden ulaşıldığı durumdur.
-enum GameStatus {
-  setup,
-  ready,
-  playing,
-  paused,
-  victory,
-  arrived,
-  gameOver,
-  abandoned,
-}
+/// `02 - Oyun Tasarımı` notundaki listeye göre iki fark var:
+///
+/// - [arrived] eklendi: yolculuk süresi dolunca oyun biter ve varış sahnesi
+///   oynar ("Trip Complete / Result").
+/// - `victory` **kaldırıldı**: hedef skora ulaşmak oyunu artık bitirmez,
+///   yalnızca [GameSession.targetReached] işaretlenir ve oyuncuya kısa bir
+///   bildirim gösterilir. Tek doruk nokta varıştır.
+enum GameStatus { setup, ready, playing, paused, arrived, gameOver, abandoned }
 
 extension GameStatusX on GameStatus {
   bool get isFinished =>
-      this == GameStatus.victory ||
-      this == GameStatus.arrived ||
-      this == GameStatus.gameOver;
+      this == GameStatus.arrived || this == GameStatus.gameOver;
 
   bool get isActive => this == GameStatus.playing;
 }
@@ -47,7 +40,9 @@ class GameSession {
     required this.elapsedSeconds,
     required this.status,
     required this.undoLeft,
-    required this.targetReached,
+    required this.recordToBeat,
+    required this.recordBeaten,
+    required this.stationsPassed,
     required this.placedPieces,
   });
 
@@ -55,6 +50,7 @@ class GameSession {
     required Journey journey,
     required Board board,
     required List<BlockPiece?> tray,
+    int recordToBeat = 0,
   }) {
     return GameSession(
       journey: journey,
@@ -68,7 +64,9 @@ class GameSession {
       elapsedSeconds: 0,
       status: GameStatus.ready,
       undoLeft: journey.difficulty.undoCount,
-      targetReached: false,
+      recordToBeat: recordToBeat,
+      recordBeaten: false,
+      stationsPassed: 0,
       placedPieces: 0,
     );
   }
@@ -91,12 +89,19 @@ class GameSession {
   final GameStatus status;
   final int undoLeft;
 
-  /// Hedef skora ulaşıldı mı (endless devam edilse bile true kalır).
-  final bool targetReached;
+  /// Bu rotadaki mevcut rekor. 0 ise rotada ilk yolculuk.
+  final int recordToBeat;
+
+  /// Rekor bu oturumda geçildi mi?
+  final bool recordBeaten;
+
+  /// Tren kaç durağı geçti — durak bonusu bundan tetiklenir.
+  final int stationsPassed;
 
   final int placedPieces;
 
-  int get targetScore => journey.difficulty.targetScore;
+  /// Rotada daha önce oynanmadıysa kıyaslanacak bir rekor yok.
+  bool get isFirstRun => recordToBeat <= 0;
 
   int get totalClearedLines => clearedRows + clearedColumns;
 
@@ -115,12 +120,15 @@ class GameSession {
     return left < 0 ? 0 : left;
   }
 
-  /// Hedefe göre tamamlanma oranı 0.0 - 1.0.
-  double get targetProgress {
-    if (targetScore <= 0) return 1;
-    final value = score / targetScore;
+  /// Rekora göre tamamlanma oranı 0.0 - 1.0.
+  double get recordProgress {
+    if (isFirstRun) return 0;
+    final value = score / recordToBeat;
     return value > 1 ? 1 : value;
   }
+
+  /// Yolculuğun son dilimi: puanlar iki katı.
+  bool get isSprint => progress >= ScoreRules.sprintStartsAt;
 
   bool get trayIsEmpty => tray.every((piece) => piece == null);
 
@@ -135,7 +143,8 @@ class GameSession {
     int? elapsedSeconds,
     GameStatus? status,
     int? undoLeft,
-    bool? targetReached,
+    bool? recordBeaten,
+    int? stationsPassed,
     int? placedPieces,
   }) {
     return GameSession(
@@ -150,7 +159,9 @@ class GameSession {
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       status: status ?? this.status,
       undoLeft: undoLeft ?? this.undoLeft,
-      targetReached: targetReached ?? this.targetReached,
+      recordToBeat: recordToBeat,
+      recordBeaten: recordBeaten ?? this.recordBeaten,
+      stationsPassed: stationsPassed ?? this.stationsPassed,
       placedPieces: placedPieces ?? this.placedPieces,
     );
   }

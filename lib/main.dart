@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app.dart';
+import 'core/audio/audio_service.dart';
 import 'core/storage/local_store.dart';
+import 'data/metro/metro_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,13 @@ Future<void> main() async {
   final store = LocalStore();
   await store.init();
 
-  runApp(MetroGameApp(store: store));
+  // Metro verisi uygulama paketinden okunur; network yok.
+  final metro = await MetroDataset.load();
+
+  final audio = AudioService()..enabled = store.soundEnabled;
+  await audio.init();
+
+  runApp(MetroGameApp(store: store, audio: audio, metro: metro));
 }
 
 /// Gömülü fontların SIL Open Font License metinlerini kaydeder.

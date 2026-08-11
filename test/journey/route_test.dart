@@ -1,13 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/core/utils/formatters.dart';
-import 'package:istanbul_metro_game/data/metro/metro_repository.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 import 'package:istanbul_metro_game/features/journey/services/difficulty_mapper.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 
+import '../helpers/metro_fixture.dart';
+
 void main() {
-  const repository = BundledMetroRepository();
-  const service = RouteService(repository);
+  final repository = MetroFixture.load();
+  final service = RouteService(repository);
 
   group('RouteService', () {
     test('aynı istasyon reddedilir', () {
@@ -24,12 +25,19 @@ void main() {
     });
 
     test('ileri yön süresi doğru toplanır', () {
-      // Taksim(4) -> Levent(8): 2+2+2+2 = 8 dk
+      // Taksim(4) -> Levent(8): M2'de kenar 137 sn, 4 kenar = 548 sn ≈ 9 dk
       final result = service.estimate('m2_taksim', 'm2_levent');
 
       expect(result.isValid, isTrue);
-      expect(result.journey!.estimatedMinutes, 8);
+      expect(result.journey!.estimatedSeconds, 4 * 137);
+      expect(result.journey!.estimatedMinutes, 9);
       expect(result.journey!.stopCount, 4);
+    });
+
+    test('farklı hatlardaki duraklar reddedilir (MVP: aktarma yok)', () {
+      final result = service.estimate('m2_taksim', 'm4_kadikoy');
+      expect(result.error, RouteError.differentLines);
+      expect(result.message, contains('aynı hatta'));
     });
 
     test('ters yön aynı süreyi verir', () {
@@ -41,19 +49,38 @@ void main() {
       expect(reverse.destination.id, 'm2_taksim');
     });
 
-    test('3 dakikalık kenar hesaba katılır', () {
-      // Sanayi Mahallesi(10) -> İTÜ-Ayazağa(11) = 3 dk (tek uzun kenar)
-      final result = service.estimate('m2_sanayi_mahallesi', 'm2_itu_ayazaga');
-      expect(result.journey!.estimatedMinutes, 3);
+    test('kenar süresi hatta göre değişir', () {
+      // Süreler resmi sefer süresinden türetiliyor; her hat farklı.
+      final m2 = service.estimate('m2_taksim', 'm2_osmanbey').journey!;
+      final m9 = service.estimate('m9_atakoy', 'm9_yenibosna').journey!;
+
+      expect(m2.estimatedSeconds, 137);
+      expect(m9.estimatedSeconds, 120);
+      expect(
+        m2.estimatedSeconds,
+        isNot(m9.estimatedSeconds),
+        reason: 'tek tip 2 dk varsayımına geri dönülmemeli',
+      );
     });
 
-    test('uçtan uca rota', () {
-      // Yenikapı -> Hacıosman: 13 x 2 dk + 1 x 3 dk = 29 dk
+    test('uçtan uca rota resmi sefer süresini verir', () {
+      // M2 resmi tek yön sefer süresi: 32 dakika.
       final result = service.estimate('m2_yenikapi', 'm2_haciosman');
 
-      expect(result.journey!.estimatedMinutes, 29);
+      expect(result.journey!.estimatedMinutes, 32);
       expect(result.journey!.stopCount, 14);
       expect(result.journey!.difficulty, DifficultyProfiles.long);
+    });
+
+    test('en uzun hat maraton profiline düşer', () {
+      // M4 Kadıköy -> Sabiha Gökçen: resmi 52 dakika.
+      final result = service.estimate(
+        'm4_kadikoy',
+        'm4_sabiha_gokcen_havalimani',
+      );
+
+      expect(result.journey!.estimatedMinutes, 52);
+      expect(result.journey!.difficulty, DifficultyProfiles.marathon);
     });
 
     test('komşu duraklar en kısa rotayı verir', () {
@@ -103,21 +130,66 @@ void main() {
   });
 
   group('metro datası', () {
-    test('istasyon sırası boşluksuz', () {
-      final stations = repository.stations();
-      for (var i = 0; i < stations.length; i++) {
-        expect(stations[i].order, i);
+    test('on metro hattı yüklendi', () {
+      final ids = repository.lines().map((l) => l.id).toList();
+      expect(ids, <String>[
+        'M1A',
+        'M1B',
+        'M2',
+        'M3',
+        'M4',
+        'M5',
+        'M6',
+        'M7',
+        'M8',
+        'M9',
+      ]);
+    });
+
+    test('her hattın istasyon sırası boşluksuz', () {
+      for (final line in repository.lines()) {
+        final stations = repository.stationsOfLine(line.id);
+        expect(stations, isNotEmpty, reason: '${line.id} boş');
+        for (var i = 0; i < stations.length; i++) {
+          expect(stations[i].order, i, reason: '${line.id} sırası bozuk');
+        }
       }
     });
 
-    test('her komşu çift için kenar var', () {
-      final stations = repository.stations();
-      expect(repository.edges().length, stations.length - 1);
+    test('her hat için komşu çift sayısı kadar kenar var', () {
+      final expected = repository
+          .lines()
+          .map((l) => repository.stationsOfLine(l.id).length - 1)
+          .reduce((a, b) => a + b);
+      expect(repository.edges().length, expected);
     });
 
-    test('istasyon id’leri benzersiz', () {
+    test('istasyon id’leri şehir genelinde benzersiz', () {
       final ids = repository.stations().map((s) => s.id).toList();
       expect(ids.toSet().length, ids.length);
+    });
+
+    test('her hattın resmi rengi ve sefer süresi var', () {
+      for (final line in repository.lines()) {
+        expect(line.oneWayMinutes, greaterThan(0), reason: line.id);
+        expect(line.color.a, 1.0, reason: '${line.id} rengi opak olmalı');
+        expect(line.name, isNotEmpty, reason: line.id);
+      }
+    });
+
+    test('uçtan uca süre resmi sefer süresine yakın', () {
+      // Kenarlar yuvarlandığı için birkaç saniye sapma kabul edilebilir.
+      for (final line in repository.lines()) {
+        final stations = repository.stationsOfLine(line.id);
+        final journey = service
+            .estimate(stations.first.id, stations.last.id)
+            .journey!;
+        expect(
+          journey.estimatedMinutes,
+          closeTo(line.oneWayMinutes, 1),
+          reason: line.id,
+        );
+      }
     });
   });
 

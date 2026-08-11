@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/core/constants/app_constants.dart';
 import 'package:istanbul_metro_game/features/game/application/piece_generator.dart';
 import 'package:istanbul_metro_game/features/game/domain/board.dart';
+import 'package:istanbul_metro_game/features/game/domain/piece_shapes.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 
 import '../helpers/board_helpers.dart';
@@ -55,6 +56,37 @@ void main() {
           reason: 'Tepside oynanabilir parça yok (deneme $i)',
         );
       }
+    });
+
+    test('torba: aynı tepside şekil tekrar etmez', () {
+      final generator = PieceGenerator(random: Random(5));
+      for (var i = 0; i < 300; i++) {
+        final tray = generator.generateTray(
+          Board.empty(),
+          DifficultyProfiles.standard,
+        );
+        expect(
+          tray.map((p) => p.id).toSet().length,
+          tray.length,
+          reason: 'tepsi $i içinde tekrar eden şekil var',
+        );
+      }
+    });
+
+    test('torba: havuzdaki her şekil görünür', () {
+      // Torbasız ağırlıklı random'da zor şekiller %1 sıklıkla çıkıyordu;
+      // torba her şeklin sırası gelmesini garanti eder.
+      final generator = PieceGenerator(random: Random(9));
+      final seen = <String>{};
+      for (var i = 0; i < 400; i++) {
+        for (final piece in generator.generateTray(
+          Board.empty(),
+          DifficultyProfiles.marathon,
+        )) {
+          seen.add(piece.id);
+        }
+      }
+      expect(seen.length, PieceShapes.all.length);
     });
 
     test('aynı seed aynı tepsiyi üretir (deterministik)', () {

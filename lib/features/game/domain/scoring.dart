@@ -18,6 +18,17 @@ class ScoreRules {
 
   /// Aynı hamlede 3 veya daha fazla line temizlenirse ek puan.
   static const int tripleLineBonus = 60;
+
+  /// Tren bir durağı geçerken, o duraktan beri en az bir line temizlendiyse
+  /// verilen bonus. Yolculuğa ritim verir: "bir sonraki durağa kadar bir
+  /// line çıkarmalıyım".
+  static const int stationBonus = 25;
+
+  /// Yolculuğun son diliminde puanlar bu katsayıyla çarpılır.
+  static const int sprintMultiplier = 2;
+
+  /// Sprintin başladığı ilerleme oranı (yolculuğun son %15'i).
+  static const double sprintStartsAt = 0.85;
 }
 
 /// Bir hamlenin skor sonucu.
@@ -56,6 +67,7 @@ class ScoreResult {
 /// - line temizleyen ardışık hamleler combo'yu artırır ve **line puanı**
 ///   combo ile çarpılır (ilk temizlik x1, ikinci ardışık x2 ...)
 /// - line temizlenmeyen hamle combo'yu sıfırlar
+/// - [isSprint] ise (yolculuğun son dilimi) toplam puan iki katına çıkar
 ///
 /// Yerleştirme puanı (hücre başına) combo'dan etkilenmez.
 ScoreResult calculateScore({
@@ -63,6 +75,7 @@ ScoreResult calculateScore({
   required int clearedRows,
   required int clearedColumns,
   required int currentCombo,
+  bool isSprint = false,
 }) {
   assert(placedCells >= 0);
   assert(clearedRows >= 0 && clearedColumns >= 0);
@@ -71,9 +84,11 @@ ScoreResult calculateScore({
   final placementPoints = placedCells * ScoreRules.perPlacedCell;
   final totalLines = clearedRows + clearedColumns;
 
+  final sprint = isSprint ? ScoreRules.sprintMultiplier : 1;
+
   if (totalLines == 0) {
     return ScoreResult(
-      points: placementPoints,
+      points: placementPoints * sprint,
       combo: 0,
       linesCleared: 0,
       multiplier: 1,
@@ -94,7 +109,7 @@ ScoreResult calculateScore({
   final multiplier = combo < 1 ? 1 : combo;
 
   return ScoreResult(
-    points: placementPoints + linePoints * multiplier,
+    points: (placementPoints + linePoints * multiplier) * sprint,
     combo: combo,
     linesCleared: totalLines,
     multiplier: multiplier,

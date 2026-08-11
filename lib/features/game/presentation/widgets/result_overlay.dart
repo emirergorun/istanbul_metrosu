@@ -5,10 +5,14 @@ import '../../../../core/utils/formatters.dart';
 import '../../domain/game_state.dart';
 import 'overlay_panel.dart';
 
-/// Oyun sonu paneli: hedefe ulaşma, varış veya hamle bitişi.
+/// Oyun sonu paneli.
 ///
-/// Ton nötr tutulur; kaybetme durumunda kullanıcıyı suçlayan/aşırı esprili
-/// dil kullanılmaz.
+/// İki bitiş vardır ve tonları bilinçli olarak farklıdır:
+///
+/// - **Varış** (`arrived`) oyunun finalidir ve her zaman kutlanır; hedef de
+///   geçildiyse ayrıca "Challenge tamamlandı" rozeti çıkar.
+/// - **Hamle bitişi** (`gameOver`) sade ve nötrdür. Varışın değerli olması
+///   için varamama ihtimalinin görünür kalması gerekir.
 class ResultOverlay extends StatelessWidget {
   const ResultOverlay({
     super.key,
@@ -18,7 +22,7 @@ class ResultOverlay extends StatelessWidget {
     required this.isNewBest,
     required this.onRestart,
     required this.onExit,
-    required this.onContinue,
+    this.showBackdrop = true,
   });
 
   final GameSession session;
@@ -28,56 +32,42 @@ class ResultOverlay extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
-  /// Sadece hedefe ulaşıldığında (endless devam) gösterilir.
-  final VoidCallback? onContinue;
+  /// Varış sahnesi kendi karartmasını çizer.
+  final bool showBackdrop;
 
-  ({String title, String subtitle, IconData icon, Color color}) get _content {
-    switch (session.status) {
-      case GameStatus.victory:
-        return (
-          title: 'Challenge tamamlandı',
-          subtitle:
-              'Hedef skora yolculuk bitmeden ulaştın. İstersen devam edebilirsin.',
-          icon: Icons.emoji_events_rounded,
-          color: AppColors.success,
-        );
-      case GameStatus.arrived:
-        return (
-          title: 'Durağına yaklaştın!',
-          subtitle: session.targetReached
-              ? 'Yolculuk tamamlandı ve hedefi de geçtin.'
-              : 'Yolculuk tamamlandı. Hedefe bu sefer ulaşamadın.',
-          icon: Icons.place_rounded,
-          color: accent,
-        );
-      case GameStatus.gameOver:
-      default:
-        return (
-          title: 'Hamle kalmadı',
-          subtitle: 'Tahtaya sığacak parça kalmadı. Tekrar deneyebilirsin.',
-          icon: Icons.grid_off_rounded,
-          color: AppColors.textSecondary,
-        );
-    }
-  }
+  bool get _isArrival => session.status == GameStatus.arrived;
 
   @override
   Widget build(BuildContext context) {
-    final content = _content;
+    final title = _isArrival ? 'DURAĞA GELDİN' : 'Hamle kalmadı';
+    final subtitle = _isArrival
+        ? '${session.journey.destination.name} durağındasın. '
+              'Yolculuğu tamamladın.'
+        : 'Tahtaya sığacak parça kalmadı, durağa varamadın.';
 
     return OverlayPanel(
-      icon: content.icon,
-      accent: content.color,
-      title: content.title,
-      subtitle: content.subtitle,
+      showBackdrop: showBackdrop,
+      icon: _isArrival ? Icons.where_to_vote_rounded : Icons.grid_off_rounded,
+      accent: _isArrival ? accent : AppColors.textSecondary,
+      title: title,
+      subtitle: subtitle,
       children: <Widget>[
+        if (session.recordBeaten) ...<Widget>[
+          _ChallengeBadge(accent: accent),
+          const SizedBox(height: AppSpacing.md),
+        ],
         StatRow(
           label: 'Skor',
           value: Formatters.score(session.score),
           highlight: true,
-          accent: content.color,
+          accent: _isArrival ? accent : AppColors.textPrimary,
         ),
-        StatRow(label: 'Hedef', value: Formatters.score(session.targetScore)),
+        StatRow(
+          label: session.isFirstRun ? 'Bu rotada' : 'Rota rekoru',
+          value: session.isFirstRun
+              ? 'İlk yolculuk'
+              : Formatters.score(session.recordToBeat),
+        ),
         StatRow(
           label: 'Temizlenen satır / sütun',
           value: '${session.clearedRows} / ${session.clearedColumns}',
@@ -86,56 +76,98 @@ class ResultOverlay extends StatelessWidget {
           label: 'En iyi combo',
           value: session.bestCombo > 0 ? 'x${session.bestCombo}' : '—',
         ),
-        StatRow(
-          label: '${session.journey.difficulty.label} rekoru',
-          value: Formatters.score(bestScore),
-        ),
+        if (!session.recordBeaten && !session.isFirstRun)
+          StatRow(
+            label: 'Rekora kalan',
+            value: Formatters.score(
+              (session.recordToBeat - session.score).clamp(
+                0,
+                session.recordToBeat,
+              ),
+            ),
+          ),
         if (isNewBest) ...<Widget>[
           const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(Icons.star_rounded, size: 18, color: AppColors.warning),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Yeni rekor!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _NewRecordBadge(),
         ],
         const SizedBox(height: AppSpacing.lg),
-        if (onContinue != null) ...<Widget>[
-          FilledButton(
-            onPressed: onContinue,
-            style: FilledButton.styleFrom(backgroundColor: accent),
-            child: const Text('Yolculuğa devam et'),
+        FilledButton(
+          onPressed: onRestart,
+          style: FilledButton.styleFrom(
+            backgroundColor: _isArrival ? accent : AppColors.brandNavy,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          TextButton(onPressed: onRestart, child: const Text('Tekrar oyna')),
-        ] else ...<Widget>[
-          FilledButton(
-            onPressed: onRestart,
-            style: FilledButton.styleFrom(backgroundColor: accent),
-            child: const Text('Tekrar oyna'),
-          ),
-        ],
+          child: const Text('TEKRAR OYNA'),
+        ),
         TextButton(onPressed: onExit, child: const Text('Yeni rota seç')),
       ],
+    );
+  }
+}
+
+/// Rota rekoru geçildiyse eklenen ikinci katman.
+class _ChallengeBadge extends StatelessWidget {
+  const _ChallengeBadge({required this.accent});
+
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: accent.withValues(alpha: 0.55)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(Icons.check_circle_rounded, size: 18, color: accent),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'Rekorunu geçtin',
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: accent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewRecordBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(Icons.star_rounded, size: 18, color: AppColors.warning),
+          SizedBox(width: AppSpacing.sm),
+          Text(
+            'Yeni rekor!',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppColors.warning,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

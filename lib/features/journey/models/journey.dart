@@ -9,7 +9,7 @@ class Journey {
   const Journey({
     required this.origin,
     required this.destination,
-    required this.estimatedMinutes,
+    required this.estimatedSeconds,
     required this.stopCount,
     required this.difficulty,
     required this.lineId,
@@ -18,8 +18,10 @@ class Journey {
   final Station origin;
   final Station destination;
 
-  /// Tahmini yolculuk süresi (dakika). Kesin varış vaadi değildir.
-  final int estimatedMinutes;
+  /// Tahmini yolculuk süresi (saniye). Kesin varış vaadi değildir.
+  ///
+  /// Kenar süreleri saniye tutulur; dakikaya yalnızca gösterim için yuvarlanır.
+  final int estimatedSeconds;
 
   /// Aradaki durak sayısı (origin hariç, destination dahil).
   final int stopCount;
@@ -27,7 +29,8 @@ class Journey {
   final DifficultyProfile difficulty;
   final String lineId;
 
-  int get estimatedSeconds => estimatedMinutes * 60;
+  /// Kullanıcıya gösterilen yuvarlanmış dakika.
+  int get estimatedMinutes => (estimatedSeconds / 60).round();
 
   @override
   String toString() =>

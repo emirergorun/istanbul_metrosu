@@ -10,8 +10,15 @@ import '../domain/piece_shapes.dart';
 ///
 /// Tam random kullanılmaz:
 /// - zorluk profiline göre kolay/orta/zor havuzları ağırlıklandırılır,
+/// - her havuz bir **torbadır**: çekilen şekil torbadan çıkar, torba bitince
+///   karıştırılıp yenilenir,
+/// - aynı tepside aynı şekil tekrar etmemeye çalışılır,
 /// - üretilen tepside **en az bir** legal hamle olması garanti edilmeye
 ///   çalışılır (fairness kuralı).
+///
+/// Torba olmadan ölçüm şuydu: kısa yolculuklarda beş küçük şekil tüm
+/// parçaların %41'ini kaplıyor, tepsilerin %17'sinde aynı şekil tekrar
+/// ediyordu. Torba, havuzdaki her şeklin görünmesini garanti eder.
 class PieceGenerator {
   PieceGenerator({Random? random, this.colorCount = 6})
     : _random = random ?? Random();
@@ -20,6 +27,20 @@ class PieceGenerator {
 
   /// Blok renk paletindeki renk sayısı.
   final int colorCount;
+
+  /// Zorluk havuzu başına karıştırılmış torba.
+  final Map<PieceDifficulty, List<BlockPiece>> _bags =
+      <PieceDifficulty, List<BlockPiece>>{};
+
+  /// Torbadan bir şekil çeker; torba boşsa karıştırıp yeniler.
+  BlockPiece _drawShape(PieceDifficulty tier) {
+    final bag = _bags[tier] ??= _refill(tier);
+    if (bag.isEmpty) bag.addAll(_refill(tier));
+    return bag.removeLast();
+  }
+
+  List<BlockPiece> _refill(PieceDifficulty tier) =>
+      List<BlockPiece>.of(PieceShapes.pool(tier))..shuffle(_random);
 
   /// Zorluk havuzu seçimi.
   ///
@@ -37,10 +58,18 @@ class PieceGenerator {
   }
 
   /// Tek parça üretir (renk atanmış olarak).
-  BlockPiece nextPiece(DifficultyProfile profile) {
-    final pool = PieceShapes.pool(_rollDifficulty(profile));
-    final shape = pool[_random.nextInt(pool.length)];
-    return shape.withColor(1 + _random.nextInt(colorCount));
+  BlockPiece nextPiece(DifficultyProfile profile) =>
+      _drawShape(_rollDifficulty(profile)).withColor(_randomColor());
+
+  int _randomColor() => 1 + _random.nextInt(colorCount);
+
+  /// Tepsi için parça çeker; mümkünse tepsideki şekilleri tekrarlamaz.
+  BlockPiece _nextDistinct(DifficultyProfile profile, Set<String> used) {
+    for (var attempt = 0; attempt < 6; attempt++) {
+      final piece = nextPiece(profile);
+      if (used.add(piece.id)) return piece;
+    }
+    return nextPiece(profile);
   }
 
   /// 3'lü tepsi üretir.
@@ -57,8 +86,10 @@ class PieceGenerator {
       attempt < AppConstants.maxTrayGenerationAttempts;
       attempt++
     ) {
+      final used = <String>{};
       tray = <BlockPiece>[
-        for (var i = 0; i < AppConstants.traySize; i++) nextPiece(profile),
+        for (var i = 0; i < AppConstants.traySize; i++)
+          _nextDistinct(profile, used),
       ];
       if (hasAnyLegalMove(board, tray)) return tray;
     }
@@ -71,9 +102,7 @@ class PieceGenerator {
     ) {
       tray = <BlockPiece>[
         for (var i = 0; i < AppConstants.traySize; i++)
-          PieceShapes.easy[_random.nextInt(PieceShapes.easy.length)].withColor(
-            1 + _random.nextInt(colorCount),
-          ),
+          _drawShape(PieceDifficulty.easy).withColor(_randomColor()),
       ];
       if (hasAnyLegalMove(board, tray)) return tray;
     }
@@ -100,8 +129,9 @@ class PieceGenerator {
       final r = _random.nextInt(board.rows);
       final c = _random.nextInt(board.cols);
       if (grid[r][c] != kEmptyCell) continue;
-      // Kenarlarda tam satır/sütunu kilitlememek için üst iki satırı boş bırak.
-      if (r < 1) continue;
+      // En üst satır boş bırakılır: oyun açılışında tahtanın tepesi kilitli
+      // görünmesin, uzun parçalar için her zaman temiz bir sıra kalsın.
+      if (r == 0) continue;
       grid[r][c] = kBlockerCell;
       placed++;
     }

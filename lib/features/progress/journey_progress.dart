@@ -4,6 +4,7 @@ import '../../app/theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/line_badge.dart';
+import '../../core/widgets/metro_train.dart';
 
 /// Alt sabit alandaki metro ilerleme göstergesi.
 ///
@@ -138,7 +139,8 @@ class _ProgressTrack extends StatelessWidget {
   final Color accent;
 
   static const double _height = 30;
-  static const double _trainWidth = 30;
+  static const double _trainHeight = 18;
+  static double get _trainWidth => MetroTrain.widthFor(height: _trainHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -159,8 +161,8 @@ class _ProgressTrack extends StatelessWidget {
               ),
               Positioned(
                 left: travel * progress,
-                top: (_height - 18) / 2,
-                child: _TrainIcon(color: accent),
+                top: (_height - _trainHeight) / 2,
+                child: MetroTrain(color: accent, height: _trainHeight),
               ),
             ],
           ),
@@ -227,72 +229,4 @@ class _TrackPainter extends CustomPainter {
   @override
   bool shouldRepaint(_TrackPainter oldDelegate) =>
       oldDelegate.progress != progress || oldDelegate.accent != accent;
-}
-
-/// Basit, özgün tren ikonu. Resmi marka görseli kullanılmaz.
-class _TrainIcon extends StatelessWidget {
-  const _TrainIcon({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 30,
-      height: 18,
-      child: CustomPaint(painter: _TrainPainter(color: color)),
-    );
-  }
-}
-
-class _TrainPainter extends CustomPainter {
-  const _TrainPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final body = RRect.fromRectAndCorners(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      topLeft: const Radius.circular(4),
-      bottomLeft: const Radius.circular(4),
-      topRight: const Radius.circular(9),
-      bottomRight: const Radius.circular(9),
-    );
-
-    canvas.drawRRect(body, Paint()..color = AppColors.textPrimary);
-    canvas.drawRRect(
-      body,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    );
-
-    // Pencereler.
-    final windowPaint = Paint()..color = color;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(4, 4, 7, 6),
-        const Radius.circular(1.5),
-      ),
-      windowPaint,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(14, 4, 7, 6),
-        const Radius.circular(1.5),
-      ),
-      windowPaint,
-    );
-
-    // Alt bant.
-    canvas.drawRect(
-      Rect.fromLTWH(3, size.height - 4, size.width - 8, 2),
-      Paint()..color = color.withValues(alpha: 0.7),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_TrainPainter oldDelegate) => oldDelegate.color != color;
 }
