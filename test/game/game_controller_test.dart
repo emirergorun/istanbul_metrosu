@@ -196,6 +196,51 @@ void main() {
       expect(controller.board.filledCount, 0);
       expect(controller.status, GameStatus.playing);
     });
+
+    test('restart geçilecek rekoru depodan tazeler', () async {
+      // Regresyon: rekor ekran açılırken bir kez okunuyordu. Sonuç panelinden
+      // "tekrar oyna" denince ekran yeniden kurulmadığı için ikinci oyun,
+      // az önce kırılan ESKİ rekoru hedefliyor ve ilk hamlede "rekoru geçtin"
+      // bildirimi çıkıyordu.
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final store = LocalStore();
+      await store.init();
+      await store.submitRouteScore(
+        originId: 'm2_taksim',
+        destinationId: 'm2_levent',
+        score: 10,
+      );
+
+      final controller = GameController(
+        journey: shortJourney(),
+        generator: _DotGenerator(),
+        store: store,
+        recordToBeat: store.bestScoreForRoute('m2_taksim', 'm2_levent'),
+      )..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.session.recordToBeat, 10);
+
+      // Oyun sırasında rekor kırılır ve depoya yazılır.
+      await store.submitRouteScore(
+        originId: 'm2_taksim',
+        destinationId: 'm2_levent',
+        score: 60,
+      );
+
+      controller.restart();
+
+      expect(
+        controller.session.recordToBeat,
+        60,
+        reason: 'yeni oyun güncel rekoru hedeflemeli',
+      );
+      expect(
+        controller.session.recordBeaten,
+        isFalse,
+        reason: 'yeni oyun rekor geçilmemiş başlamalı',
+      );
+    });
   });
 
   group('oyun sonu', () {
@@ -408,6 +453,42 @@ void main() {
         scoreBeforeStation + ScoreRules.stationBonus,
       );
       expect(controller.stationBonusPulse, 1);
+    });
+
+    test('geri alınan temizlik durak bonusu kazandırmaz', () async {
+      // Regresyon: undo board ve skoru geri alıyor ama "bu duraktan beri
+      // temizlik yapıldı" bayrağını bırakıyordu. Oyuncu satırı temizleyip
+      // geri alarak bedava +25 kasabiliyordu.
+      final controller = GameController(
+        journey: shortJourney(),
+        generator: _DotGenerator(),
+        tick: const Duration(milliseconds: 1),
+      )..start();
+      addTearDown(controller.dispose);
+
+      for (var c = 0; c < 8; c++) {
+        final index = controller.tray.indexWhere((p) => p != null);
+        controller.place(index, 0, c);
+      }
+      expect(controller.session.clearedRows, 1);
+
+      expect(controller.undo(), isTrue);
+      expect(controller.session.clearedRows, 0, reason: 'temizlik geri alındı');
+
+      final scoreBefore = controller.session.score;
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (controller.session.stationsPassed == 0 &&
+          DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+
+      expect(controller.session.stationsPassed, greaterThan(0));
+      expect(
+        controller.session.score,
+        scoreBefore,
+        reason: 'geri alınan temizlik bonus vermemeli',
+      );
+      expect(controller.stationBonusPulse, 0);
     });
 
     test('line temizlenmediyse durak bonusu gelmez', () async {

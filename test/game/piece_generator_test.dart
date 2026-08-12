@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/constants/app_constants.dart';
 import 'package:istanbul_metro_game/features/game/application/piece_generator.dart';
 import 'package:istanbul_metro_game/features/game/domain/board.dart';
@@ -31,6 +32,30 @@ void main() {
       for (final piece in tray) {
         expect(piece.colorIndex, greaterThan(0));
       }
+    });
+
+    test('renk sayısı palet boyutunu aşmaz', () {
+      // Regresyon: generator 6 renk üretiyordu ama palet 5 renk. Fazlalık
+      // `forCellValue` içinde başa dönüp ilk rengi iki kat sık gösteriyordu
+      // (ölçüm: turuncu 1985, diğerleri ~1000).
+      expect(
+        AppConstants.blockColorCount,
+        AppColors.blocks.length,
+        reason: 'sabit ile palet ayrışmış',
+      );
+
+      final generator = PieceGenerator(random: Random(7));
+      final seen = <int>{};
+      for (var i = 0; i < 4000; i++) {
+        seen.add(generator.nextPiece(DifficultyProfiles.mini).colorIndex);
+      }
+
+      expect(seen.length, AppColors.blocks.length);
+      expect(
+        seen.map(AppColors.forCellValue).toSet().length,
+        seen.length,
+        reason: 'iki renk indeksi aynı ekran rengine düşüyor',
+      );
     });
 
     test('fairness: dar board’da bile en az bir legal hamle bulunur', () {

@@ -11,6 +11,13 @@ class AppConstants {
   // --- Tray ---
   static const int traySize = 3;
 
+  /// Blok paletindeki renk sayısı — `AppColors.blocks` ile aynı olmalıdır.
+  ///
+  /// Generator bundan fazla renk üretirse fazlalık `forCellValue` içinde
+  /// başa döner ve ilk renk iki kat sık görünür (ölçüm: turuncu 1985'e karşı
+  /// diğerleri ~1000). Eşitliği `test/game/piece_generator_test.dart` korur.
+  static const int blockColorCount = 5;
+
   /// Bir tray üretilirken "en az bir legal hamle" garantisi için
   /// yapılacak maksimum yeniden üretim denemesi.
   static const int maxTrayGenerationAttempts = 20;

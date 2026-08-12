@@ -53,10 +53,14 @@ class GameController extends ChangeNotifier {
     PieceGenerator? generator,
     this.store,
     Random? random,
-    this.recordToBeat = 0,
+    int recordToBeat = 0,
     this.tick = AppConstants.playTick,
     GameSession? resumeFrom,
-  }) : _generator = generator ?? PieceGenerator(random: random) {
+    // Alan private + mutable (restart tazeliyor), parametre public kalmalı;
+    // `this._recordToBeat` dışarıdan kullanılamayacak bir ad üretirdi.
+    // ignore: prefer_initializing_formals
+  }) : _recordToBeat = recordToBeat,
+       _generator = generator ?? PieceGenerator(random: random) {
     _session = resumeFrom ?? _createSession(journey);
   }
 
@@ -66,7 +70,12 @@ class GameController extends ChangeNotifier {
   final LocalStore? store;
 
   /// Bu rotada geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
-  final int recordToBeat;
+  ///
+  /// `final` değildir: [restart] bunu depodan tazeler. Aynı ekranda ikinci
+  /// kez oynarken hedef, bir önceki oyunun kurduğu rekor olmalıdır.
+  int _recordToBeat;
+
+  int get recordToBeat => _recordToBeat;
 
   /// Aktif oyun süresi sayacının periyodu (test'te kısaltılabilir).
   final Duration tick;
@@ -79,6 +88,12 @@ class GameController extends ChangeNotifier {
 
   /// Son durak geçişinden beri line temizlendi mi? Durak bonusunun koşulu.
   bool _clearedSinceLastStation = false;
+
+  /// [_undoSnapshot] alındığı andaki [_clearedSinceLastStation] değeri.
+  ///
+  /// Geri alınan bir temizlik durak bonusunu hak etmiş saymamalı; yoksa
+  /// oyuncu satırı temizleyip geri alarak bedava +25 kasabiliyor.
+  bool _undoClearedSinceLastStation = false;
 
   /// Kazanılan son durak bonusu ve onu tetikleyen sayaç. UI, sayaç değişince
   /// kısa bir bildirim gösterir.
@@ -139,9 +154,25 @@ class GameController extends ChangeNotifier {
     _scoreSaved = false;
     _clearedSinceLastStation = false;
     lastStationBonus = 0;
+    _refreshRecord();
     _session = _createSession(_session.journey);
     _persistSnapshot();
     start();
+  }
+
+  /// Geçilecek rekoru depodan tazeler.
+  ///
+  /// Rekor ekran açılırken bir kez okunur. Oyuncu sonuç panelinden "tekrar
+  /// oyna" derse ekran yeniden kurulmaz; tazelenmezse ikinci oyun, az önce
+  /// kırılmış olan **eski** rekoru hedefler ve ilk hamlede "rekoru geçtin"
+  /// bildirimi çıkar.
+  void _refreshRecord() {
+    final journey = _session.journey;
+    final stored = store?.bestScoreForRoute(
+      journey.origin.id,
+      journey.destination.id,
+    );
+    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
   }
 
   /// Kullanıcı rotadan çıktığında (ör. geri tuşu).
@@ -241,6 +272,7 @@ class GameController extends ChangeNotifier {
     }
 
     _undoSnapshot = _session;
+    _undoClearedSinceLastStation = _clearedSinceLastStation;
 
     var board = placePiece(_session.board, piece, row, col);
     final completedRows = findCompletedRows(board);
@@ -306,6 +338,8 @@ class GameController extends ChangeNotifier {
     if (!canUndo) return false;
     final snapshot = _undoSnapshot!;
     _undoSnapshot = null;
+    // Geri alınan hamle bir line temizlediyse durak bonusu hakkı da geri gider.
+    _clearedSinceLastStation = _undoClearedSinceLastStation;
     _session = snapshot.copyWith(
       elapsedSeconds: _session.elapsedSeconds,
       undoLeft: snapshot.undoLeft - 1,

@@ -121,15 +121,23 @@ class LineTheme {
     return LineTheme(
       color: official,
       accent: accent,
-      onColor: _readableOn(official),
-      onAccent: _readableOn(accent),
+      onColor: readableOn(official),
+      onAccent: readableOn(accent),
     );
   }
 
-  static Color _readableOn(Color background) =>
-      background.computeLuminance() > 0.42
-      ? AppColors.background
-      : Colors.white;
+  /// [background] üzerinde okunabilir metin rengi.
+  ///
+  /// Sabit bir parlaklık eşiği yetmiyordu: M3 (`#05A8E2`) eşiğin altında
+  /// kalıp beyaz metin alıyor, kontrast 2.7:1'de kalıyordu. Bunun yerine iki
+  /// aday (beyaz ve koyu zemin) arasından **kontrastı yüksek olan** seçilir;
+  /// böylece her hat rengi için elde edilebilecek en iyi okunurluk garanti
+  /// olur ve yeni hat eklendiğinde ayar gerekmez.
+  static Color readableOn(Color background) =>
+      _contrast(Colors.white, background) >=
+          _contrast(AppColors.background, background)
+      ? Colors.white
+      : AppColors.background;
 
   /// Koyu zeminde yeterli kontrasta ulaşana kadar rengi açar.
   static Color _liftForDarkBackground(Color color) {

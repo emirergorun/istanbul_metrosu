@@ -20,8 +20,10 @@ import '../domain/piece_shapes.dart';
 /// parçaların %41'ini kaplıyor, tepsilerin %17'sinde aynı şekil tekrar
 /// ediyordu. Torba, havuzdaki her şeklin görünmesini garanti eder.
 class PieceGenerator {
-  PieceGenerator({Random? random, this.colorCount = 6})
-    : _random = random ?? Random();
+  PieceGenerator({
+    Random? random,
+    this.colorCount = AppConstants.blockColorCount,
+  }) : _random = random ?? Random();
 
   final Random _random;
 
