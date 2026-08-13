@@ -35,7 +35,9 @@ Future<void> main() async {
     return;
   }
 
-  final audio = AudioService()..enabled = store.soundEnabled;
+  final audio = AudioService()
+    ..enabled = store.soundEnabled
+    ..musicEnabled = store.musicEnabled;
   await audio.init();
 
   runApp(MetroGameApp(store: store, audio: audio, metro: metro));

@@ -12,6 +12,7 @@ class LocalStore extends ChangeNotifier {
   static const String _overallBestKey = 'best_score_overall';
   static const String _hapticsKey = 'haptics_enabled';
   static const String _soundKey = 'sound_enabled';
+  static const String _musicKey = 'music_enabled';
   static const String _onboardingKey = 'onboarding_seen';
   static const String _savedGameKey = 'saved_game';
   static const String _lastOriginKey = 'last_route_origin';
@@ -25,9 +26,14 @@ class LocalStore extends ChangeNotifier {
   /// ötmesi istenmez, açmak kullanıcının tercihidir.
   bool _soundEnabled = false;
 
+  /// Arka plan müziği de varsayılan olarak **kapalı** — efektlerden bile
+  /// daha müdahaleci olduğu için aynı gerekçe fazlasıyla geçerli.
+  bool _musicEnabled = false;
+
   bool get isReady => _ready;
   bool get hapticsEnabled => _hapticsEnabled;
   bool get soundEnabled => _soundEnabled;
+  bool get musicEnabled => _musicEnabled;
 
   /// Storage kullanılamazsa (ör. test ortamı) uygulama yine çalışır;
   /// değerler sadece bellekte kalır.
@@ -36,6 +42,7 @@ class LocalStore extends ChangeNotifier {
       _prefs = await SharedPreferences.getInstance();
       _hapticsEnabled = _prefs?.getBool(_hapticsKey) ?? true;
       _soundEnabled = _prefs?.getBool(_soundKey) ?? false;
+      _musicEnabled = _prefs?.getBool(_musicKey) ?? false;
     } catch (error, stack) {
       debugPrint('LocalStore init başarısız: $error\n$stack');
       _prefs = null;
@@ -128,6 +135,12 @@ class LocalStore extends ChangeNotifier {
   Future<void> setSoundEnabled(bool value) async {
     _soundEnabled = value;
     await _prefs?.setBool(_soundKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setMusicEnabled(bool value) async {
+    _musicEnabled = value;
+    await _prefs?.setBool(_musicKey, value);
     notifyListeners();
   }
 

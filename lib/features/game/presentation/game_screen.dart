@@ -87,6 +87,8 @@ class _GameScreenState extends State<GameScreen>
     if (_controller != null) return;
 
     final store = AppScope.of(context).store;
+    // dispose sırasında AppScope'a erişmek güvenli değil; referansı şimdi al.
+    _audio = AppScope.of(context).audio;
     final controller = GameController(
       journey: widget.journey,
       store: store,
@@ -110,10 +112,40 @@ class _GameScreenState extends State<GameScreen>
       _playedArrivalSound = true;
       _sound(GameSound.arrival);
     }
+    _syncMusic();
     setState(() {});
   }
 
   bool _playedArrivalSound = false;
+
+  AudioService? _audio;
+
+  /// Müziğin en son hangi duruma göre ayarlandığı.
+  ///
+  /// `_onControllerChanged` saniyede bir tetikleniyor; player'a her saniye
+  /// `resume()` göndermemek için yalnızca durum değişince iş yapılır.
+  GameStatus? _musicSyncedFor;
+
+  /// Müziği oyunun durumuyla eşitler.
+  ///
+  /// Oynarken çalar, duraklatınca kaldığı yerde bekler, oyun bitince
+  /// (varış ya da hamle bitişi) susar — varış sesi temiz duyulsun.
+  void _syncMusic() {
+    final status = _controller?.status;
+    if (status == null || status == _musicSyncedFor) return;
+    _musicSyncedFor = status;
+
+    final audio = _audio;
+    if (audio == null) return;
+
+    if (status == GameStatus.playing) {
+      audio.resumeMusic();
+    } else if (status.isFinished || status == GameStatus.abandoned) {
+      audio.stopMusic();
+    } else {
+      audio.pauseMusic();
+    }
+  }
 
   /// Controller yeni bir durak bonusu verdiyse kısa bildirim göster.
   void _showStationBonusIfNew() {
@@ -137,12 +169,17 @@ class _GameScreenState extends State<GameScreen>
     // açıkça "devam et" demeli.
     if (state != AppLifecycleState.resumed) {
       _controller?.pause();
+      // Oyun zaten bitmişse `pause()` erken döner ve müzik durumu
+      // değişmez; müziği burada da susturuyoruz.
+      _audio?.pauseMusic();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Oyun ekranından çıkılıyor: müzik oyun ekranına ait, menülerde çalmaz.
+    _audio?.stopMusic();
     _controller?.removeListener(_onControllerChanged);
     _controller?.dispose();
     _targetBannerTimer?.cancel();

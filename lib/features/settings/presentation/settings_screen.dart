@@ -61,6 +61,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const _Divider(),
               _SwitchRow(
+                icon: Icons.music_note_rounded,
+                title: 'Müzik',
+                subtitle: 'Yolculuk boyunca çalan sakin piyano',
+                value: store.musicEnabled,
+                onChanged: (value) async {
+                  await store.setMusicEnabled(value);
+                  scope.audio.musicEnabled = value;
+                  if (mounted) setState(() {});
+                },
+              ),
+              const _Divider(),
+              _SwitchRow(
                 icon: Icons.vibration_rounded,
                 title: 'Titreşim',
                 subtitle: 'Yerleştirme ve temizleme geri bildirimi',
