@@ -220,7 +220,9 @@ class _BoardPainter extends CustomPainter {
     for (final cell in value.piece.cells) {
       final r = value.row + cell.row;
       final c = value.col + cell.col;
-      if (r < 0 || r >= board.rows || c < 0 || c >= board.cols) return;
+      // Taşan hücre atlanır — `return` olsaydı tek bir taşma yüzünden
+      // ipucunun tamamı çizilmezdi.
+      if (r < 0 || r >= board.rows || c < 0 || c >= board.cols) continue;
       grid[r][c] = 1;
     }
     final hypothetical = Board.fromGrid(grid);

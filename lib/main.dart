@@ -22,7 +22,18 @@ Future<void> main() async {
   await store.init();
 
   // Metro verisi uygulama paketinden okunur; network yok.
-  final metro = await MetroDataset.load();
+  //
+  // Veri olmadan uygulamanın yapabileceği hiçbir şey yok: hat seçici de,
+  // rota hesabı da buna dayanıyor. Korumasız bırakılırsa dosya bozulduğunda
+  // uygulama boş ekranla ölüyor ve kullanıcı nedenini göremiyor.
+  final MetroDataset metro;
+  try {
+    metro = await MetroDataset.load();
+  } catch (error, stack) {
+    debugPrint('Metro verisi yüklenemedi: $error\n$stack');
+    runApp(const MetroDataErrorApp());
+    return;
+  }
 
   final audio = AudioService()..enabled = store.soundEnabled;
   await audio.init();

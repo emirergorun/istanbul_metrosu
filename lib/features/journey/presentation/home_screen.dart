@@ -104,6 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
+
+    // Hat yoksa planlanacak yolculuk da yok. `_activeLine` boş listede
+    // `.first` çağırıp StateError atardı; kullanıcıya boş ekran yerine
+    // ne olduğunu söylüyoruz.
+    if (scope.metro.lines().isEmpty) return const _NoLinesScreen();
+
     final route = _route;
     final journey = route?.journey;
     final line = _activeLine;
@@ -192,6 +198,44 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Metro verisinde hiç hat yoksa gösterilen boş durum.
+class _NoLinesScreen extends StatelessWidget {
+  const _NoLinesScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(backgroundColor: AppColors.background),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(
+                Icons.wrong_location_rounded,
+                size: 44,
+                color: AppColors.danger,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Hat bulunamadı',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Metro verisi boş görünüyor, yolculuk planlanamıyor.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
         ),
       ),
     );

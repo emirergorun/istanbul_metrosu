@@ -255,6 +255,39 @@ void main() {
     expect(find.text('OYUNA BAŞLA'), findsOneWidget);
   });
 
+  testWidgets('tanıtım kapanmadan "görüldü" olarak işaretlenir', (
+    tester,
+  ) async {
+    // Regresyon: kayıt yalnızca tanıtım kapandıktan sonra yazılıyordu.
+    // Kullanıcı tanıtım açıkken uygulamayı kapatırsa bir dahaki açılışta
+    // yeniden karşılıyordu.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final freshStore = LocalStore();
+    await freshStore.init();
+
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+
+    await tester.pumpWidget(
+      MetroGameApp(
+        store: freshStore,
+        audio: AudioService(),
+        metro: MetroFixture.load(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tanıtım hâlâ ekranda, ama kayıt çoktan yazılmış olmalı.
+    expect(find.text('Yolculuğunu seç'), findsOneWidget);
+    expect(freshStore.hasSeenOnboarding, isTrue);
+  });
+
   testWidgets('yön değiştirme durakları takas eder', (tester) async {
     await pumpHome(tester);
     await selectLine(tester, 'M2');

@@ -38,12 +38,14 @@ class AudioService {
     try {
       await AudioPlayer.global.setAudioContext(
         AudioContext(
-          iOS: AudioContextIOS(
-            category: AVAudioSessionCategory.ambient,
-            options: const <AVAudioSessionOptions>{
-              AVAudioSessionOptions.mixWithOthers,
-            },
-          ),
+          // `ambient` iOS'ta zaten tanımı gereği diğer seslerle karışır ve
+          // sessiz moda saygı gösterir; `mixWithOthers` seçeneğini ayrıca
+          // vermek gerekmez. Üstelik audioplayers bunu yasaklıyor: seçenek
+          // yalnızca playback/playAndRecord/multiRoute ile açıkça verilebilir,
+          // aksi hâlde AudioContextIOS kurucusu assert atar. Bu assert debug
+          // modunda tüm ses sistemini sessizce devre dışı bırakıyordu
+          // (init throw eder -> _ready false kalır -> play() hiç çalmaz).
+          iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
           android: const AudioContextAndroid(
             contentType: AndroidContentType.sonification,
             usageType: AndroidUsageType.game,

@@ -59,6 +59,10 @@ class _TitleScreenState extends State<TitleScreen>
     // İlk kare çizildikten sonra aç: build sırasında route açılamaz.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // Kayıt tanıtım kapanmadan önce yazılır: kullanıcı tanıtım açıkken
+      // uygulamayı kapatırsa bir dahaki açılışta yeniden karşılamamalı.
+      await store.markOnboardingSeen();
+      if (!mounted) return;
       await showModalBottomSheet<void>(
         context: context,
         backgroundColor: AppColors.surface,
@@ -69,7 +73,6 @@ class _TitleScreenState extends State<TitleScreen>
         ),
         builder: (_) => const OnboardingSheet(),
       );
-      await store.markOnboardingSeen();
     });
   }
 
@@ -505,6 +508,10 @@ class _TrafficPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Hat yoksa çizilecek ray da yok. Korumasız bırakılırsa `% lines.length`
+    // sıfıra bölme hatası verir ve açılış ekranı komple çöker.
+    if (lines.isEmpty) return;
+
     for (var i = 0; i < _tracks.length; i++) {
       final track = _tracks[i];
       final line = lines[i % lines.length];

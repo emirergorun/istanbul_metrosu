@@ -55,3 +55,51 @@ class MetroGameApp extends StatelessWidget {
     );
   }
 }
+
+/// Metro verisi okunamadığında gösterilen tek ekran.
+///
+/// Oyunun tamamı `assets/data/metro.json` üzerine kurulu; veri yoksa
+/// yapılabilecek bir şey yok. Sessizce çökmek yerine ne olduğunu söyler.
+class MetroDataErrorApp extends StatelessWidget {
+  const MetroDataErrorApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: AppConstants.appTitle,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.dark(),
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.wrong_location_rounded,
+                  size: 48,
+                  color: AppColors.danger,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Metro verisi yüklenemedi',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Hat ve istasyon bilgisi okunamadığı için oyun '
+                  'başlatılamıyor. Uygulamayı kapatıp yeniden açmayı dene; '
+                  'sorun sürerse uygulamayı yeniden yükle.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

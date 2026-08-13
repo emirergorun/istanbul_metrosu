@@ -65,15 +65,22 @@ class GameSnapshot {
           <int>[for (final cell in row as List<dynamic>) cell as int],
       ];
 
-      final tray = <BlockPiece?>[
-        for (final entry in json['tray'] as List<dynamic>)
-          if (entry == null)
-            null
-          else
-            PieceShapes.byId(
-              (entry as Map<String, dynamic>)['id'] as String,
-            )?.withColor(entry['color'] as int),
-      ];
+      // Parça kataloğu değişmişse (şekil silinmiş ya da adı değişmiş)
+      // `byId` null döner. Bunu sessizce tepsiye koymak tehlikeli: oyuncu
+      // eksik tepsiyle devam eder, tepsi tamamen boşalırsa oyun kilitlenir
+      // (yeni tepsi yalnızca hamle yapılınca geliyor, yapacak parça ise yok).
+      // Bu yüzden tek bir şekil bile çözülemezse kaydın tamamı atılır.
+      final tray = <BlockPiece?>[];
+      for (final entry in json['tray'] as List<dynamic>) {
+        if (entry == null) {
+          tray.add(null);
+          continue;
+        }
+        final map = entry as Map<String, dynamic>;
+        final shape = PieceShapes.byId(map['id'] as String);
+        if (shape == null) return null;
+        tray.add(shape.withColor(map['color'] as int));
+      }
 
       return GameSession(
         journey: journey,
