@@ -88,7 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _startJourney(journey);
   }
 
-  /// Oyunu açar ve döndüğünde ekranı tazeler.
+  /// Oyun seçimine geçer ve döndüğünde ekranı tazeler.
+  ///
+  /// Akış: rota → oyun → oyna. Rota "ne kadar", oyun "ne" oynanacağını
+  /// belirler.
   ///
   /// `Navigator.pop` alttaki rotayı yeniden çizmez; beklemeden bırakılırsa
   /// dönüşte ne "son rotan" kartı ne de yeni rekor görünür.
@@ -97,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await store.rememberRoute(journey.origin.id, journey.destination.id);
     if (!mounted) return;
 
-    await AppRoutes.openGame(context, journey);
+    await AppRoutes.openGameSelect(context, journey);
     if (mounted) setState(() {});
   }
 

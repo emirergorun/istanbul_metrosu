@@ -35,7 +35,12 @@ class ArrivalSequence extends StatefulWidget {
   /// Sahnenin toplam süresi. Yavaşlatılmış hâli görsel kontrol için kullanılır.
   final Duration duration;
 
-  static const Duration defaultDuration = Duration(milliseconds: 1600);
+  /// Yolculuğun tek doruk noktası; acele ettirilmemeli.
+  ///
+  /// 1600 ms'de tren "gelmek" yerine kayıp geçiyordu ve sonuç kartı bir anda
+  /// bitmiş oluyordu. Trenin frenlemesi ve kartın açılması artık gözle takip
+  /// edilebilecek kadar uzun. Sıkılan oyuncu ekrana dokunup atlayabilir.
+  static const Duration defaultDuration = Duration(milliseconds: 2800);
 
   @override
   State<ArrivalSequence> createState() => _ArrivalSequenceState();
@@ -68,16 +73,20 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
   }
 
   // Zaman çizelgesi (0..1 aralığında dilimler).
-  late final Animation<double> _scrim = _curve(0.0, 0.14, Curves.easeOut);
-  late final Animation<double> _train = _curve(0.0, 0.56, Curves.easeOutCubic);
-  late final Animation<double> _sign = _curve(0.56, 0.72, Curves.easeOut);
+  //
+  // Tren dilimi toplamın yarısından uzun: `easeOutCubic` ile uzun bir fren
+  // eğrisi çiziyor, "gelip duruyor" hissi buradan geliyor. Sonuç kartı da
+  // sona doğru geniş bir dilime yayıldı; aniden belirmiyor.
+  late final Animation<double> _scrim = _curve(0.0, 0.10, Curves.easeOut);
+  late final Animation<double> _train = _curve(0.0, 0.58, Curves.easeOutCubic);
+  late final Animation<double> _sign = _curve(0.56, 0.70, Curves.easeOut);
   late final Animation<double> _doors = _curve(
-    0.68,
-    0.94,
+    0.66,
+    0.88,
     Curves.easeInOutCubic,
   );
   late final Animation<double> _content = _curve(
-    0.76,
+    0.74,
     1.0,
     Curves.easeOutCubic,
   );

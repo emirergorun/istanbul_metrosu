@@ -158,15 +158,46 @@ void main() {
     });
 
     test('undo hakkı olmayan profilde çalışmaz', () {
-      // Yenikapı -> Hacıosman: 29 dk, "Uzun" profil, undo yok.
+      // Sevk edilen profillerin hepsinde artık undo hakkı var; kuralın
+      // kendisini doğrulamak için hakkı sıfır olan bir profil kuruyoruz.
+      final base = shortJourney();
       final controller = controllerFor(
-        journeyFor('m2_yenikapi', 'm2_haciosman'),
+        Journey(
+          origin: base.origin,
+          destination: base.destination,
+          estimatedSeconds: base.estimatedSeconds,
+          stopCount: base.stopCount,
+          lineId: base.lineId,
+          difficulty: const DifficultyProfile(
+            id: 'no_undo',
+            label: 'Undosuz',
+            minMinutes: 0,
+            maxMinutes: null,
+            initialBlockerRatio: 0,
+            hardPieceWeight: 0.1,
+            undoCount: 0,
+          ),
+        ),
       )..start();
       addTearDown(controller.dispose);
 
       controller.place(0, 0, 0);
       expect(controller.canUndo, isFalse);
       expect(controller.undo(), isFalse);
+    });
+
+    test('uzun yolculukta geri alma hakkı vardır', () {
+      // Regresyon: uzun rotalarda undo hakkı 0'dı; artık en zor durumda
+      // oyuncunun elinde en çok araç olmalı.
+      final controller = controllerFor(
+        journeyFor('m2_yenikapi', 'm2_haciosman'), // 32 dk, "Uzun"
+      )..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.session.undoLeft, greaterThan(0));
+      controller.place(0, 0, 0);
+      expect(controller.canUndo, isTrue);
+      expect(controller.undo(), isTrue);
     });
   });
 

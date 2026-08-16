@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/game/domain/game_state.dart';
 import '../features/game/presentation/game_screen.dart';
+import '../features/games/presentation/game_select_screen.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
 import '../features/journey/presentation/home_screen.dart';
@@ -24,6 +25,7 @@ class AppRoutes {
 
   static const String home = '/';
   static const String planner = '/planner';
+  static const String gameSelect = '/game-select';
   static const String game = '/game';
   static const String settings = '/settings';
 
@@ -38,6 +40,12 @@ class AppRoutes {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => const SettingsScreen(),
+        );
+      case gameSelect:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) =>
+              GameSelectScreen(journey: settings.arguments! as Journey),
         );
       case game:
         final args = settings.arguments;
@@ -76,6 +84,10 @@ class AppRoutes {
   /// Rota planlayıcıyı açar.
   static Future<void> openPlanner(BuildContext context) =>
       Navigator.of(context).pushNamed<void>(planner);
+
+  /// Rota seçildikten sonra oyun seçim ekranını açar.
+  static Future<void> openGameSelect(BuildContext context, Journey journey) =>
+      Navigator.of(context).pushNamed<void>(gameSelect, arguments: journey);
 
   /// Ayarları açar.
   static Future<void> openSettings(BuildContext context) =>

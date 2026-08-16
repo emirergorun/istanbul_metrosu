@@ -3,18 +3,29 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
-/// Oyunun kısa arayüz sesleri.
+/// Oyunun ses efektleri.
 enum GameSound {
   place('place'),
   clear('clear'),
   combo('combo'),
   station('station'),
-  arrival('arrival'),
+
+  /// Varış (metro kapısı) — 4 saniyelik tören sesi, kısa bir tık değil.
+  arrival('arrival', longForm: true),
+
   invalid('invalid');
 
-  const GameSound(this.file);
+  const GameSound(this.file, {this.longForm = false});
 
   final String file;
+
+  /// Uzun ses mi?
+  ///
+  /// `lowLatency` modu ardışık kısa tıklar için tasarlanmıştır ve uzun
+  /// dosyalarda güvenilir çalmaz — varış sesi (4 sn, 48 kHz, stereo) bu
+  /// yüzden hiç duyulmuyordu. Uzun sesler normal medya çalar kullanır;
+  /// birkaç milisaniyelik gecikmenin tören sesinde bir önemi yok.
+  final bool longForm;
 
   String get asset => 'audio/$file.wav';
 }
@@ -97,7 +108,9 @@ class AudioService {
       try {
         final player = AudioPlayer(playerId: sound.name)
           ..setReleaseMode(ReleaseMode.stop)
-          ..setPlayerMode(PlayerMode.lowLatency);
+          ..setPlayerMode(
+            sound.longForm ? PlayerMode.mediaPlayer : PlayerMode.lowLatency,
+          );
         await player.setSource(AssetSource(sound.asset));
         _players[sound] = player;
       } catch (error) {

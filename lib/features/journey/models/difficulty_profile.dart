@@ -46,7 +46,19 @@ class DifficultyProfile {
   String toString() => 'DifficultyProfile($id)';
 }
 
-/// Prototip zorluk konfigürasyonu — `01 - MVP` tablosundan.
+/// Zorluk konfigürasyonu.
+///
+/// **Zorluk yolculuk uzunluğuyla ters orantılıdır.** İlk sürümde tersiydi:
+/// uzun yolculuğa daha çok engel ve daha zor parça veriliyordu. Oysa uzun
+/// yolculukta zaten hayatta kalmak zor — ölçüm, 14 dakikanın üstünde varış
+/// oranının %0'a düştüğünü gösterdi. Artık yolculuk uzadıkça parçalar
+/// kolaylaşır ve geri alma hakkı artar.
+///
+/// **Başlangıç engelleri tamamen kaldırıldı** (tüm profillerde 0). Tahtayı
+/// baştan daraltmak yalnızca hayatta kalma süresini kısaltıyordu; ölçümde
+/// engelsiz Maraton medyanı 160'tan 275'e çıkmıştı. Mekanizma
+/// `applyInitialBlockers` içinde duruyor, ileride bir "zor mod" istenirse
+/// yeniden açılabilir.
 class DifficultyProfiles {
   const DifficultyProfiles._();
 
@@ -75,9 +87,9 @@ class DifficultyProfiles {
     label: 'Standart',
     minMinutes: 11,
     maxMinutes: 20,
-    initialBlockerRatio: 0.04,
-    hardPieceWeight: 0.18,
-    undoCount: 1,
+    initialBlockerRatio: 0.0,
+    hardPieceWeight: 0.12,
+    undoCount: 2,
   );
 
   static const DifficultyProfile long = DifficultyProfile(
@@ -85,9 +97,9 @@ class DifficultyProfiles {
     label: 'Uzun',
     minMinutes: 21,
     maxMinutes: 35,
-    initialBlockerRatio: 0.08,
-    hardPieceWeight: 0.25,
-    undoCount: 0,
+    initialBlockerRatio: 0.0,
+    hardPieceWeight: 0.08,
+    undoCount: 3,
   );
 
   static const DifficultyProfile marathon = DifficultyProfile(
@@ -95,9 +107,9 @@ class DifficultyProfiles {
     label: 'Maraton',
     minMinutes: 36,
     maxMinutes: null,
-    initialBlockerRatio: 0.12,
-    hardPieceWeight: 0.32,
-    undoCount: 0,
+    initialBlockerRatio: 0.0,
+    hardPieceWeight: 0.05,
+    undoCount: 4,
   );
 
   static const List<DifficultyProfile> all = <DifficultyProfile>[

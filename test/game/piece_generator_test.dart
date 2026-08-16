@@ -125,8 +125,19 @@ void main() {
       expect(first.map((p) => p.id).toList(), second.map((p) => p.id).toList());
     });
 
-    test('zor profil daha çok zor parça üretir', () {
-      int hardCount(DifficultyProfile profile) {
+    test('hardPieceWeight zor parça sıklığını belirler', () {
+      // Mekanizma testi: ağırlık arttıkça zor parça artmalı. Hangi profilin
+      // daha zor olduğu ayrı bir karar (bkz. "zorluk ters orantılı" grubu).
+      int hardCount(double weight) {
+        final profile = DifficultyProfile(
+          id: 'w$weight',
+          label: 'w',
+          minMinutes: 0,
+          maxMinutes: null,
+          initialBlockerRatio: 0,
+          hardPieceWeight: weight,
+          undoCount: 0,
+        );
         final generator = PieceGenerator(random: Random(11));
         var count = 0;
         for (var i = 0; i < 400; i++) {
@@ -135,39 +146,44 @@ void main() {
         return count;
       }
 
-      expect(
-        hardCount(DifficultyProfiles.marathon),
-        greaterThan(hardCount(DifficultyProfiles.mini)),
-      );
+      expect(hardCount(0.40), greaterThan(hardCount(0.05)));
     });
   });
 
   group('applyInitialBlockers', () {
-    test('mini profilde engel yok', () {
+    test('hiçbir profil oyunu engelle başlatmaz', () {
+      // Başlangıç engelleri kaldırıldı: tahtayı baştan daraltmak yalnızca
+      // hayatta kalma süresini kısaltıyordu.
       final generator = PieceGenerator(random: Random(1));
-      final board = generator.applyInitialBlockers(
-        Board.empty(),
-        DifficultyProfiles.mini,
-      );
-
-      expect(board.filledCount, 0);
+      for (final profile in DifficultyProfiles.all) {
+        expect(
+          generator.applyInitialBlockers(Board.empty(), profile).filledCount,
+          0,
+          reason: '${profile.id} engelle başlıyor',
+        );
+      }
     });
 
-    test('maraton profilinde engel eklenir ve oran makul', () {
-      final generator = PieceGenerator(random: Random(1));
-      final board = generator.applyInitialBlockers(
-        Board.empty(),
-        DifficultyProfiles.marathon,
+    test('mekanizma duruyor: oran verilirse engel eklenir', () {
+      // `applyInitialBlockers` bilerek korundu; ileride "zor mod" istenirse
+      // yeniden açılabilsin diye.
+      const hard = DifficultyProfile(
+        id: 'test',
+        label: 'Test',
+        minMinutes: 0,
+        maxMinutes: null,
+        initialBlockerRatio: 0.12,
+        hardPieceWeight: 0.3,
+        undoCount: 0,
       );
+      final generator = PieceGenerator(random: Random(1));
+      final board = generator.applyInitialBlockers(Board.empty(), hard);
 
-      final expected =
-          (board.cellCount * DifficultyProfiles.marathon.initialBlockerRatio)
-              .round();
-      expect(board.filledCount, expected);
+      expect(board.filledCount, (board.cellCount * 0.12).round());
       expect(board.filledCount, lessThan(board.cellCount ~/ 4));
     });
 
-    test('engelli board’da oyun başlangıcında hamle vardır', () {
+    test('boş board’da oyun başlangıcında hamle vardır', () {
       final generator = PieceGenerator(random: Random(5));
       final board = generator.applyInitialBlockers(
         Board.empty(),
@@ -176,6 +192,31 @@ void main() {
       final tray = generator.generateTray(board, DifficultyProfiles.marathon);
 
       expect(hasAnyLegalMove(board, tray), isTrue);
+    });
+  });
+
+  group('zorluk yolculuk uzunluğuyla ters orantılı', () {
+    test('yolculuk uzadıkça zor parça oranı düşer', () {
+      // Regresyon: ilk sürümde tersiydi ve uzun yolculuklarda varış %0'dı.
+      expect(
+        DifficultyProfiles.marathon.hardPieceWeight,
+        lessThan(DifficultyProfiles.standard.hardPieceWeight),
+      );
+      expect(
+        DifficultyProfiles.long.hardPieceWeight,
+        lessThan(DifficultyProfiles.standard.hardPieceWeight),
+      );
+    });
+
+    test('yolculuk uzadıkça geri alma hakkı artar', () {
+      expect(
+        DifficultyProfiles.marathon.undoCount,
+        greaterThan(DifficultyProfiles.standard.undoCount),
+      );
+      expect(
+        DifficultyProfiles.long.undoCount,
+        greaterThan(DifficultyProfiles.short.undoCount),
+      );
     });
   });
 }

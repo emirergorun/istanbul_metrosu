@@ -172,17 +172,24 @@ void main() {
       stationName: 'Levent',
     );
 
+    // Rota seçildikten sonra önce oyun seçimi gelir.
     await tester.tap(find.text('YOLCULUĞU BAŞLAT'));
+    await tester.pumpAndSettle();
+    expect(find.text('Oyun seç'), findsOneWidget);
+
+    await tester.tap(find.text('Blok Metro'));
     await tester.pumpAndSettle();
     expect(find.text('SKOR · İLK YOLCULUK'), findsOneWidget);
 
-    // Oyundan çık, planlayıcıdan da geri dön: açılış ekranı tazelenmeli.
+    // Oyundan çık; oyun seçimi ve planlayıcıdan da geri dön.
     await tester.tap(find.byIcon(Icons.pause_rounded));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yeni rota seç'));
     await tester.pumpAndSettle();
-    Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 2; i++) {
+      Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
+      await tester.pumpAndSettle();
+    }
 
     // Oyun yarım bırakıldığı için açılışta "devam et" kartı çıkar.
     expect(find.text('YARIM KALAN OYUN'), findsOneWidget);
