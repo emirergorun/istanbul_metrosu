@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
-import '../../../../core/widgets/line_badge.dart';
-import '../../../../core/widgets/metro_train.dart';
+import '../../../app/theme.dart';
+import '../../../core/widgets/line_badge.dart';
+import '../../../core/widgets/metro_train.dart';
 
 /// Varış sahnesi: oyunun gerçek finali.
 ///

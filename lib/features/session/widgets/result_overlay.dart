@@ -1,100 +1,106 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../domain/game_state.dart';
+import '../../../app/theme.dart';
+import '../../../core/utils/formatters.dart';
 import 'overlay_panel.dart';
 
-/// Oyun sonu paneli.
+/// Oyun sonu paneli — **her oyun için ortak**.
 ///
 /// İki bitiş vardır ve tonları bilinçli olarak farklıdır:
 ///
-/// - **Varış** (`arrived`) oyunun finalidir ve her zaman kutlanır; hedef de
-///   geçildiyse ayrıca "Challenge tamamlandı" rozeti çıkar.
-/// - **Hamle bitişi** (`gameOver`) sade ve nötrdür. Varışın değerli olması
-///   için varamama ihtimalinin görünür kalması gerekir.
+/// - **Varış** (`isArrival`) yolculuğun finalidir ve her zaman kutlanır;
+///   rota rekoru da geçildiyse ayrıca rozet çıkar.
+/// - **Oyun bitişi** sade ve nötrdür. Varışın değerli olması için varamama
+///   ihtimalinin görünür kalması gerekir.
+///
+/// Oyuna özgü istatistikler [extraStats] ile verilir; panel bunların ne
+/// olduğunu bilmez. Blok oyunu "temizlenen satır/sütun" ve "en iyi combo"
+/// gönderir, başka bir oyun bambaşka satırlar gönderebilir.
 class ResultOverlay extends StatelessWidget {
   const ResultOverlay({
     super.key,
-    required this.session,
+    required this.isArrival,
+    required this.destinationName,
+    required this.score,
+    required this.recordToBeat,
+    required this.isFirstRun,
+    required this.recordBeaten,
     required this.accent,
-    required this.bestScore,
     required this.isNewBest,
     required this.onRestart,
     required this.onExit,
+    this.extraStats = const <Widget>[],
+    this.gameOverTitle = 'Oyun bitti',
+    this.gameOverSubtitle = 'Durağa varamadan oyun bitti.',
     this.showBackdrop = true,
   });
 
-  final GameSession session;
+  /// Varış mı, yoksa oyunun kendi kurallarıyla mı bitti?
+  final bool isArrival;
+
+  final String destinationName;
+  final int score;
+  final int recordToBeat;
+  final bool isFirstRun;
+  final bool recordBeaten;
   final Color accent;
-  final int bestScore;
   final bool isNewBest;
   final VoidCallback onRestart;
   final VoidCallback onExit;
 
+  /// Oyuna özgü istatistik satırları ([StatRow] beklenir).
+  final List<Widget> extraStats;
+
+  /// Varış dışı bitişin metni. Her oyunun kendi kaybetme koşulu var:
+  /// blok oyununda "hamle kalmadı", başka bir oyunda başka bir şey.
+  final String gameOverTitle;
+  final String gameOverSubtitle;
+
   /// Varış sahnesi kendi karartmasını çizer.
   final bool showBackdrop;
 
-  bool get _isArrival => session.status == GameStatus.arrived;
-
   @override
   Widget build(BuildContext context) {
-    final title = _isArrival ? 'DURAĞA GELDİN' : 'Hamle kalmadı';
-    final subtitle = _isArrival
-        ? '${session.journey.destination.name} durağındasın. '
-              'Yolculuğu tamamladın.'
-        : 'Tahtaya sığacak parça kalmadı, durağa varamadın.';
-
     return OverlayPanel(
       showBackdrop: showBackdrop,
-      icon: _isArrival ? Icons.where_to_vote_rounded : Icons.grid_off_rounded,
-      accent: _isArrival ? accent : AppColors.textSecondary,
-      title: title,
-      subtitle: subtitle,
+      icon: isArrival ? Icons.where_to_vote_rounded : Icons.grid_off_rounded,
+      accent: isArrival ? accent : AppColors.textSecondary,
+      title: isArrival ? 'DURAĞA GELDİN' : gameOverTitle,
+      subtitle: isArrival
+          ? '$destinationName durağındasın. Yolculuğu tamamladın.'
+          : gameOverSubtitle,
       children: <Widget>[
-        if (session.recordBeaten) ...<Widget>[
+        if (recordBeaten) ...<Widget>[
           _ChallengeBadge(accent: accent),
           const SizedBox(height: AppSpacing.md),
         ],
         StatRow(
           label: 'Skor',
-          value: Formatters.score(session.score),
+          value: Formatters.score(score),
           highlight: true,
-          accent: _isArrival ? accent : AppColors.textPrimary,
+          accent: isArrival ? accent : AppColors.textPrimary,
         ),
         StatRow(
-          label: session.isFirstRun ? 'Bu rotada' : 'Rota rekoru',
-          value: session.isFirstRun
-              ? 'İlk yolculuk'
-              : Formatters.score(session.recordToBeat),
+          label: isFirstRun ? 'Bu rotada' : 'Rota rekoru',
+          value: isFirstRun ? 'İlk yolculuk' : Formatters.score(recordToBeat),
         ),
-        StatRow(
-          label: 'Temizlenen satır / sütun',
-          value: '${session.clearedRows} / ${session.clearedColumns}',
-        ),
-        StatRow(
-          label: 'En iyi combo',
-          value: session.bestCombo > 0 ? 'x${session.bestCombo}' : '—',
-        ),
-        if (!session.recordBeaten && !session.isFirstRun)
+        ...extraStats,
+        if (!recordBeaten && !isFirstRun)
           StatRow(
             label: 'Rekora kalan',
             value: Formatters.score(
-              (session.recordToBeat - session.score).clamp(
-                0,
-                session.recordToBeat,
-              ),
+              (recordToBeat - score).clamp(0, recordToBeat),
             ),
           ),
         if (isNewBest) ...<Widget>[
           const SizedBox(height: AppSpacing.sm),
-          _NewRecordBadge(),
+          const _NewRecordBadge(),
         ],
         const SizedBox(height: AppSpacing.lg),
         FilledButton(
           onPressed: onRestart,
           style: FilledButton.styleFrom(
-            backgroundColor: _isArrival ? accent : AppColors.brandNavy,
+            backgroundColor: isArrival ? accent : AppColors.brandNavy,
           ),
           child: const Text('TEKRAR OYNA'),
         ),
@@ -142,6 +148,8 @@ class _ChallengeBadge extends StatelessWidget {
 }
 
 class _NewRecordBadge extends StatelessWidget {
+  const _NewRecordBadge();
+
   @override
   Widget build(BuildContext context) {
     return Container(

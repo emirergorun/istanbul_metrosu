@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../features/game/domain/game_state.dart';
-import '../features/game/presentation/game_screen.dart';
-import '../features/games/presentation/game_select_screen.dart';
+import '../features/games/blocks/domain/game_state.dart';
+import '../features/games/blocks/presentation/game_screen.dart';
+import '../features/games/catalog/game_select_screen.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
 import '../features/journey/presentation/home_screen.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
-import '../../../../core/utils/formatters.dart';
+import '../../../../../app/theme.dart';
+import '../../../../../core/utils/formatters.dart';
 
 /// Oyun ekranının üst bilgi alanı: skor, hedef, combo, pause.
 class GameHud extends StatelessWidget {

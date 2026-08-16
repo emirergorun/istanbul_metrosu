@@ -5,8 +5,8 @@ import 'package:istanbul_metro_game/app/routes.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
-import 'package:istanbul_metro_game/features/games/models/mini_game.dart';
-import 'package:istanbul_metro_game/features/games/presentation/game_select_screen.dart';
+import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
+import 'package:istanbul_metro_game/features/games/catalog/game_select_screen.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

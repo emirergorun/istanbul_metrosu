@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../app/theme.dart';
+import '../../../core/constants/app_constants.dart';
 
 /// Oyun üstünde açılan modal panellerin ortak kabuğu.
 class OverlayPanel extends StatelessWidget {

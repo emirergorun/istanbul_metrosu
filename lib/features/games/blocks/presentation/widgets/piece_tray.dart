@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
-import '../../../../core/constants/app_constants.dart';
+import '../../../../../app/theme.dart';
+import '../../../../../core/constants/app_constants.dart';
 import '../../domain/block_piece.dart';
 import '../../domain/board.dart';
 import 'piece_view.dart';

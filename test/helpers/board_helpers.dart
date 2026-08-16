@@ -1,4 +1,4 @@
-import 'package:istanbul_metro_game/features/game/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
 
 /// Testlerde okunabilir board kurmak için yardımcı.
 ///

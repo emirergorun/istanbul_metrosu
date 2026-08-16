@@ -3,9 +3,10 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../core/constants/app_constants.dart';
-import '../../../core/storage/local_store.dart';
-import '../../journey/models/journey.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/storage/local_store.dart';
+import '../../../journey/models/journey.dart';
+import '../../../session/journey_run.dart';
 import '../domain/block_piece.dart';
 import '../domain/board.dart';
 import '../domain/game_state.dart';
@@ -47,7 +48,7 @@ class PlaceOutcome {
 ///
 /// UI, oyun kurallarını bilmez; sadece bu controller'ı dinler.
 /// Kuralların kendisi `domain/` altındaki saf fonksiyonlardadır.
-class GameController extends ChangeNotifier {
+class GameController extends ChangeNotifier implements JourneyRun {
   GameController({
     required Journey journey,
     PieceGenerator? generator,
@@ -75,6 +76,7 @@ class GameController extends ChangeNotifier {
   /// kez oynarken hedef, bir önceki oyunun kurduğu rekor olmalıdır.
   int _recordToBeat;
 
+  @override
   int get recordToBeat => _recordToBeat;
 
   /// Aktif oyun süresi sayacının periyodu (test'te kısaltılabilir).
@@ -97,14 +99,36 @@ class GameController extends ChangeNotifier {
 
   /// Kazanılan son durak bonusu ve onu tetikleyen sayaç. UI, sayaç değişince
   /// kısa bir bildirim gösterir.
+  @override
   int lastStationBonus = 0;
+  @override
   int stationBonusPulse = 0;
 
   GameSession get session => _session;
+
+  // --- JourneyRun sözleşmesi ---
+  //
+  // Ortak yolculuk kabuğu ([JourneyScaffold]) yalnızca bu üyeleri görür;
+  // board, tepsi ve combo gibi oyuna özgü şeyleri bilmez.
+  @override
+  int get score => _session.score;
+  @override
+  bool get recordBeaten => _session.recordBeaten;
+  @override
+  bool get isFirstRun => _session.isFirstRun;
+  @override
+  double get progress => _session.progress;
+  @override
+  double get recordProgress => _session.recordProgress;
+  @override
+  int get remainingSeconds => _session.remainingSeconds;
+  @override
   Journey get journey => _session.journey;
   Board get board => _session.board;
   List<BlockPiece?> get tray => _session.tray;
+  @override
   GameStatus get status => _session.status;
+  @override
   bool get isNewBest => _isNewBest;
   bool get canUndo =>
       _undoSnapshot != null &&
@@ -124,6 +148,7 @@ class GameController extends ChangeNotifier {
 
   // --- Yaşam döngüsü ---
 
+  @override
   void start() {
     if (_session.status == GameStatus.playing) return;
     _session = _session.copyWith(status: GameStatus.playing);
@@ -131,6 +156,7 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void pause() {
     if (_session.status != GameStatus.playing) return;
     _stopTimer();
@@ -139,6 +165,7 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
   void resume() {
     if (_session.status != GameStatus.paused) return;
     _session = _session.copyWith(status: GameStatus.playing);
@@ -147,6 +174,7 @@ class GameController extends ChangeNotifier {
   }
 
   /// Aynı rotayla yeni oyun.
+  @override
   void restart() {
     _stopTimer();
     _undoSnapshot = null;
@@ -179,6 +207,7 @@ class GameController extends ChangeNotifier {
   ///
   /// Oyun bitmediyse kayıt korunur; kullanıcı açılış ekranından devam
   /// edebilir.
+  @override
   void abandon() {
     _stopTimer();
     if (_session.status.isFinished) return;

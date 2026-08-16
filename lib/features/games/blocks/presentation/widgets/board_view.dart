@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
+import '../../../../../app/theme.dart';
 import '../../domain/block_piece.dart';
 import '../../domain/board.dart';
 

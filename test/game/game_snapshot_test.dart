@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:istanbul_metro_game/features/game/application/game_snapshot.dart';
-import 'package:istanbul_metro_game/features/game/domain/block_piece.dart';
-import 'package:istanbul_metro_game/features/game/domain/board.dart';
-import 'package:istanbul_metro_game/features/game/domain/game_state.dart';
-import 'package:istanbul_metro_game/features/game/domain/piece_shapes.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/game_snapshot.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/game_state.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 
 import '../helpers/metro_fixture.dart';

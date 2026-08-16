@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/constants/app_constants.dart';
+import '../../../../core/constants/app_constants.dart';
 import 'block_piece.dart';
 import 'cell.dart';
 

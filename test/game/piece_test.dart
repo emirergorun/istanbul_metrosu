@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:istanbul_metro_game/features/game/domain/block_piece.dart';
-import 'package:istanbul_metro_game/features/game/domain/cell.dart';
-import 'package:istanbul_metro_game/features/game/domain/piece_shapes.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/cell.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
 
 void main() {
   group('parça kataloğu', () {

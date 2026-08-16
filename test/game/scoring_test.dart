@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:istanbul_metro_game/features/game/domain/scoring.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/scoring.dart';
 
 void main() {
   group('calculateScore', () {

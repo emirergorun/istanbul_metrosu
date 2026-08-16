@@ -6,7 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../journey/models/journey.dart';
-import '../models/mini_game.dart';
+import 'mini_game.dart';
 
 /// Rota seçildikten sonra gelen oyun seçim ekranı.
 ///

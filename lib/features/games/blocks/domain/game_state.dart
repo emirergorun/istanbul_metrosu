@@ -1,27 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import '../../journey/models/journey.dart';
+import '../../../journey/models/journey.dart';
+import '../../../session/journey_status.dart';
 import 'block_piece.dart';
 import 'board.dart';
 import 'scoring.dart';
 
-/// Oyun oturumunun durumu.
-///
-/// `02 - Oyun Tasarımı` notundaki listeye göre iki fark var:
-///
-/// - [arrived] eklendi: yolculuk süresi dolunca oyun biter ve varış sahnesi
-///   oynar ("Trip Complete / Result").
-/// - `victory` **kaldırıldı**: hedef skora ulaşmak oyunu artık bitirmez,
-///   yalnızca [GameSession.targetReached] işaretlenir ve oyuncuya kısa bir
-///   bildirim gösterilir. Tek doruk nokta varıştır.
-enum GameStatus { setup, ready, playing, paused, arrived, gameOver, abandoned }
-
-extension GameStatusX on GameStatus {
-  bool get isFinished =>
-      this == GameStatus.arrived || this == GameStatus.gameOver;
-
-  bool get isActive => this == GameStatus.playing;
-}
+// Oyun kodu GameStatus'u bu dosyadan almaya devam edebilsin diye
+// yeniden dışa aktarılıyor; tanım paylaşılan katmanda.
+export '../../../session/journey_status.dart';
 
 /// Tek bir oyun oturumunun tam anlık görüntüsü.
 ///

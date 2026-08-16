@@ -4,10 +4,10 @@ library;
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:istanbul_metro_game/features/game/application/piece_generator.dart';
-import 'package:istanbul_metro_game/features/game/domain/block_piece.dart';
-import 'package:istanbul_metro_game/features/game/domain/board.dart';
-import 'package:istanbul_metro_game/features/game/domain/scoring.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/piece_generator.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/scoring.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 

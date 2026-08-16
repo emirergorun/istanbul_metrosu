@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import '../../../core/constants/app_constants.dart';
-import '../../journey/models/difficulty_profile.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../journey/models/difficulty_profile.dart';
 import '../domain/block_piece.dart';
 import '../domain/board.dart';
 import '../domain/piece_shapes.dart';

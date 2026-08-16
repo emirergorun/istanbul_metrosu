@@ -4,22 +4,23 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../app/app_scope.dart';
-import '../../../app/routes.dart';
-import '../../../app/theme.dart';
-import '../../../core/audio/audio_service.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../journey/models/journey.dart';
-import '../../progress/journey_progress.dart';
+import '../../../../app/app_scope.dart';
+import '../../../../app/routes.dart';
+import '../../../../app/theme.dart';
+import '../../../../core/audio/audio_service.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../journey/models/journey.dart';
+import '../../../session/widgets/journey_progress.dart';
 import '../application/game_controller.dart';
 import '../domain/board.dart';
 import '../domain/game_state.dart';
-import 'widgets/arrival_sequence.dart';
+import '../../../session/widgets/arrival_sequence.dart';
 import 'widgets/board_view.dart';
 import 'widgets/game_hud.dart';
-import 'widgets/pause_overlay.dart';
+import '../../../session/widgets/pause_overlay.dart';
 import 'widgets/piece_tray.dart';
-import 'widgets/result_overlay.dart';
+import '../../../session/widgets/overlay_panel.dart';
+import '../../../session/widgets/result_overlay.dart';
 
 /// Oyun ekranı.
 ///
@@ -401,15 +402,26 @@ class _GameScreenState extends State<GameScreen>
   }) {
     final session = controller.session;
     return ResultOverlay(
-      session: session,
+      isArrival: session.status == GameStatus.arrived,
+      destinationName: session.journey.destination.name,
+      score: session.score,
+      recordToBeat: session.recordToBeat,
+      isFirstRun: session.isFirstRun,
+      recordBeaten: session.recordBeaten,
       accent: accent,
-      bestScore: math.max(
-        AppScope.of(context).store.bestScoreForRoute(
-          session.journey.origin.id,
-          session.journey.destination.id,
+      // Blok oyununa özgü istatistikler; panel bunların ne olduğunu bilmez.
+      extraStats: <Widget>[
+        StatRow(
+          label: 'Temizlenen satır / sütun',
+          value: '${session.clearedRows} / ${session.clearedColumns}',
         ),
-        session.score,
-      ),
+        StatRow(
+          label: 'En iyi combo',
+          value: session.bestCombo > 0 ? 'x${session.bestCombo}' : '—',
+        ),
+      ],
+      gameOverTitle: 'Hamle kalmadı',
+      gameOverSubtitle: 'Tahtaya sığacak parça kalmadı, durağa varamadın.',
       isNewBest: controller.isNewBest,
       onRestart: controller.restart,
       onExit: _exitToHome,

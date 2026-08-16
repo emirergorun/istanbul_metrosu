@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme.dart';
+import '../../../../../app/theme.dart';
 import '../../domain/block_piece.dart';
 
 /// Tek bir parçayı verilen hücre boyutunda çizer.

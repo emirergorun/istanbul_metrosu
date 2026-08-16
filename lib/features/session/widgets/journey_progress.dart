@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme.dart';
-import '../../core/constants/app_constants.dart';
-import '../../core/utils/formatters.dart';
-import '../../core/widgets/line_badge.dart';
-import '../../core/widgets/metro_train.dart';
+import '../../../app/theme.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/line_badge.dart';
+import '../../../core/widgets/metro_train.dart';
 
 /// Alt sabit alandaki metro ilerleme göstergesi.
 ///

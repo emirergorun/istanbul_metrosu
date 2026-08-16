@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../journey/services/route_service.dart';
+import '../../../journey/services/route_service.dart';
 import '../domain/block_piece.dart';
 import '../domain/board.dart';
 import '../domain/game_state.dart';

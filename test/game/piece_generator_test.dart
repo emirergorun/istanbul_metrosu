@@ -3,9 +3,9 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/constants/app_constants.dart';
-import 'package:istanbul_metro_game/features/game/application/piece_generator.dart';
-import 'package:istanbul_metro_game/features/game/domain/board.dart';
-import 'package:istanbul_metro_game/features/game/domain/piece_shapes.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/piece_generator.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 
 import '../helpers/board_helpers.dart';
