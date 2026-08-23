@@ -56,6 +56,46 @@ class MiniGames {
     isAvailable: true,
   );
 
+  static const MiniGame metroMerge = MiniGame(
+    id: 'metro_merge',
+    name: 'Hat Birleştir',
+    tagline: 'M1 hatlarını birleştir, M2 ve M3 seviyelerine yükselt.',
+    icon: Icons.train_rounded,
+    isAvailable: true,
+  );
+
+  static const MiniGame railFlight = MiniGame(
+    id: 'rail_flight',
+    name: 'Ray Uçuşu',
+    tagline: 'Treni uçur, raylara çarpmadan tünellerden geç.',
+    icon: Icons.flight_takeoff_rounded,
+    isAvailable: true,
+  );
+
+  static const MiniGame mergeDrop = MiniGame(
+    id: 'merge_drop',
+    name: 'Hat Düşür',
+    tagline: 'M1 rozetlerini düşür, aynı hatları M7’ye kadar büyüt.',
+    icon: Icons.bubble_chart_rounded,
+    isAvailable: true,
+  );
+
+  static const MiniGame stationMemory = MiniGame(
+    id: 'station_memory',
+    name: 'Durak Hafıza',
+    tagline: 'Durak sırasını aklında tut, aynı sırayla seç.',
+    icon: Icons.psychology_rounded,
+    isAvailable: true,
+  );
+
+  static const MiniGame laneRunner = MiniGame(
+    id: 'lane_runner',
+    name: 'Ray Değiştir',
+    tagline: 'Kapalı raylardan kaç, treni M7’ye kadar yükselt.',
+    icon: Icons.swap_horiz_rounded,
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -77,5 +117,15 @@ class MiniGames {
     icon: Icons.view_week_rounded,
   );
 
-  static const List<MiniGame> all = <MiniGame>[blocks, transfer, signal, wagon];
+  static const List<MiniGame> all = <MiniGame>[
+    blocks,
+    metroMerge,
+    railFlight,
+    mergeDrop,
+    stationMemory,
+    laneRunner,
+    transfer,
+    signal,
+    wagon,
+  ];
 }

@@ -9,6 +9,7 @@ class LocalStore extends ChangeNotifier {
   LocalStore();
 
   static const String _bestScorePrefix = 'best_route_';
+  static const String _bestGameScorePrefix = 'best_game_route_';
   static const String _overallBestKey = 'best_score_overall';
   static const String _hapticsKey = 'haptics_enabled';
   static const String _soundKey = 'sound_enabled';
@@ -65,6 +66,16 @@ class LocalStore extends ChangeNotifier {
       _prefs?.getInt('$_bestScorePrefix${routeKey(originId, destinationId)}') ??
       0;
 
+  int bestScoreForGameRoute({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+  }) =>
+      _prefs?.getInt(
+        '$_bestGameScorePrefix${gameId}_${routeKey(originId, destinationId)}',
+      ) ??
+      0;
+
   int get overallBest => _prefs?.getInt(_overallBestKey) ?? 0;
 
   /// Skoru rotaya kaydeder. Yeni rekorsa `true` döner.
@@ -76,6 +87,32 @@ class LocalStore extends ChangeNotifier {
     if (score <= 0) return false;
     final key = '$_bestScorePrefix${routeKey(originId, destinationId)}';
     final previous = bestScoreForRoute(originId, destinationId);
+    final isNewBest = score > previous;
+
+    if (isNewBest) {
+      await _prefs?.setInt(key, score);
+    }
+    if (score > overallBest) {
+      await _prefs?.setInt(_overallBestKey, score);
+    }
+    if (isNewBest || score > previous) notifyListeners();
+    return isNewBest;
+  }
+
+  Future<bool> submitGameRouteScore({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+    required int score,
+  }) async {
+    if (score <= 0) return false;
+    final key =
+        '$_bestGameScorePrefix${gameId}_${routeKey(originId, destinationId)}';
+    final previous = bestScoreForGameRoute(
+      gameId: gameId,
+      originId: originId,
+      destinationId: destinationId,
+    );
     final isNewBest = score > previous;
 
     if (isNewBest) {
@@ -151,7 +188,11 @@ class LocalStore extends ChangeNotifier {
     if (prefs == null) return 0;
     final keys = prefs
         .getKeys()
-        .where((k) => k.startsWith(_bestScorePrefix))
+        .where(
+          (k) =>
+              k.startsWith(_bestScorePrefix) ||
+              k.startsWith(_bestGameScorePrefix),
+        )
         .toList();
     for (final key in keys) {
       await prefs.remove(key);
@@ -169,6 +210,9 @@ class LocalStore extends ChangeNotifier {
       for (final key in prefs.getKeys())
         if (key.startsWith(_bestScorePrefix))
           key.substring(_bestScorePrefix.length): prefs.getInt(key) ?? 0,
+      for (final key in prefs.getKeys())
+        if (key.startsWith(_bestGameScorePrefix))
+          key.substring(_bestGameScorePrefix.length): prefs.getInt(key) ?? 0,
     };
   }
 }

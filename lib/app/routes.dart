@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../features/games/blocks/domain/game_state.dart';
 import '../features/games/blocks/presentation/game_screen.dart';
+import '../features/games/lane_runner/application/lane_runner_controller.dart';
+import '../features/games/lane_runner/presentation/lane_runner_screen.dart';
+import '../features/games/merge_drop/application/merge_drop_controller.dart';
+import '../features/games/merge_drop/presentation/merge_drop_screen.dart';
+import '../features/games/metro_merge/application/metro_merge_controller.dart';
+import '../features/games/metro_merge/presentation/metro_merge_screen.dart';
+import '../features/games/rail_flight/application/rail_flight_controller.dart';
+import '../features/games/rail_flight/presentation/rail_flight_screen.dart';
+import '../features/games/station_memory/application/station_memory_controller.dart';
+import '../features/games/station_memory/presentation/station_memory_screen.dart';
 import '../features/games/catalog/game_select_screen.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
@@ -11,9 +21,14 @@ import '../features/settings/presentation/settings_screen.dart';
 /// Oyun ekranına geçilirken taşınan bilgi.
 @immutable
 class GameLaunch {
-  const GameLaunch({required this.journey, this.resumeFrom});
+  const GameLaunch({
+    required this.journey,
+    this.gameId = 'blocks',
+    this.resumeFrom,
+  });
 
   final Journey journey;
+  final String gameId;
   final GameSession? resumeFrom;
 }
 
@@ -52,8 +67,27 @@ class AppRoutes {
         if (args is GameLaunch) {
           return MaterialPageRoute<void>(
             settings: settings,
-            builder: (_) =>
-                GameScreen(journey: args.journey, resumeFrom: args.resumeFrom),
+            builder: (_) {
+              if (args.gameId == MetroMergeController.gameId) {
+                return MetroMergeScreen(journey: args.journey);
+              }
+              if (args.gameId == RailFlightController.gameId) {
+                return RailFlightScreen(journey: args.journey);
+              }
+              if (args.gameId == MergeDropController.gameId) {
+                return MergeDropScreen(journey: args.journey);
+              }
+              if (args.gameId == StationMemoryController.gameId) {
+                return StationMemoryScreen(journey: args.journey);
+              }
+              if (args.gameId == LaneRunnerController.gameId) {
+                return LaneRunnerScreen(journey: args.journey);
+              }
+              return GameScreen(
+                journey: args.journey,
+                resumeFrom: args.resumeFrom,
+              );
+            },
           );
         }
         return MaterialPageRoute<void>(
@@ -73,11 +107,16 @@ class AppRoutes {
   static Future<void> openGame(
     BuildContext context,
     Journey journey, {
+    String gameId = 'blocks',
     GameSession? resumeFrom,
   }) {
     return Navigator.of(context).pushNamed<void>(
       game,
-      arguments: GameLaunch(journey: journey, resumeFrom: resumeFrom),
+      arguments: GameLaunch(
+        journey: journey,
+        gameId: gameId,
+        resumeFrom: resumeFrom,
+      ),
     );
   }
 

@@ -20,9 +20,7 @@ class GameSelectScreen extends StatelessWidget {
 
   Future<void> _start(BuildContext context, MiniGame game) async {
     if (!game.isAvailable) return;
-    // Bugün tek oynanabilir oyun blok oyunu; katalog büyüdüğünde burada
-    // `game.id`'ye göre dallanılacak.
-    await AppRoutes.openGame(context, journey);
+    await AppRoutes.openGame(context, journey, gameId: game.id);
   }
 
   @override
