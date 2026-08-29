@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 
-const int railFlightGatesPerLine = 7;
-const int railFlightMaxLineLevel = 9;
+const int railFlightGatesPerLine = 5;
+const int railFlightMaxLineLevel = 10;
 const double railFlightTrainX = 0.24;
 const double railFlightTrainRadius = 0.045;
 const double railFlightObstacleWidth = 0.13;
 
+/// Gerçek ağda M10 yok (M9'dan sonra M11 gelir); bkz. README "Bilinen
+/// Sınırlar".
 const List<String> railFlightLineLabels = <String>[
   'M1',
   'M2',
@@ -16,6 +18,7 @@ const List<String> railFlightLineLabels = <String>[
   'M7',
   'M8',
   'M9',
+  'M11',
 ];
 
 @immutable

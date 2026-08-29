@@ -46,6 +46,7 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
   bool _passedGateSinceLastStation = false;
   GameStatus _status = GameStatus.ready;
   List<RailObstacle> _obstacles = const <RailObstacle>[];
+  double _pendingSpawnGap = 0;
 
   @override
   int lastStationBonus = 0;
@@ -180,6 +181,7 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
   void _resetFlight() {
     _trainY = 0.5;
     _velocity = 0;
+    _pendingSpawnGap = _randomSpawnGap();
     _obstacles = <RailObstacle>[_newObstacle(1.05)];
   }
 
@@ -191,6 +193,14 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
       gapCenter: 0.28 + _random.nextDouble() * 0.44,
       gapHeight: gapHeight,
     );
+  }
+
+  /// Engeller arası mesafe: bazıları kısa, bazıları uzun olsun diye
+  /// `config.spawnDistance` etrafında ±45% rastgele oynatılır. Zorluk
+  /// seviyesinin ortalama temposunu korur, sadece ritmi düzensizleştirir.
+  double _randomSpawnGap() {
+    final factor = 0.55 + _random.nextDouble() * 1.05;
+    return config.spawnDistance * factor;
   }
 
   void _startTimer() {
@@ -254,11 +264,12 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
     final rightMost = _obstacles.isEmpty
         ? 0.0
         : _obstacles.map((obstacle) => obstacle.x).reduce(max);
-    if (rightMost < 1 - config.spawnDistance) {
+    if (rightMost < 1 - _pendingSpawnGap) {
       _obstacles = <RailObstacle>[
         ..._obstacles,
-        _newObstacle(rightMost + config.spawnDistance),
+        _newObstacle(rightMost + _pendingSpawnGap),
       ];
+      _pendingSpawnGap = _randomSpawnGap();
     }
   }
 

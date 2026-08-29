@@ -221,9 +221,17 @@ class _MergeDropScreenState extends State<MergeDropScreen>
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Expanded(
-                        child: _DropPlayArea(
-                          controller: controller,
-                          onDrop: _drop,
+                        // Havuz daha dar: toplara daha az yanal alan kalır,
+                        // yığın daha çabuk sıkışır — oyun biraz zorlaşır.
+                        child: Center(
+                          child: FractionallySizedBox(
+                            widthFactor: 0.82,
+                            heightFactor: 1,
+                            child: _DropPlayArea(
+                              controller: controller,
+                              onDrop: _drop,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),

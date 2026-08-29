@@ -59,36 +59,52 @@ void main() {
       expect(controller.score, 1);
     });
 
-    test('7 geçişten sonra M2 trenine dönüşür', () {
+    test('5 geçişten sonra M2 trenine dönüşür', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
       controller.debugSetFlight(
         trainY: 0.5,
         velocity: 0,
-        obstacles: passedObstacles(7),
+        obstacles: passedObstacles(5),
       );
 
       controller.debugStep(0.01);
 
-      expect(controller.gatesPassed, 7);
+      expect(controller.gatesPassed, 5);
       expect(controller.lineLabel, 'M2');
       expect(controller.lineLevel, 2);
     });
 
-    test('14 geçişten sonra M3 trenine dönüşür', () {
+    test('10 geçişten sonra M3 trenine dönüşür', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
       controller.debugSetFlight(
         trainY: 0.5,
         velocity: 0,
-        obstacles: passedObstacles(14),
+        obstacles: passedObstacles(10),
       );
 
       controller.debugStep(0.01);
 
-      expect(controller.gatesPassed, 14);
+      expect(controller.gatesPassed, 10);
       expect(controller.lineLabel, 'M3');
       expect(controller.lineLevel, 3);
+    });
+
+    test('45 geçişten sonra M11 trenine dönüşür (son hat, artık ilerlemez)', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      controller.debugSetFlight(
+        trainY: 0.5,
+        velocity: 0,
+        obstacles: passedObstacles(45),
+      );
+
+      controller.debugStep(0.01);
+
+      expect(controller.gatesPassed, 45);
+      expect(controller.lineLabel, 'M11');
+      expect(controller.lineLevel, 10);
     });
 
     test('ray sınırına çarpmak oyunu bitirir', () {

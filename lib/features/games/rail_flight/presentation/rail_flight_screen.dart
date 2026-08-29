@@ -627,6 +627,7 @@ Color _railFlightLineColor(int lineLevel) {
     Color(0xFFF05A8A),
     Color(0xFF0067B1),
     Color(0xFFFFD300),
+    Color(0xFFF7941D),
   ];
   return colors[(lineLevel - 1).clamp(0, colors.length - 1)];
 }
