@@ -191,10 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const Spacer(),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                        child: _OfflineNote(),
-                      ),
                     ],
                   ),
                 ),
@@ -720,25 +716,6 @@ class _InfoBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _OfflineNote extends StatelessWidget {
-  const _OfflineNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(Icons.wifi_off_rounded, size: 14, color: AppColors.textMuted),
-        SizedBox(width: AppSpacing.sm),
-        Text(
-          AppConstants.offlineNote,
-          style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
-        ),
-      ],
     );
   }
 }

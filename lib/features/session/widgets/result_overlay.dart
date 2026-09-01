@@ -104,7 +104,7 @@ class ResultOverlay extends StatelessWidget {
           ),
           child: const Text('TEKRAR OYNA'),
         ),
-        TextButton(onPressed: onExit, child: const Text('Yeni rota seç')),
+        TextButton(onPressed: onExit, child: const Text('Başka oyun seç')),
       ],
     );
   }

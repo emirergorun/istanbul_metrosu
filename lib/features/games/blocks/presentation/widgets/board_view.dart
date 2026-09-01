@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -33,13 +35,22 @@ class BoardPreview {
   int get hashCode => Object.hash(piece, row, col, isValid);
 }
 
-/// Temizlenen satır/sütunların kısa parlama efekti.
+/// Temizlenen satır/sütunların patlama efekti.
 @immutable
 class BoardFlash {
-  const BoardFlash({required this.rows, required this.columns});
+  const BoardFlash({
+    required this.rows,
+    required this.columns,
+    this.cellValues = const <int, int>{},
+  });
 
   final List<int> rows;
   final List<int> columns;
+
+  /// Temizlenen hücrelerin silinmeden önceki renk değerleri
+  /// (`satır * sütunSayısı + sütun` -> değer). Parçacıklar blokların kendi
+  /// renginde savrulsun diye taşınır.
+  final Map<int, int> cellValues;
 
   bool get isEmpty => rows.isEmpty && columns.isEmpty;
 }
@@ -242,40 +253,135 @@ class _BoardPainter extends CustomPainter {
     }
   }
 
+  /// Patlama: parlama → şok dalgası → savrulan parçacıklar.
+  ///
+  /// Üç katman üst üste bindiği için temizlik "kayboldu" değil "patladı" gibi
+  /// okunuyor. Parçacık yönleri hücre konumundan türetilen deterministik bir
+  /// sözde-rastgeleden gelir; her karede yeniden üretilmediği için parçacıklar
+  /// titremez.
   void _paintFlash(Canvas canvas) {
     final value = flash.value;
     if (value == null || value.isEmpty) return;
 
     final t = flashAnimation.value.clamp(0.0, 1.0);
-    final alpha = (1.0 - t) * 0.85;
-    if (alpha <= 0) return;
+    if (t >= 1) return;
 
-    final paint = Paint()..color = Colors.white.withValues(alpha: alpha);
-    final shrink = 1.0 - t * 0.35;
+    final cells = <({int row, int col})>[];
+    for (final r in value.rows) {
+      for (var c = 0; c < board.cols; c++) {
+        cells.add((row: r, col: c));
+      }
+    }
+    for (final c in value.columns) {
+      for (var r = 0; r < board.rows; r++) {
+        if (value.rows.contains(r)) continue; // kesişim iki kez patlamasın
+        cells.add((row: r, col: c));
+      }
+    }
 
-    void drawCell(int r, int c) {
-      final rect = _cellRect(r, c);
+    _paintBurstCore(canvas, cells, t);
+    _paintShockwave(canvas, value, t);
+    _paintParticles(canvas, value, cells, t);
+  }
+
+  /// İlk anda hücrenin yerinde kalan beyaz çekirdek; hızla sönüp küçülür.
+  void _paintBurstCore(
+    Canvas canvas,
+    List<({int row, int col})> cells,
+    double t,
+  ) {
+    final k = (t / 0.35).clamp(0.0, 1.0);
+    if (k >= 1) return;
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9 * (1 - k));
+    final grow = 1.0 + k * 0.25;
+
+    for (final cell in cells) {
+      final rect = _cellRect(cell.row, cell.col);
       final scaled = Rect.fromCenter(
         center: rect.center,
-        width: rect.width * shrink,
-        height: rect.height * shrink,
+        width: rect.width * grow,
+        height: rect.height * grow,
       );
       canvas.drawRRect(
         RRect.fromRectAndRadius(scaled, Radius.circular(cellSize * 0.20)),
         paint,
       );
     }
+  }
 
-    for (final r in value.rows) {
-      for (var c = 0; c < board.cols; c++) {
-        drawCell(r, c);
+  /// Temizlenen her hattın ortasından yayılan halka.
+  void _paintShockwave(Canvas canvas, BoardFlash flash, double t) {
+    final k = (t / 0.7).clamp(0.0, 1.0);
+    if (k >= 1) return;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = cellSize * 0.10 * (1 - k)
+      ..color = Colors.white.withValues(alpha: 0.5 * (1 - k));
+
+    final maxRadius = board.cols * cellSize * 0.55;
+    for (final r in flash.rows) {
+      final center = Offset(board.cols * cellSize / 2, (r + 0.5) * cellSize);
+      canvas.drawCircle(center, maxRadius * k, paint);
+    }
+    for (final c in flash.columns) {
+      final center = Offset((c + 0.5) * cellSize, board.rows * cellSize / 2);
+      canvas.drawCircle(center, maxRadius * k, paint);
+    }
+  }
+
+  /// Hücre başına savrulan enkaz. Yerçekimi var: yukarı çıkıp aşağı düşerler.
+  void _paintParticles(
+    Canvas canvas,
+    BoardFlash flash,
+    List<({int row, int col})> cells,
+    double t,
+  ) {
+    const perCell = 5;
+    final fade = (1 - t) * (1 - t);
+    if (fade <= 0.01) return;
+
+    for (final cell in cells) {
+      final origin = _cellRect(cell.row, cell.col).center;
+      final key = cell.row * board.cols + cell.col;
+      final colorValue = flash.cellValues[key] ?? 0;
+      final color = colorValue > 0
+          ? AppColors.forCellValue(colorValue)
+          : Colors.white;
+
+      for (var i = 0; i < perCell; i++) {
+        final seed = key * 31 + i * 7;
+        final angle = _pseudoRandom(seed) * 2 * math.pi;
+        final speed = (0.55 + _pseudoRandom(seed + 1) * 0.75) * cellSize * 2.4;
+        final spin = 0.6 + _pseudoRandom(seed + 2) * 0.8;
+
+        // Konum: düz savrulma + yerçekimi.
+        final dx = math.cos(angle) * speed * t;
+        final dy = math.sin(angle) * speed * t + cellSize * 5.0 * t * t;
+        final size = cellSize * 0.17 * spin * (1 - t);
+        if (size <= 0.2) continue;
+
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: origin + Offset(dx, dy),
+              width: size,
+              height: size,
+            ),
+            Radius.circular(size * 0.3),
+          ),
+          Paint()..color = color.withValues(alpha: fade),
+        );
       }
     }
-    for (final c in value.columns) {
-      for (var r = 0; r < board.rows; r++) {
-        drawCell(r, c);
-      }
-    }
+  }
+
+  /// Deterministik sözde-rastgele, 0..1. Aynı tohum her karede aynı değeri
+  /// verir; yoksa parçacıklar her frame'de yer değiştirir.
+  double _pseudoRandom(int seed) {
+    var x = (seed * 1103515245 + 12345) & 0x7fffffff;
+    x = (x >> 16) ^ x;
+    return ((x * 2654435761) & 0xffff) / 0xffff;
   }
 
   @override

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../app/app_scope.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
@@ -225,8 +224,6 @@ class _TitleScreenState extends State<TitleScreen>
                           onPressed: _openPlanner,
                           child: const Text('OYUNA BAŞLA'),
                         ),
-                      const SizedBox(height: AppSpacing.md),
-                      const _OfflineNote(),
                     ],
                   ),
                 ),
@@ -254,11 +251,6 @@ class _Wordmark extends StatelessWidget {
           style: Theme.of(
             context,
           ).textTheme.displaySmall?.copyWith(fontSize: 30, height: 1.1),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          AppConstants.tagline,
-          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
     );
@@ -444,25 +436,6 @@ class _ResumeButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _OfflineNote extends StatelessWidget {
-  const _OfflineNote();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Icon(Icons.wifi_off_rounded, size: 14, color: AppColors.textMuted),
-        SizedBox(width: AppSpacing.sm),
-        Text(
-          AppConstants.offlineNote,
-          style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
-        ),
-      ],
     );
   }
 }

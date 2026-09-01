@@ -88,7 +88,8 @@ void main() {
     expect(find.text('YOLCULUĞUN\nKADAR OYNA'), findsOneWidget);
     expect(find.text('ÇIKIŞ NOKTASI'), findsOneWidget);
     expect(find.text('GİDİLECEK YER'), findsOneWidget);
-    expect(find.text('İnternetsiz oynanabilir.'), findsOneWidget);
+    // "İnternetsiz oynanabilir" satırı kaldırıldı.
+    expect(find.text('İnternetsiz oynanabilir.'), findsNothing);
     expect(find.text('YOLCULUĞU BAŞLAT'), findsOneWidget);
     // Sağ üstteki çevrimdışı rozeti kaldırıldı.
     expect(find.text('ÇEVRİMDIŞI'), findsNothing);
@@ -184,7 +185,7 @@ void main() {
     // Oyundan çık; oyun seçimi ve planlayıcıdan da geri dön.
     await tester.tap(find.byIcon(Icons.pause_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Yeni rota seç'));
+    await tester.tap(find.text('Başka oyun seç'));
     await tester.pumpAndSettle();
     for (var i = 0; i < 2; i++) {
       Navigator.of(tester.element(find.byType(Scaffold).first)).pop();

@@ -27,7 +27,9 @@ class AppConstants {
   static const double trayHeightFactor = 2.6;
 
   // --- Animasyon süreleri (kısa tutulur, metroda hız önemli) ---
-  static const Duration lineClearDuration = Duration(milliseconds: 220);
+  /// Satır temizleme patlaması: parlama, şok dalgası ve savrulan parçacıklar
+  /// bu süreye yayılır. 220 ms'de efekt bitmeden gözden kaçıyordu.
+  static const Duration lineClearDuration = Duration(milliseconds: 520);
   static const Duration piecePlaceDuration = Duration(milliseconds: 120);
   static const Duration progressTickDuration = Duration(milliseconds: 900);
   static const Duration overlayFadeDuration = Duration(milliseconds: 180);
@@ -38,5 +40,4 @@ class AppConstants {
   // --- Metin ---
   static const String appTitle = 'İstanbul Metrosu Oyunu';
   static const String tagline = 'Yolculuğun kadar oyna.';
-  static const String offlineNote = 'İnternetsiz oynanabilir.';
 }

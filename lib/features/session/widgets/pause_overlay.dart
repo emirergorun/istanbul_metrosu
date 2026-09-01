@@ -55,7 +55,7 @@ class PauseOverlay extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         TextButton(onPressed: onRestart, child: const Text('Yeniden başlat')),
         TextButton(onPressed: onSettings, child: const Text('Ayarlar')),
-        TextButton(onPressed: onExit, child: const Text('Yeni rota seç')),
+        TextButton(onPressed: onExit, child: const Text('Başka oyun seç')),
       ],
     );
   }
