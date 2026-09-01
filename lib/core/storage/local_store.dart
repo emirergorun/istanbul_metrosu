@@ -10,6 +10,13 @@ class LocalStore extends ChangeNotifier {
 
   static const String _bestScorePrefix = 'best_route_';
   static const String _bestGameScorePrefix = 'best_game_route_';
+
+  /// Oyun kimliğiyle rotayı ayırır.
+  ///
+  /// Alt çizgi kullanılamaz: istasyon id'leri de alt çizgi içeriyor
+  /// (`m2_taksim`), bu yüzden `<oyun>_<rota>` biçimi geri ayrıştırılamıyordu
+  /// ve ayarlar ekranı bu kayıtları çizemeyip sessizce atlıyordu.
+  static const String _gameRouteSeparator = '|';
   static const String _overallBestKey = 'best_score_overall';
   static const String _hapticsKey = 'haptics_enabled';
   static const String _soundKey = 'sound_enabled';
@@ -72,7 +79,8 @@ class LocalStore extends ChangeNotifier {
     required String destinationId,
   }) =>
       _prefs?.getInt(
-        '$_bestGameScorePrefix${gameId}_${routeKey(originId, destinationId)}',
+        '$_bestGameScorePrefix$gameId$_gameRouteSeparator'
+        '${routeKey(originId, destinationId)}',
       ) ??
       0;
 
@@ -107,7 +115,8 @@ class LocalStore extends ChangeNotifier {
   }) async {
     if (score <= 0) return false;
     final key =
-        '$_bestGameScorePrefix${gameId}_${routeKey(originId, destinationId)}';
+        '$_bestGameScorePrefix$gameId$_gameRouteSeparator'
+        '${routeKey(originId, destinationId)}';
     final previous = bestScoreForGameRoute(
       gameId: gameId,
       originId: originId,
@@ -202,17 +211,64 @@ class LocalStore extends ChangeNotifier {
     return keys.length;
   }
 
-  /// Kayıtlı rekoru olan rotalar: `{rota anahtarı: skor}`.
-  Map<String, int> allRecords() {
+  /// Kayıtlı bütün rekorlar.
+  ///
+  /// Ham anahtar yerine çözülmüş kayıt döner: arayüzün anahtar biçimini
+  /// bilmesi gerekmez.
+  List<RouteRecord> allRecords() {
     final prefs = _prefs;
-    if (prefs == null) return const <String, int>{};
-    return <String, int>{
-      for (final key in prefs.getKeys())
-        if (key.startsWith(_bestScorePrefix))
-          key.substring(_bestScorePrefix.length): prefs.getInt(key) ?? 0,
-      for (final key in prefs.getKeys())
-        if (key.startsWith(_bestGameScorePrefix))
-          key.substring(_bestGameScorePrefix.length): prefs.getInt(key) ?? 0,
-    };
+    if (prefs == null) return const <RouteRecord>[];
+
+    final records = <RouteRecord>[];
+    for (final key in prefs.getKeys()) {
+      final score = prefs.getInt(key) ?? 0;
+
+      if (key.startsWith(_bestGameScorePrefix)) {
+        final rest = key.substring(_bestGameScorePrefix.length);
+        final split = rest.indexOf(_gameRouteSeparator);
+        if (split <= 0) continue;
+        final pair = rest.substring(split + 1).split('__');
+        if (pair.length != 2) continue;
+        records.add(
+          RouteRecord(
+            gameId: rest.substring(0, split),
+            originId: pair[0],
+            destinationId: pair[1],
+            score: score,
+          ),
+        );
+        continue;
+      }
+
+      if (key.startsWith(_bestScorePrefix)) {
+        final pair = key.substring(_bestScorePrefix.length).split('__');
+        if (pair.length != 2) continue;
+        records.add(
+          RouteRecord(originId: pair[0], destinationId: pair[1], score: score),
+        );
+      }
+    }
+    return records;
   }
+}
+
+/// Çözülmüş bir rekor kaydı.
+///
+/// Anahtar biçimi [LocalStore] içinde kalır; arayüz yalnızca bu tipi görür.
+@immutable
+class RouteRecord {
+  const RouteRecord({
+    required this.originId,
+    required this.destinationId,
+    required this.score,
+    this.gameId,
+  });
+
+  /// Hangi oyunda kurulduğu. `null` ise oyun ayrımından önceki eski kayıt
+  /// (Blok Metro).
+  final String? gameId;
+
+  final String originId;
+  final String destinationId;
+  final int score;
 }

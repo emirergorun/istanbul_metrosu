@@ -5,7 +5,9 @@ import '../../../app/theme.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/storage/local_store.dart';
 import '../../../core/widgets/line_badge.dart';
+import '../../games/catalog/mini_game.dart';
 
 /// Ayarlar: ses, titreşim, rekorlar ve uygulama bilgisi.
 class SettingsScreen extends StatefulWidget {
@@ -86,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle('REKORLAR (${records.length})'),
+          _SectionTitle('REKORLAR (${_visible(records).length})'),
           if (records.isEmpty)
             const _SettingsCard(
               children: <Widget>[
@@ -107,9 +109,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           else
             _SettingsCard(
               children: <Widget>[
-                for (final entry in _sorted(records)) ...<Widget>[
-                  _RecordRow(routeKey: entry.key, score: entry.value),
-                  if (entry.key != _sorted(records).last.key) const _Divider(),
+                for (final record in _visible(records)) ...<Widget>[
+                  _RecordRow(record: record),
+                  if (record != _visible(records).last) const _Divider(),
                 ],
               ],
             ),
@@ -167,8 +169,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  List<MapEntry<String, int>> _sorted(Map<String, int> records) =>
-      records.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  /// Çizilebilecek kayıtlar, skora göre azalan.
+  ///
+  /// Verisi çözülemeyen kayıt (metro verisi değişmiş olabilir) baştan elenir;
+  /// eskiden bu kayıtlar listeye giriyor ama boş satır olarak çiziliyordu, bu
+  /// yüzden başlıktaki sayı ile ekrandaki satır sayısı tutmuyordu.
+  List<RouteRecord> _visible(List<RouteRecord> records) {
+    final metro = AppScope.of(context).metro;
+    return records
+        .where(
+          (r) =>
+              metro.stationById(r.originId) != null &&
+              metro.stationById(r.destinationId) != null,
+        )
+        .toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+  }
 
   Future<void> _confirmReset(
     BuildContext context,
@@ -205,20 +221,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _RecordRow extends StatelessWidget {
-  const _RecordRow({required this.routeKey, required this.score});
+  const _RecordRow({required this.record});
 
-  final String routeKey;
-  final int score;
+  final RouteRecord record;
+
+  /// Kaydın hangi oyuna ait olduğu. Oyun ayrımından önceki kayıtlar
+  /// (`gameId == null`) Blok Metro'ya aittir.
+  MiniGame get _game => MiniGames.all.firstWhere(
+    (g) => g.id == (record.gameId ?? MiniGames.blocks.id),
+    orElse: () => MiniGames.blocks,
+  );
 
   @override
   Widget build(BuildContext context) {
     final metro = AppScope.of(context).metro;
-    final ids = routeKey.split('__');
-    final origin = ids.isNotEmpty ? metro.stationById(ids.first) : null;
-    final destination = ids.length > 1 ? metro.stationById(ids[1]) : null;
-
+    final origin = metro.stationById(record.originId);
+    final destination = metro.stationById(record.destinationId);
     if (origin == null || destination == null) {
-      // Veri değişmiş olabilir; anahtarı ham göstermek yerine atla.
       return const SizedBox.shrink();
     }
 
@@ -235,18 +254,35 @@ class _RecordRow extends StatelessWidget {
           LineBadge(label: origin.lineId, color: theme.accent, compact: true),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Text(
-              '${origin.name} – ${destination.name}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14.5,
-                color: AppColors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  '${origin.name} – ${destination.name}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                // Aynı rotanın her oyunda ayrı rekoru var; hangisi olduğu
+                // yazılmazsa liste anlamsız tekrarlar gibi görünür.
+                Text(
+                  _game.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: AppSpacing.sm),
           Text(
-            Formatters.score(score),
+            Formatters.score(record.score),
             style: TextStyle(
               fontFamily: AppFonts.display,
               fontSize: 16,
