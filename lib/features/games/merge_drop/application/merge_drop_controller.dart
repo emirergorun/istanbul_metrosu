@@ -1,28 +1,25 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/storage/local_store.dart';
-import '../../blocks/domain/scoring.dart';
-import '../../../journey/models/journey.dart';
-import '../../../session/journey_run.dart';
+import '../../../session/journey_game_controller.dart';
+import '../../../session/journey_status.dart';
 import '../domain/merge_drop_state.dart';
 
-class MergeDropController extends ChangeNotifier implements JourneyRun {
+class MergeDropController extends JourneyGameController {
   MergeDropController({
-    required Journey journey,
-    required int recordToBeat,
-    this.store,
+    required super.journey,
+    required super.recordToBeat,
+    super.store,
     Random? random,
-    this.tick = const Duration(milliseconds: 16),
-  }) : _journey = journey,
-       _recordToBeat = recordToBeat,
-       _random = random ?? Random() {
+    super.tick = const Duration(milliseconds: 16),
+  }) : _random = random ?? Random(),
+       super(gameId: id) {
     _currentLevel = _randomLevel();
   }
 
-  static const String gameId = 'merge_drop';
+  /// Rekor anahtarında kullanılır; değiştirilmemeli.
+  static const String id = 'merge_drop';
   static const double worldWidth = 1;
   static const double worldHeight = 1;
 
@@ -83,35 +80,16 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
   /// saymamak, yeni bırakılan topun düşmesini beklemek değil.
   static const double _overflowGraceSeconds = 0.22;
 
-  final LocalStore? store;
-  final Duration tick;
-  final Journey _journey;
   final Random _random;
 
-  Timer? _timer;
-  double _routeElapsedSeconds = 0;
   double _aimX = 0.5;
   double _dropCooldown = 0;
   double _overflowSeconds = 0;
   int _nextId = 1;
   int _currentLevel = mergeDropMinLevel;
-  int _score = 0;
   int _merges = 0;
   int _maxLevel = mergeDropMinLevel;
-  int _stationsPassed = 0;
-  int _recordToBeat;
-  bool _recordBeaten = false;
-  bool _isNewBest = false;
-  bool _scoreSaved = false;
-  bool _mergedSinceLastStation = false;
-  GameStatus _status = GameStatus.ready;
   List<DropBall> _balls = const <DropBall>[];
-
-  @override
-  int lastStationBonus = 0;
-
-  @override
-  int stationBonusPulse = 0;
 
   double get aimX => _aimX;
   int get currentLevel => _currentLevel;
@@ -119,7 +97,7 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
   int get merges => _merges;
   int get maxLevel => _maxLevel;
   String get maxLabel => mergeDropLabelForLevel(_maxLevel);
-  bool get canDrop => _status == GameStatus.playing && _dropCooldown <= 0;
+  bool get canDrop => status == GameStatus.playing && _dropCooldown <= 0;
   List<DropBall> get balls => List<DropBall>.unmodifiable(_balls);
 
   @visibleForTesting
@@ -130,106 +108,20 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
 
   @visibleForTesting
   void debugStep(double seconds) {
-    _advance(seconds);
+    advance(seconds);
     notifyListeners();
   }
 
   @override
-  Journey get journey => _journey;
-
-  @override
-  GameStatus get status => _status;
-
-  @override
-  int get score => _score;
-
-  @override
-  int get recordToBeat => _recordToBeat;
-
-  @override
-  bool get recordBeaten => _recordBeaten;
-
-  @override
-  bool get isFirstRun => _recordToBeat <= 0;
-
-  @override
-  bool get isNewBest => _isNewBest;
-
-  @override
-  double get progress {
-    final total = _journey.estimatedSeconds;
-    if (total <= 0) return 1;
-    return (_routeElapsedSeconds / total).clamp(0.0, 1.0);
-  }
-
-  @override
-  double get recordProgress {
-    if (isFirstRun) return 0;
-    return (_score / _recordToBeat).clamp(0.0, 1.0);
-  }
-
-  @override
-  int get remainingSeconds {
-    final left = _journey.estimatedSeconds - _routeElapsedSeconds.floor();
-    return left < 0 ? 0 : left;
-  }
-
-  @override
-  void start() {
-    if (_status == GameStatus.playing) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void pause() {
-    if (_status != GameStatus.playing) return;
-    _stopTimer();
-    _status = GameStatus.paused;
-    notifyListeners();
-  }
-
-  @override
-  void resume() {
-    if (_status != GameStatus.paused) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void restart() {
-    _stopTimer();
-    _routeElapsedSeconds = 0;
+  void onRestart() {
     _aimX = 0.5;
     _dropCooldown = 0;
     _overflowSeconds = 0;
     _nextId = 1;
-    _score = 0;
     _merges = 0;
     _maxLevel = mergeDropMinLevel;
-    _stationsPassed = 0;
-    _recordBeaten = false;
-    _isNewBest = false;
-    _scoreSaved = false;
-    _mergedSinceLastStation = false;
-    lastStationBonus = 0;
-    stationBonusPulse = 0;
     _balls = const <DropBall>[];
     _currentLevel = _randomLevel();
-    _refreshRecord();
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void abandon() {
-    _stopTimer();
-    if (_status.isFinished) return;
-    _status = GameStatus.abandoned;
-    notifyListeners();
   }
 
   void moveAim(double x) {
@@ -258,23 +150,8 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
 
   int _randomLevel() => _random.nextInt(3) + mergeDropMinLevel;
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(tick, (_) {
-      _advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
-      notifyListeners();
-    });
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  void _advance(double dt) {
-    if (_status != GameStatus.playing) return;
-
-    _routeElapsedSeconds += dt;
+  @override
+  void onTick(double dt) {
     _dropCooldown = max(0, _dropCooldown - dt);
 
     // Tek büyük adım yerine küçük alt-adımlar: hızlı düşen bir top, altındaki
@@ -288,20 +165,11 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
       }
     }
 
-    _awardStationBonusIfPassed();
-
     if (_isOverflowing()) {
       _overflowSeconds += dt;
-      if (_overflowSeconds > _overflowGraceSeconds) {
-        _finish(GameStatus.gameOver);
-        return;
-      }
+      if (_overflowSeconds > _overflowGraceSeconds) endGame();
     } else {
       _overflowSeconds = 0;
-    }
-
-    if (remainingSeconds <= 0) {
-      _finish(GameStatus.arrived);
     }
   }
 
@@ -367,9 +235,8 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
         ];
         _merges++;
         _maxLevel = max(_maxLevel, merged.level);
-        _score += merged.level * 10;
-        _mergedSinceLastStation = true;
-        _checkRecord();
+        addScore(merged.level * 10);
+        markStationProgress();
         return true;
       }
     }
@@ -485,66 +352,5 @@ class MergeDropController extends ChangeNotifier implements JourneyRun {
     return _balls.any(
       (ball) => ball.landed && ball.y - ball.radius < mergeDropDangerLine,
     );
-  }
-
-  void _awardStationBonusIfPassed() {
-    final stops = _journey.stopCount;
-    if (stops <= 0) return;
-
-    final passed = (progress * stops).floor();
-    if (passed <= _stationsPassed) return;
-
-    final earned = _mergedSinceLastStation;
-    _mergedSinceLastStation = false;
-    _stationsPassed = passed;
-
-    if (earned) {
-      _score += ScoreRules.stationBonus;
-      lastStationBonus = ScoreRules.stationBonus;
-      stationBonusPulse++;
-      _checkRecord();
-    }
-  }
-
-  bool _checkRecord() {
-    if (_recordBeaten || isFirstRun) return false;
-    if (_score <= _recordToBeat) return false;
-    _recordBeaten = true;
-    return true;
-  }
-
-  void _refreshRecord() {
-    final stored = store?.bestScoreForGameRoute(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-    );
-    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
-  }
-
-  void _finish(GameStatus status) {
-    _stopTimer();
-    _status = status;
-    notifyListeners();
-    unawaited(_persistScore());
-  }
-
-  Future<void> _persistScore() async {
-    final target = store;
-    if (target == null || _scoreSaved) return;
-    _isNewBest = await target.submitGameRouteScore(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-      score: _score,
-    );
-    _scoreSaved = true;
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _stopTimer();
-    super.dispose();
   }
 }

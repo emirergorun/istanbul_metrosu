@@ -8,11 +8,12 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import '../../../session/widgets/result_overlay.dart';
@@ -61,7 +62,7 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
       journey: widget.journey,
       store: scope.store,
       recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: MetroMergeController.gameId,
+        gameId: MetroMergeController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
@@ -279,6 +280,8 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
                 )
               else if (controller.status == GameStatus.gameOver)
                 _buildResult(controller, accent),
+              // Sprint başladığında bir kez geçer; oyunu durdurmaz.
+              SprintBanner(pulse: controller.sprintPulse),
             ],
           ),
         ),
@@ -350,86 +353,7 @@ class _MergeHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _HudBox(
-            label: 'Skor',
-            value: Formatters.score(controller.score),
-            accent: accent,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: _HudBox(
-            label: controller.isFirstRun ? 'Rota' : 'Rekor',
-            value: controller.isFirstRun
-                ? controller.journey.difficulty.label
-                : Formatters.score(controller.recordToBeat),
-            accent: accent,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        IconButton.filledTonal(
-          onPressed: onPause,
-          icon: const Icon(Icons.pause_rounded),
-          tooltip: 'Duraklat',
-        ),
-      ],
-    );
-  }
-}
-
-class _HudBox extends StatelessWidget {
-  const _HudBox({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: AppColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
+    return JourneyHud(run: controller, accent: accent, onPause: onPause);
   }
 }
 
@@ -638,16 +562,6 @@ class _TileContent extends StatelessWidget {
               fontSize: dense ? 15 : 19,
               fontWeight: FontWeight.w800,
               color: foreground,
-            ),
-          ),
-          Text(
-            tile.rankLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: dense ? 8 : 10,
-              fontWeight: FontWeight.w700,
-              color: foreground.withValues(alpha: 0.82),
             ),
           ),
         ],

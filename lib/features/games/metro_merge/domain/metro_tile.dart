@@ -26,9 +26,6 @@ class MetroTile {
 
   int get lineIndex => (rank - 1).clamp(0, metroMergeLineLabels.length - 1);
   String get lineLabel => metroMergeLineLabels[lineIndex];
-  String get rankLabel => rank < metroMergeMaxRank
-      ? 'Sıradaki ${metroMergeLineLabels[rank]}'
-      : 'Final hat';
 }
 
 @immutable

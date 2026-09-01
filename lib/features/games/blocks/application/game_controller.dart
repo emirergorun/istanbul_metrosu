@@ -25,6 +25,7 @@ class PlaceOutcome {
     this.combo = 0,
     this.trayRefilled = false,
     this.beatRecord = false,
+    this.clearedCellValues = const <int, int>{},
   });
 
   const PlaceOutcome.rejected() : this(accepted: false);
@@ -39,6 +40,13 @@ class PlaceOutcome {
   /// Rotanın rekoru **bu hamlede** geçildi mi? Yalnızca bir kez `true` olur;
   /// oyun durmaz, UI kısa bir bildirim gösterir.
   final bool beatRecord;
+
+  /// Temizlenen hücrelerin **silinmeden önceki** renk değerleri.
+  ///
+  /// Anahtar `satır * sütunSayısı + sütun`. Patlama efekti parçacıkları
+  /// blokların kendi renginde savurabilsin diye taşınır; tahta temizlendikten
+  /// sonra bu bilgi başka yerden okunamaz.
+  final Map<int, int> clearedCellValues;
 
   int get linesCleared => clearedRows.length + clearedColumns.length;
   bool get didClear => linesCleared > 0;
@@ -122,6 +130,21 @@ class GameController extends ChangeNotifier implements JourneyRun {
   double get recordProgress => _session.recordProgress;
   @override
   int get remainingSeconds => _session.remainingSeconds;
+
+  @override
+  bool get isSprint => _session.isSprint;
+
+  /// Sprint **bu anda** başladıysa artan sayaç; UI bir kez şerit gösterir.
+  @override
+  int sprintPulse = 0;
+  bool _sprintAnnounced = false;
+
+  void _announceSprintIfStarted() {
+    if (_sprintAnnounced || !_session.isSprint) return;
+    _sprintAnnounced = true;
+    sprintPulse++;
+  }
+
   @override
   Journey get journey => _session.journey;
   Board get board => _session.board;
@@ -182,6 +205,8 @@ class GameController extends ChangeNotifier implements JourneyRun {
     _scoreSaved = false;
     _clearedSinceLastStation = false;
     lastStationBonus = 0;
+    sprintPulse = 0;
+    _sprintAnnounced = false;
     _refreshRecord();
     _session = _createSession(_session.journey);
     _persistSnapshot();
@@ -241,6 +266,7 @@ class GameController extends ChangeNotifier implements JourneyRun {
     if (_session.status != GameStatus.playing) return;
     _session = _session.copyWith(elapsedSeconds: _session.elapsedSeconds + 1);
 
+    _announceSprintIfStarted();
     _awardStationBonusIfPassed();
 
     if (_session.remainingSeconds <= 0) {
@@ -315,6 +341,11 @@ class GameController extends ChangeNotifier implements JourneyRun {
       isSprint: _session.isSprint,
     );
 
+    final clearedCellValues = _cellValuesOf(
+      board,
+      rows: completedRows,
+      columns: completedColumns,
+    );
     board = clearLines(board, rows: completedRows, columns: completedColumns);
 
     final tray = List<BlockPiece?>.of(_session.tray);
@@ -354,12 +385,34 @@ class GameController extends ChangeNotifier implements JourneyRun {
       combo: score.combo,
       trayRefilled: refilled,
       beatRecord: beatRecord,
+      clearedCellValues: clearedCellValues,
     );
 
     _evaluateEndConditions();
     _persistSnapshot();
     notifyListeners();
     return outcome;
+  }
+
+  /// Temizlenecek hücrelerin renk değerleri; kesişimler bir kez yazılır.
+  Map<int, int> _cellValuesOf(
+    Board board, {
+    required List<int> rows,
+    required List<int> columns,
+  }) {
+    if (rows.isEmpty && columns.isEmpty) return const <int, int>{};
+    final values = <int, int>{};
+    for (final r in rows) {
+      for (var c = 0; c < board.cols; c++) {
+        values[r * board.cols + c] = board.valueAt(r, c);
+      }
+    }
+    for (final c in columns) {
+      for (var r = 0; r < board.rows; r++) {
+        values[r * board.cols + c] = board.valueAt(r, c);
+      }
+    }
+    return values;
   }
 
   /// Son hamleyi geri alır. Süre geri sarılmaz — sadece board/skor.

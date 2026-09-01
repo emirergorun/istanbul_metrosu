@@ -1,58 +1,35 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/storage/local_store.dart';
-import '../../blocks/domain/scoring.dart';
-import '../../../journey/models/journey.dart';
-import '../../../session/journey_run.dart';
+import '../../../session/journey_game_controller.dart';
+import '../../../session/journey_status.dart';
 import '../domain/rail_flight_state.dart';
 
-class RailFlightController extends ChangeNotifier implements JourneyRun {
+class RailFlightController extends JourneyGameController {
   RailFlightController({
-    required Journey journey,
-    required int recordToBeat,
-    this.store,
+    required super.journey,
+    required super.recordToBeat,
+    super.store,
     Random? random,
-    this.tick = const Duration(milliseconds: 16),
-  }) : _journey = journey,
-       _recordToBeat = recordToBeat,
-       _random = random ?? Random(),
-       config = RailFlightConfig.forMinutes(journey.estimatedMinutes) {
+    super.tick = const Duration(milliseconds: 16),
+  }) : _random = random ?? Random(),
+       config = RailFlightConfig.forMinutes(journey.estimatedMinutes),
+       super(gameId: id) {
     _resetFlight();
   }
 
-  static const String gameId = 'rail_flight';
+  /// Rekor anahtarında kullanılır; değiştirilmemeli.
+  static const String id = 'rail_flight';
 
-  final LocalStore? store;
-  final Duration tick;
-  final Journey _journey;
   final Random _random;
   final RailFlightConfig config;
 
-  Timer? _timer;
-  double _routeElapsedSeconds = 0;
   double _trainY = 0.5;
   double _velocity = 0;
-  int _score = 0;
   int _gatesPassed = 0;
-  int _stationsPassed = 0;
-  int _recordToBeat;
-  bool _recordBeaten = false;
-  bool _isNewBest = false;
-  bool _scoreSaved = false;
-  bool _passedGateSinceLastStation = false;
-  GameStatus _status = GameStatus.ready;
   List<RailObstacle> _obstacles = const <RailObstacle>[];
   double _pendingSpawnGap = 0;
-
-  @override
-  int lastStationBonus = 0;
-
-  @override
-  int stationBonusPulse = 0;
 
   double get trainY => _trainY;
   double get velocity => _velocity;
@@ -74,106 +51,21 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
     notifyListeners();
   }
 
+  /// Testte uçuşu elle ilerletmek için.
   @visibleForTesting
   void debugStep(double seconds) {
-    _advance(seconds);
+    advance(seconds);
     notifyListeners();
   }
 
   @override
-  Journey get journey => _journey;
-
-  @override
-  GameStatus get status => _status;
-
-  @override
-  int get score => _score;
-
-  @override
-  int get recordToBeat => _recordToBeat;
-
-  @override
-  bool get recordBeaten => _recordBeaten;
-
-  @override
-  bool get isFirstRun => _recordToBeat <= 0;
-
-  @override
-  bool get isNewBest => _isNewBest;
-
-  @override
-  double get progress {
-    final total = _journey.estimatedSeconds;
-    if (total <= 0) return 1;
-    return (_routeElapsedSeconds / total).clamp(0.0, 1.0);
-  }
-
-  @override
-  double get recordProgress {
-    if (isFirstRun) return 0;
-    return (_score / _recordToBeat).clamp(0.0, 1.0);
-  }
-
-  @override
-  int get remainingSeconds {
-    final left = _journey.estimatedSeconds - _routeElapsedSeconds.ceil();
-    return left < 0 ? 0 : left;
-  }
-
-  @override
-  void start() {
-    if (_status == GameStatus.playing) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void pause() {
-    if (_status != GameStatus.playing) return;
-    _stopTimer();
-    _status = GameStatus.paused;
-    notifyListeners();
-  }
-
-  @override
-  void resume() {
-    if (_status != GameStatus.paused) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void restart() {
-    _stopTimer();
-    _score = 0;
+  void onRestart() {
     _gatesPassed = 0;
-    _stationsPassed = 0;
-    _routeElapsedSeconds = 0;
-    _recordBeaten = false;
-    _isNewBest = false;
-    _scoreSaved = false;
-    _passedGateSinceLastStation = false;
-    lastStationBonus = 0;
-    stationBonusPulse = 0;
-    _refreshRecord();
     _resetFlight();
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void abandon() {
-    _stopTimer();
-    if (_status.isFinished) return;
-    _status = GameStatus.abandoned;
-    notifyListeners();
   }
 
   void flap() {
-    if (_status != GameStatus.playing) return;
+    if (status != GameStatus.playing) return;
     _velocity = config.flapVelocity;
     notifyListeners();
   }
@@ -203,23 +95,8 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
     return config.spawnDistance * factor;
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(tick, (_) {
-      _advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
-      notifyListeners();
-    });
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  void _advance(double dt) {
-    if (_status != GameStatus.playing) return;
-
-    _routeElapsedSeconds += dt;
+  @override
+  void onTick(double dt) {
     _velocity += config.gravity * dt;
     _trainY += _velocity * dt;
 
@@ -229,15 +106,8 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
     ];
     _scorePassedGates();
     _trimAndSpawnObstacles();
-    _awardStationBonusIfPassed();
 
-    if (_isColliding()) {
-      _finish(GameStatus.gameOver);
-      return;
-    }
-    if (remainingSeconds <= 0) {
-      _finish(GameStatus.arrived);
-    }
+    if (_isColliding()) endGame();
   }
 
   void _scorePassedGates() {
@@ -246,9 +116,8 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
       if (!obstacle.passed &&
           obstacle.x + railFlightObstacleWidth < railFlightTrainX) {
         _gatesPassed++;
-        _score += 1;
-        _passedGateSinceLastStation = true;
-        _checkRecord();
+        addScore(1);
+        markStationProgress();
         updated.add(obstacle.copyWith(passed: true));
       } else {
         updated.add(obstacle);
@@ -292,66 +161,5 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
       }
     }
     return false;
-  }
-
-  void _awardStationBonusIfPassed() {
-    final stops = _journey.stopCount;
-    if (stops <= 0) return;
-
-    final passed = (progress * stops).floor();
-    if (passed <= _stationsPassed) return;
-
-    final earned = _passedGateSinceLastStation;
-    _passedGateSinceLastStation = false;
-    _stationsPassed = passed;
-
-    if (earned) {
-      _score += ScoreRules.stationBonus;
-      lastStationBonus = ScoreRules.stationBonus;
-      stationBonusPulse++;
-      _checkRecord();
-    }
-  }
-
-  bool _checkRecord() {
-    if (_recordBeaten || isFirstRun) return false;
-    if (_score <= _recordToBeat) return false;
-    _recordBeaten = true;
-    return true;
-  }
-
-  void _refreshRecord() {
-    final stored = store?.bestScoreForGameRoute(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-    );
-    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
-  }
-
-  void _finish(GameStatus status) {
-    _stopTimer();
-    _status = status;
-    notifyListeners();
-    unawaited(_persistScore());
-  }
-
-  Future<void> _persistScore() async {
-    final target = store;
-    if (target == null || _scoreSaved) return;
-    _isNewBest = await target.submitGameRouteScore(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-      score: _score,
-    );
-    _scoreSaved = true;
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _stopTimer();
-    super.dispose();
   }
 }

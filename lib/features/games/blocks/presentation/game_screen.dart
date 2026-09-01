@@ -10,13 +10,14 @@ import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../journey/models/journey.dart';
+import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/sprint_banner.dart';
 import '../application/game_controller.dart';
 import '../domain/board.dart';
 import '../domain/game_state.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import 'widgets/board_view.dart';
-import 'widgets/game_hud.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import 'widgets/piece_tray.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -253,6 +254,7 @@ class _GameScreenState extends State<GameScreen>
       _flash.value = BoardFlash(
         rows: outcome.clearedRows,
         columns: outcome.clearedColumns,
+        cellValues: outcome.clearedCellValues,
       );
       _flashController.forward(from: 0);
       _haptic(
@@ -326,22 +328,28 @@ class _GameScreenState extends State<GameScreen>
                 ),
                 child: Column(
                   children: <Widget>[
-                    GameHud(
-                      score: session.score,
-                      recordToBeat: session.recordToBeat,
-                      recordBeaten: session.recordBeaten,
-                      isSprint: session.isSprint,
-                      combo: session.combo,
-                      recordProgress: session.recordProgress,
+                    JourneyHud(
+                      run: controller,
                       accent: accent,
-                      canUndo: controller.canUndo,
-                      undoLeft: session.undoLeft,
-                      onUndo: () {
-                        if (controller.undo()) {
-                          _haptic(HapticFeedback.selectionClick);
-                        }
-                      },
                       onPause: controller.pause,
+                      chips: <Widget>[
+                        if (session.combo >= 2)
+                          ComboChip(combo: session.combo, accent: accent),
+                      ],
+                      actions: <Widget>[
+                        if (session.undoLeft > 0)
+                          HudButton(
+                            icon: Icons.undo_rounded,
+                            tooltip: 'Geri al (${session.undoLeft})',
+                            onPressed: controller.canUndo
+                                ? () {
+                                    if (controller.undo()) {
+                                      _haptic(HapticFeedback.selectionClick);
+                                    }
+                                  }
+                                : null,
+                          ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Expanded(child: _buildPlayArea(controller, accent)),
@@ -377,6 +385,9 @@ class _GameScreenState extends State<GameScreen>
               ),
             // Rekoru geçme bildirimi — oyunu durdurmaz.
             _TargetBanner(animation: _targetBanner, accent: accent),
+
+            // Sprint başladığında bir kez geçer; oyunu durdurmaz.
+            SprintBanner(pulse: controller.sprintPulse),
 
             // Varış: oyunun finali. Tren gelir, kapılar açılır, sonuç çıkar.
             if (session.status == GameStatus.arrived)

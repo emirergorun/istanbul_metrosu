@@ -42,6 +42,15 @@ abstract class JourneyRun implements Listenable {
 
   int get remainingSeconds;
 
+  /// Yolculuğun son diliminde miyiz? Puanlar iki katı.
+  ///
+  /// Yalnızca yeterince uzun yolculuklarda açılır; iki duraklık bir
+  /// yolculukta "son durak sprinti" diye bir şey yok.
+  bool get isSprint;
+
+  /// Sprint **bu anda** başladıysa artan sayaç. UI bir kez animasyon gösterir.
+  int get sprintPulse;
+
   /// Kazanılan son durak bonusu ve onu tetikleyen sayaç.
   ///
   /// Sayaç her bonusta artar; kabuk değişimi görüp kısa bir bildirim gösterir.

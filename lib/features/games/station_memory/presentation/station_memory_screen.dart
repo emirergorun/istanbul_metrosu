@@ -8,11 +8,12 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import '../../../session/widgets/result_overlay.dart';
@@ -38,7 +39,6 @@ class _StationMemoryScreenState extends State<StationMemoryScreen>
   int _seenLineLevel = 1;
   Timer? _bannerTimer;
   String? _bannerText;
-  final FocusNode _focusNode = FocusNode(debugLabel: 'StationMemoryControls');
 
   late final AnimationController _bannerAnimation = AnimationController(
     vsync: this,
@@ -68,7 +68,7 @@ class _StationMemoryScreenState extends State<StationMemoryScreen>
       store: scope.store,
       stationNames: stations,
       recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: StationMemoryController.gameId,
+        gameId: StationMemoryController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
@@ -137,7 +137,6 @@ class _StationMemoryScreenState extends State<StationMemoryScreen>
     _controller?.dispose();
     _bannerTimer?.cancel();
     _bannerAnimation.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
@@ -164,13 +163,6 @@ class _StationMemoryScreenState extends State<StationMemoryScreen>
     _sound(accepted ? GameSound.place : GameSound.invalid);
   }
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
-    if (event.logicalKey == LogicalKeyboardKey.space) {
-      _controller?.debugFinishShowing();
-    }
-  }
-
   void _exitToHome() {
     _controller?.abandon();
     Navigator.of(context).pop();
@@ -194,77 +186,74 @@ class _StationMemoryScreenState extends State<StationMemoryScreen>
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) _controller?.abandon();
       },
-      child: KeyboardListener(
-        focusNode: _focusNode,
-        autofocus: true,
-        onKeyEvent: _handleKeyEvent,
-        child: Scaffold(
-          body: Stack(
-            children: <Widget>[
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      _MemoryHud(
+      child: Scaffold(
+        body: Stack(
+          children: <Widget>[
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    _MemoryHud(
+                      controller: controller,
+                      accent: accent,
+                      onPause: controller.pause,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Expanded(
+                      child: _MemoryPlayArea(
                         controller: controller,
                         accent: accent,
-                        onPause: controller.pause,
+                        onChoose: _choose,
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      Expanded(
-                        child: _MemoryPlayArea(
-                          controller: controller,
-                          accent: accent,
-                          onChoose: _choose,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      JourneyProgressBar(
-                        lineId: journey.lineId,
-                        originName: journey.origin.name,
-                        destinationName: journey.destination.name,
-                        progress: controller.progress,
-                        remainingSeconds: controller.remainingSeconds,
-                        nextStopName: _nextStopName(controller),
-                        accent: accent,
-                        isMoving: controller.status == GameStatus.playing,
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    JourneyProgressBar(
+                      lineId: journey.lineId,
+                      originName: journey.origin.name,
+                      destinationName: journey.destination.name,
+                      progress: controller.progress,
+                      remainingSeconds: controller.remainingSeconds,
+                      nextStopName: _nextStopName(controller),
+                      accent: accent,
+                      isMoving: controller.status == GameStatus.playing,
+                    ),
+                  ],
                 ),
               ),
-              _Banner(
-                animation: _bannerAnimation,
-                text: _bannerText,
+            ),
+            _Banner(
+              animation: _bannerAnimation,
+              text: _bannerText,
+              accent: accent,
+            ),
+            if (controller.status == GameStatus.paused)
+              PauseOverlay(
                 accent: accent,
+                score: controller.score,
+                remainingSeconds: controller.remainingSeconds,
+                onResume: controller.resume,
+                onRestart: controller.restart,
+                onSettings: () => AppRoutes.openSettings(context),
+                onExit: _exitToHome,
               ),
-              if (controller.status == GameStatus.paused)
-                PauseOverlay(
-                  accent: accent,
-                  score: controller.score,
-                  remainingSeconds: controller.remainingSeconds,
-                  onResume: controller.resume,
-                  onRestart: controller.restart,
-                  onSettings: () => AppRoutes.openSettings(context),
-                  onExit: _exitToHome,
-                ),
-              if (controller.status == GameStatus.arrived)
-                ArrivalSequence(
-                  accent: accent,
-                  lineId: journey.lineId,
-                  stationName: journey.destination.name,
-                  child: _buildResult(controller, accent, showBackdrop: false),
-                )
-              else if (controller.status == GameStatus.gameOver)
-                _buildResult(controller, accent),
-            ],
-          ),
+            if (controller.status == GameStatus.arrived)
+              ArrivalSequence(
+                accent: accent,
+                lineId: journey.lineId,
+                stationName: journey.destination.name,
+                child: _buildResult(controller, accent, showBackdrop: false),
+              )
+            else if (controller.status == GameStatus.gameOver)
+              _buildResult(controller, accent),
+            // Sprint başladığında bir kez geçer; oyunu durdurmaz.
+            SprintBanner(pulse: controller.sprintPulse),
+          ],
         ),
       ),
     );
@@ -327,36 +316,24 @@ class _MemoryHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _HudBox(
-            label: 'Skor',
-            value: Formatters.score(controller.score),
-            accent: accent,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: _HudBox(
-            label: 'Hafıza',
-            value: '${controller.lineLabel} · ${controller.successes}',
-            accent: _memoryLineColor(controller.lineLevel),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        IconButton.filledTonal(
-          onPressed: onPause,
-          icon: const Icon(Icons.pause_rounded),
-          tooltip: 'Duraklat',
+    return JourneyHud(
+      run: controller,
+      accent: accent,
+      onPause: onPause,
+      chips: <Widget>[
+        _HudChip(
+          label: 'Hafıza',
+          value: '${controller.lineLabel} · ${controller.successes}',
+          accent: _memoryLineColor(controller.lineLevel),
         ),
       ],
     );
   }
 }
 
-class _HudBox extends StatelessWidget {
-  const _HudBox({
+/// Oyuna özgü küçük gösterge; ortak HUD'un yanında durur.
+class _HudChip extends StatelessWidget {
+  const _HudChip({
     required this.label,
     required this.value,
     required this.accent,
@@ -369,37 +346,32 @@ class _HudBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        color: accent.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accent.withValues(alpha: 0.6)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
               letterSpacing: 0.8,
-              color: AppColors.textMuted,
+              color: accent,
             ),
           ),
-          const SizedBox(height: 2),
           Text(
             value,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: accent,
             ),
           ),
         ],

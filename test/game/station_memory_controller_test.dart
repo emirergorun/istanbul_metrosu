@@ -32,6 +32,69 @@ StationMemoryController controllerFor({int seed = 1}) {
 }
 
 void main() {
+  group('ezberleme süresi', () {
+    test('dizi uzadıkça gösterim süresi de uzar', () {
+      // Regresyon: süre sabit 1400 ms'ydi. Dizi 3 duraktan 7'ye çıkarken
+      // ilk turda oyuncu bekliyor, son turlarda yedi durağı okumaya vakit
+      // bulamıyordu.
+      final controller = StationMemoryController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        stationNames: const <String>[
+          'Taksim',
+          'Osmanbey',
+          'Şişli-Mecidiyeköy',
+          'Gayrettepe',
+          'Levent',
+          '4. Levent',
+          'Sanayi',
+        ],
+        random: Random(3),
+      )..start();
+      addTearDown(controller.dispose);
+
+      final ilkUzunluk = controller.round.sequence.length;
+      final ilkSure = controller.currentShowDuration;
+
+      // Turları doğru bilerek dizinin uzamasını sağla.
+      for (var i = 0; i < 6; i++) {
+        controller.debugFinishShowing();
+        for (final station in List<String>.of(controller.round.sequence)) {
+          expect(controller.choose(station), isTrue);
+        }
+      }
+
+      expect(
+        controller.round.sequence.length,
+        greaterThan(ilkUzunluk),
+        reason: 'dizi uzamadı, test anlamsız',
+      );
+      expect(controller.currentShowDuration, greaterThan(ilkSure));
+    });
+
+    test('durak başına süre sabit kalır', () {
+      final controller = StationMemoryController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        stationNames: const <String>[
+          'Taksim',
+          'Osmanbey',
+          'Şişli-Mecidiyeköy',
+          'Gayrettepe',
+        ],
+        random: Random(1),
+      )..start();
+      addTearDown(controller.dispose);
+
+      final n = controller.round.sequence.length;
+      expect(
+        controller.currentShowDuration,
+        StationMemoryController.showBase +
+            StationMemoryController.showPerStation * n,
+      );
+    });
+  });
+
   group('durak hafıza', () {
     test('gösterimden cevap moduna geçer', () {
       final controller = controllerFor();

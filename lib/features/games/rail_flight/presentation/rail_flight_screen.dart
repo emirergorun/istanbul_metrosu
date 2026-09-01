@@ -8,11 +8,12 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import '../../../session/widgets/result_overlay.dart';
@@ -62,7 +63,7 @@ class _RailFlightScreenState extends State<RailFlightScreen>
       journey: widget.journey,
       store: scope.store,
       recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: RailFlightController.gameId,
+        gameId: RailFlightController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
@@ -257,6 +258,8 @@ class _RailFlightScreenState extends State<RailFlightScreen>
                 )
               else if (controller.status == GameStatus.gameOver)
                 _buildResult(controller, accent),
+              // Sprint başladığında bir kez geçer; oyunu durdurmaz.
+              SprintBanner(pulse: controller.sprintPulse),
             ],
           ),
         ),
@@ -321,36 +324,24 @@ class _FlightHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: _HudBox(
-            label: 'Skor',
-            value: Formatters.score(controller.score),
-            accent: accent,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: _HudBox(
-            label: 'Tren',
-            value: '${controller.lineLabel} · ${controller.gatesPassed}',
-            accent: _railFlightLineColor(controller.lineLevel),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        IconButton.filledTonal(
-          onPressed: onPause,
-          icon: const Icon(Icons.pause_rounded),
-          tooltip: 'Duraklat',
+    return JourneyHud(
+      run: controller,
+      accent: accent,
+      onPause: onPause,
+      chips: <Widget>[
+        _HudChip(
+          label: 'Tren',
+          value: '${controller.lineLabel} · ${controller.gatesPassed}',
+          accent: _railFlightLineColor(controller.lineLevel),
         ),
       ],
     );
   }
 }
 
-class _HudBox extends StatelessWidget {
-  const _HudBox({
+/// Oyuna özgü küçük gösterge; ortak HUD'un yanında durur.
+class _HudChip extends StatelessWidget {
+  const _HudChip({
     required this.label,
     required this.value,
     required this.accent,
@@ -363,37 +354,32 @@ class _HudBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        color: accent.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accent.withValues(alpha: 0.6)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
               letterSpacing: 0.8,
-              color: AppColors.textMuted,
+              color: accent,
             ),
           ),
-          const SizedBox(height: 2),
           Text(
             value,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: accent,
             ),
           ),
         ],

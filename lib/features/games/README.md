@@ -5,14 +5,21 @@ Her oyun kendi klasöründe yaşar ve **başka bir oyunun dosyasına dokunmaz.**
 ```
 features/
   session/          ← her oyunun paylaştığı yolculuk katmanı
-    journey_status.dart   GameStatus (ready/playing/arrived/gameOver…)
-    journey_run.dart      JourneyRun sözleşmesi
-    widgets/              varış sahnesi, duraklatma, sonuç paneli,
-                          ilerleme çubuğu — hepsi oyundan bağımsız
+    journey_status.dart          GameStatus (ready/playing/arrived/gameOver…)
+    journey_run.dart             JourneyRun sözleşmesi
+    journey_game_controller.dart YOLCULUK MOTORU: sayaç, varış, durak
+                                 bonusu, rekor takibi ve kaydı
+    widgets/                     varış sahnesi, duraklatma, sonuç paneli,
+                                 ilerleme çubuğu — hepsi oyundan bağımsız
   games/
     catalog/        oyun listesi + seçim ekranı
-    blocks/         1. oyun: Blok Metro
-    game2/          2. oyun buraya
+    blocks/         Blok Metro
+    metro_merge/    Hat Birleştir
+    rail_flight/    Ray Uçuşu
+    merge_drop/     Hat Düşür
+    station_memory/ Durak Hafıza
+    lane_runner/    Ray Değiştir
+    game2/          yeni oyun buraya
 ```
 
 ## Yeni oyun eklemek
@@ -34,9 +41,26 @@ static const MiniGame transfer = MiniGame(
 );
 ```
 
-**3. Controller'ında `JourneyRun`'ı uygula.** Sözleşme
-`session/journey_run.dart` içinde: skor, durum, ilerleme, rekor ve
-başlat/duraklat/devam/yeniden-başlat.
+**3. Controller'ını `JourneyGameController`'dan türet.** Sayaç, varış
+tespiti, durak bonusu, rekor takibi ve kaydı hazır gelir. Sen yalnızca
+kancaları doldurursun:
+
+| Kanca | Ne zaman |
+|---|---|
+| `onTick(dt)` | her karede kendi güncellemen (gerçek zamanlı oyunlar) |
+| `onRestart()` | "tekrar oyna"da kendi durumunu sıfırla |
+| `onPause` / `onResume` / `onAbandon` / `onFinish` | kendi sayaçların varsa |
+
+Ve şu araçları kullanırsın:
+
+| Araç | Ne yapar |
+|---|---|
+| `addScore(puan)` | puan ekler, rekor geçildiyse işaretler |
+| `markStationProgress()` | "bu duraktan beri kayda değer bir şey yaptım" |
+| `endGame()` | oyun kendi kuralıyla bitti (çarpıştı, hamle kalmadı…) |
+
+`static const String id` tanımla — rekor anahtarında kullanılır, sonradan
+değiştirme. (`gameId` adı motorun alanı olduğu için kullanılamaz.)
 
 **4. Ortak parçaları kullan.** `session/widgets/` altındakiler oyundan
 bağımsızdır ve doğrudan kullanılabilir:
@@ -63,7 +87,12 @@ bunu kontrol etmesi gerekmez, `AudioService` zaten uyar.
 
 ## Bilinen sınır
 
-`blocks/` bugün yolculuk motorunu (sayaç, varış tespiti, durak bonusu, rekor
-kaydı) kendi `GameController`'ı içinde taşıyor. İkinci oyun yazılırken bu
-motor `session/` altına çıkarılmalı ki iki oyun aynı kodu paylaşsın —
-soyutlamayı ikinci somut örnek ortaya çıkmadan sabitlemek erken olurdu.
+**`blocks/` hâlâ kendi yolculuk motorunu taşıyor.** Diğer beş oyun
+`JourneyGameController`'a taşındı; Blok Metro taşınmadı çünkü skoru, süresi
+ve durumu immutable bir `GameSession` içinde tutuyor ve bu yapı iki şeye daha
+hizmet ediyor: **geri alma** (tek satırda anlık görüntü) ve **yarım kalan
+oyun kaydı** (`GameSnapshot`). Motora taşımak kayıt biçimini de değiştirmek
+demek; ayrı bir iş olarak ele alınmalı.
+
+Pratik sonucu: Blok Metro rekorunu eski (oyundan bağımsız) anahtarla yazıyor,
+diğerleri oyun bazlı anahtarla. Ayarlar ekranı ikisini de doğru gösterir.

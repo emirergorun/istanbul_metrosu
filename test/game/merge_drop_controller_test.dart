@@ -117,7 +117,12 @@ void main() {
       final bottomY = 1 - bottomRadius;
       controller.debugSetBalls(<DropBall>[
         DropBall(id: 1, level: 3, x: 0.5, y: bottomY),
-        DropBall(id: 2, level: 2, x: 0.5, y: bottomY - bottomRadius - topRadius),
+        DropBall(
+          id: 2,
+          level: 2,
+          x: 0.5,
+          y: bottomY - bottomRadius - topRadius,
+        ),
       ]);
 
       for (var i = 0; i < 40; i++) {
@@ -157,35 +162,35 @@ void main() {
       expect(fallen.y, lessThan(resting.y));
     });
 
+    test('yeni bırakılan top tehlike çizgisinin üstünde doğsa da anında '
+        'kaybettirmez', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+
+      final accepted = controller.drop();
+      controller.debugStep(0.05);
+
+      expect(accepted, isTrue);
+      expect(controller.status, isNot(GameStatus.gameOver));
+    });
+
     test(
-      'yeni bırakılan top tehlike çizgisinin üstünde doğsa da anında '
-      'kaybettirmez',
+      'oturmuş bir top tehlike çizgisinde kalırsa kısa sürede kaybettirir',
       () {
         final controller = controllerFor();
         addTearDown(controller.dispose);
+        controller.debugSetBalls(const <DropBall>[
+          DropBall(id: 1, level: 1, x: 0.5, y: 0.05, landed: true),
+        ]);
 
-        final accepted = controller.drop();
-        controller.debugStep(0.05);
+        for (var i = 0; i < 30; i++) {
+          controller.debugStep(0.016);
+          if (controller.status == GameStatus.gameOver) break;
+        }
 
-        expect(accepted, isTrue);
-        expect(controller.status, isNot(GameStatus.gameOver));
+        expect(controller.status, GameStatus.gameOver);
       },
     );
-
-    test('oturmuş bir top tehlike çizgisinde kalırsa kısa sürede kaybettirir', () {
-      final controller = controllerFor();
-      addTearDown(controller.dispose);
-      controller.debugSetBalls(const <DropBall>[
-        DropBall(id: 1, level: 1, x: 0.5, y: 0.05, landed: true),
-      ]);
-
-      for (var i = 0; i < 30; i++) {
-        controller.debugStep(0.016);
-        if (controller.status == GameStatus.gameOver) break;
-      }
-
-      expect(controller.status, GameStatus.gameOver);
-    });
 
     test('çarpışan toplar yapışmaz, hafifçe sekip ayrılır', () {
       final controller = controllerFor();

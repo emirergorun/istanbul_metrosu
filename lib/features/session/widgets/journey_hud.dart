@@ -1,41 +1,49 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../app/theme.dart';
-import '../../../../../core/utils/formatters.dart';
+import '../../../app/theme.dart';
+import '../../../core/utils/formatters.dart';
+import '../journey_run.dart';
 
-/// Oyun ekranının üst bilgi alanı: skor, hedef, combo, pause.
-class GameHud extends StatelessWidget {
-  const GameHud({
+/// Oyun ekranlarının üst bilgi alanı — **her oyun için ortak**.
+///
+/// Skor, **rota rekoru** ve son durak sprinti burada; hangi oyun oynanırsa
+/// oynansın aynı yerde ve aynı biçimde görünür. Oyuna özgü göstergeler
+/// [chips], oyuna özgü butonlar [actions] ile eklenir.
+///
+/// Rekorun her oyunda görünmesi şart: oyunun amacı o rotadaki kendi rekorunu
+/// geçmek, ama rekor ekranda değilse oyuncu ne kadar yaklaştığını bilemez.
+class JourneyHud extends StatelessWidget {
+  const JourneyHud({
     super.key,
-    required this.score,
-    required this.recordToBeat,
-    required this.recordBeaten,
-    required this.isSprint,
-    required this.combo,
-    required this.recordProgress,
+    required this.run,
     required this.accent,
     required this.onPause,
-    required this.onUndo,
-    required this.canUndo,
-    required this.undoLeft,
+    this.chips = const <Widget>[],
+    this.actions = const <Widget>[],
   });
 
-  final int score;
-
-  /// Geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
-  final int recordToBeat;
-  final bool recordBeaten;
-
-  /// Yolculuğun son dilimi — puanlar iki katı.
-  final bool isSprint;
-
-  final int combo;
-  final double recordProgress;
+  final JourneyRun run;
   final Color accent;
   final VoidCallback onPause;
-  final VoidCallback onUndo;
-  final bool canUndo;
-  final int undoLeft;
+
+  /// Oyuna özgü rozetler (combo, hat seviyesi, sıradaki parça…).
+  final List<Widget> chips;
+
+  /// Oyuna özgü butonlar (geri al…). Duraklatma zaten eklenir.
+  final List<Widget> actions;
+
+  String get _recordLine => run.isFirstRun
+      ? 'SKOR · İLK YOLCULUK'
+      : run.recordBeaten
+      ? 'SKOR · REKOR GEÇİLDİ'
+      : 'SKOR · REKOR ${Formatters.score(run.recordToBeat)}';
+
+  String get _semanticLabel => run.isFirstRun
+      ? 'Skor ${Formatters.score(run.score)}, bu rotada ilk yolculuk'
+      : run.recordBeaten
+      ? 'Skor ${Formatters.score(run.score)}, rekor geçildi'
+      : 'Skor ${Formatters.score(run.score)}, '
+            'rekor ${Formatters.score(run.recordToBeat)}';
 
   @override
   Widget build(BuildContext context) {
@@ -43,38 +51,30 @@ class GameHud extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Expanded(
               child: Semantics(
                 liveRegion: true,
-                label: recordToBeat <= 0
-                    ? 'Skor ${Formatters.score(score)}, bu rotada ilk yolculuk'
-                    : recordBeaten
-                    ? 'Skor ${Formatters.score(score)}, rekor geçildi'
-                    : 'Skor ${Formatters.score(score)}, '
-                          'rekor ${Formatters.score(recordToBeat)}',
+                label: _semanticLabel,
                 child: ExcludeSemantics(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        recordToBeat <= 0
-                            ? 'SKOR · İLK YOLCULUK'
-                            : recordBeaten
-                            ? 'SKOR · REKOR GEÇİLDİ'
-                            : 'SKOR · REKOR ${Formatters.score(recordToBeat)}',
+                        _recordLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           letterSpacing: 1.2,
                           fontWeight: FontWeight.w700,
-                          color: recordBeaten ? accent : AppColors.textMuted,
+                          color: run.recordBeaten
+                              ? accent
+                              : AppColors.textMuted,
                         ),
                       ),
                       Text(
-                        Formatters.score(score),
+                        Formatters.score(run.score),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -90,21 +90,19 @@ class GameHud extends StatelessWidget {
                 ),
               ),
             ),
-            if (isSprint) ...<Widget>[
-              _SprintChip(accent: accent),
+            if (run.isSprint) ...<Widget>[
+              const SprintChip(),
               const SizedBox(width: AppSpacing.sm),
             ],
-            if (combo >= 2) _ComboChip(combo: combo, accent: accent),
-            if (undoLeft > 0) ...<Widget>[
+            for (final chip in chips) ...<Widget>[
+              chip,
               const SizedBox(width: AppSpacing.sm),
-              _HudButton(
-                icon: Icons.undo_rounded,
-                tooltip: 'Geri al ($undoLeft)',
-                onPressed: canUndo ? onUndo : null,
-              ),
             ],
-            const SizedBox(width: AppSpacing.sm),
-            _HudButton(
+            for (final action in actions) ...<Widget>[
+              action,
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            HudButton(
               icon: Icons.pause_rounded,
               tooltip: 'Duraklat',
               onPressed: onPause,
@@ -116,11 +114,11 @@ class GameHud extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
-            value: recordProgress.clamp(0.0, 1.0),
+            value: run.recordProgress.clamp(0.0, 1.0),
             minHeight: 6,
             backgroundColor: AppColors.surfaceHigh,
             valueColor: AlwaysStoppedAnimation<Color>(
-              recordBeaten ? AppColors.success : accent,
+              run.recordBeaten ? AppColors.success : accent,
             ),
           ),
         ),
@@ -129,11 +127,9 @@ class GameHud extends StatelessWidget {
   }
 }
 
-/// Son durak sprinti: puanlar iki katı.
-class _SprintChip extends StatelessWidget {
-  const _SprintChip({required this.accent});
-
-  final Color accent;
+/// Son durak sprinti göstergesi: sprint sürdüğü sürece üstte kalır.
+class SprintChip extends StatelessWidget {
+  const SprintChip({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +159,9 @@ class _SprintChip extends StatelessWidget {
   }
 }
 
-class _ComboChip extends StatelessWidget {
-  const _ComboChip({required this.combo, required this.accent});
+/// Ardışık temizlik göstergesi. Oyunlar `chips` ile ekler.
+class ComboChip extends StatelessWidget {
+  const ComboChip({super.key, required this.combo, required this.accent});
 
   final int combo;
   final Color accent;
@@ -201,8 +198,10 @@ class _ComboChip extends StatelessWidget {
   }
 }
 
-class _HudButton extends StatelessWidget {
-  const _HudButton({
+/// HUD'daki kare ikon butonu.
+class HudButton extends StatelessWidget {
+  const HudButton({
+    super.key,
     required this.icon,
     required this.tooltip,
     required this.onPressed,

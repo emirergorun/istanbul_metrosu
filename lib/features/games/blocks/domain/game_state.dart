@@ -114,8 +114,16 @@ class GameSession {
     return value > 1 ? 1 : value;
   }
 
+  /// Sprintin açılması için gereken en az durak sayısı.
+  ///
+  /// Kısa yolculuklarda "son durak sprinti" anlamsız: iki duraklık bir
+  /// yolculuğun son %15'i birkaç saniye sürer.
+  static const int sprintMinStops = 5;
+
   /// Yolculuğun son dilimi: puanlar iki katı.
-  bool get isSprint => progress >= ScoreRules.sprintStartsAt;
+  bool get isSprint =>
+      journey.stopCount >= sprintMinStops &&
+      progress >= ScoreRules.sprintStartsAt;
 
   bool get trayIsEmpty => tray.every((piece) => piece == null);
 

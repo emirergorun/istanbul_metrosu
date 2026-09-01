@@ -68,19 +68,19 @@ class AppRoutes {
           return MaterialPageRoute<void>(
             settings: settings,
             builder: (_) {
-              if (args.gameId == MetroMergeController.gameId) {
+              if (args.gameId == MetroMergeController.id) {
                 return MetroMergeScreen(journey: args.journey);
               }
-              if (args.gameId == RailFlightController.gameId) {
+              if (args.gameId == RailFlightController.id) {
                 return RailFlightScreen(journey: args.journey);
               }
-              if (args.gameId == MergeDropController.gameId) {
+              if (args.gameId == MergeDropController.id) {
                 return MergeDropScreen(journey: args.journey);
               }
-              if (args.gameId == StationMemoryController.gameId) {
+              if (args.gameId == StationMemoryController.id) {
                 return StationMemoryScreen(journey: args.journey);
               }
-              if (args.gameId == LaneRunnerController.gameId) {
+              if (args.gameId == LaneRunnerController.id) {
                 return LaneRunnerScreen(journey: args.journey);
               }
               return GameScreen(

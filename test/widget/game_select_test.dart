@@ -124,7 +124,8 @@ void main() {
     await tester.tap(find.text(MiniGames.metroMerge.name));
     await tester.pumpAndSettle();
 
-    expect(find.text('SKOR'), findsOneWidget);
+    // Rekor artık her oyunun HUD'unda üstte.
+    expect(find.text('SKOR · İLK YOLCULUK'), findsOneWidget);
     expect(find.text('Hat Birleştir'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());

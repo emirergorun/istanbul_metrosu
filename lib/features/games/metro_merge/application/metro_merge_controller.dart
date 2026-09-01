@@ -1,58 +1,35 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/storage/local_store.dart';
-import '../../blocks/domain/scoring.dart';
-import '../../../journey/models/journey.dart';
-import '../../../session/journey_run.dart';
+import '../../../session/journey_game_controller.dart';
+import '../../../session/journey_status.dart';
 import '../domain/metro_tile.dart';
 
-class MetroMergeController extends ChangeNotifier implements JourneyRun {
+class MetroMergeController extends JourneyGameController {
   MetroMergeController({
-    required Journey journey,
-    required int recordToBeat,
-    this.store,
+    required super.journey,
+    required super.recordToBeat,
+    super.store,
     Random? random,
-    this.tick = AppConstants.playTick,
-  }) : _journey = journey,
-       _recordToBeat = recordToBeat,
-       _random = random ?? Random(),
-       config = MetroMergeConfig.fromDifficulty(journey.difficulty) {
+    super.tick = AppConstants.playTick,
+  }) : _random = random ?? Random(),
+       config = MetroMergeConfig.fromDifficulty(journey.difficulty),
+       super(gameId: id) {
     _resetBoard();
   }
 
-  static const String gameId = 'metro_merge';
+  /// Rekor anahtarında kullanılır; değiştirilmemeli.
+  static const String id = 'metro_merge';
 
-  final LocalStore? store;
-  final Duration tick;
   final Random _random;
-  final Journey _journey;
-
   final MetroMergeConfig config;
   late List<List<MetroTile?>> _grid;
-  Timer? _timer;
 
-  int _score = 0;
-  int _elapsedSeconds = 0;
-  int _recordToBeat;
-  bool _recordBeaten = false;
-  bool _isNewBest = false;
-  bool _scoreSaved = false;
-  int _stationsPassed = 0;
-  bool _progressSinceLastStation = false;
   int _totalMerges = 0;
   int _totalClearedLines = 0;
   int _terminalClears = 0;
-  GameStatus _status = GameStatus.ready;
-
-  @override
-  int lastStationBonus = 0;
-
-  @override
-  int stationBonusPulse = 0;
 
   List<List<MetroTile?>> get grid => _grid;
   int get totalMerges => _totalMerges;
@@ -69,104 +46,18 @@ class MetroMergeController extends ChangeNotifier implements JourneyRun {
     notifyListeners();
   }
 
-  @override
-  Journey get journey => _journey;
+  // --- Yolculuk motorunun kancaları ---
 
   @override
-  GameStatus get status => _status;
-
-  @override
-  int get score => _score;
-
-  @override
-  int get recordToBeat => _recordToBeat;
-
-  @override
-  bool get recordBeaten => _recordBeaten;
-
-  @override
-  bool get isFirstRun => _recordToBeat <= 0;
-
-  @override
-  bool get isNewBest => _isNewBest;
-
-  @override
-  double get progress {
-    final total = _journey.estimatedSeconds;
-    if (total <= 0) return 1;
-    return (_elapsedSeconds / total).clamp(0.0, 1.0);
-  }
-
-  @override
-  double get recordProgress {
-    if (isFirstRun) return 0;
-    return (_score / _recordToBeat).clamp(0.0, 1.0);
-  }
-
-  @override
-  int get remainingSeconds {
-    final left = _journey.estimatedSeconds - _elapsedSeconds;
-    return left < 0 ? 0 : left;
-  }
-
-  bool get isSprint => progress >= ScoreRules.sprintStartsAt;
-
-  @override
-  void start() {
-    if (_status == GameStatus.playing) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void pause() {
-    if (_status != GameStatus.playing) return;
-    _stopTimer();
-    _status = GameStatus.paused;
-    notifyListeners();
-  }
-
-  @override
-  void resume() {
-    if (_status != GameStatus.paused) return;
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void restart() {
-    _stopTimer();
-    _score = 0;
-    _elapsedSeconds = 0;
-    _recordBeaten = false;
-    _isNewBest = false;
-    _scoreSaved = false;
-    _stationsPassed = 0;
-    _progressSinceLastStation = false;
+  void onRestart() {
     _totalMerges = 0;
     _totalClearedLines = 0;
     _terminalClears = 0;
-    lastStationBonus = 0;
-    stationBonusPulse = 0;
-    _refreshRecord();
     _resetBoard();
-    _status = GameStatus.playing;
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void abandon() {
-    _stopTimer();
-    if (_status.isFinished) return;
-    _status = GameStatus.abandoned;
-    notifyListeners();
   }
 
   MetroMoveOutcome move(MetroMoveDirection direction) {
-    if (_status != GameStatus.playing) {
+    if (status != GameStatus.playing) {
       return const MetroMoveOutcome.rejected();
     }
 
@@ -225,15 +116,13 @@ class MetroMergeController extends ChangeNotifier implements JourneyRun {
     _spawnTile();
     final cleared = _clearFullLines();
     gained += cleared.cellCount * 15;
-    if (isSprint) gained *= ScoreRules.sprintMultiplier;
 
-    _score += gained;
+    final beatRecord = addScore(gained);
     _totalMerges += merges;
     _totalClearedLines += cleared.rows.length + cleared.columns.length;
     _terminalClears += terminalClears;
-    if (merges > 0 || cleared.cellCount > 0) _progressSinceLastStation = true;
+    if (merges > 0 || cleared.cellCount > 0) markStationProgress();
 
-    final beatRecord = _checkRecord();
     _evaluateEndConditions();
     notifyListeners();
 
@@ -322,66 +211,10 @@ class MetroMergeController extends ChangeNotifier implements JourneyRun {
     return _ClearResult(rows: rows, columns: columns, cellCount: cellCount);
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(tick, (_) => _onTick());
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  void _onTick() {
-    if (_status != GameStatus.playing) return;
-    _elapsedSeconds++;
-    _awardStationBonusIfPassed();
-    if (remainingSeconds <= 0) {
-      _finish(GameStatus.arrived);
-      return;
-    }
-    notifyListeners();
-  }
-
-  void _awardStationBonusIfPassed() {
-    final stops = _journey.stopCount;
-    if (stops <= 0) return;
-
-    final passed = (progress * stops).floor();
-    if (passed <= _stationsPassed) return;
-
-    final earned = _progressSinceLastStation;
-    _progressSinceLastStation = false;
-    _stationsPassed = passed;
-
-    if (earned) {
-      _score += ScoreRules.stationBonus;
-      lastStationBonus = ScoreRules.stationBonus;
-      stationBonusPulse++;
-      _checkRecord();
-    }
-  }
-
-  bool _checkRecord() {
-    if (_recordBeaten || isFirstRun) return false;
-    if (_score <= _recordToBeat) return false;
-    _recordBeaten = true;
-    return true;
-  }
-
-  void _refreshRecord() {
-    final stored = store?.bestScoreForGameRoute(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-    );
-    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
-  }
-
   void _evaluateEndConditions() {
     if (_hasEmptyCell()) return;
     if (_hasAnyMerge()) return;
-    _finish(GameStatus.gameOver);
+    endGame();
   }
 
   bool _hasEmptyCell() {
@@ -408,32 +241,6 @@ class MetroMergeController extends ChangeNotifier implements JourneyRun {
       }
     }
     return false;
-  }
-
-  void _finish(GameStatus status) {
-    _stopTimer();
-    _status = status;
-    notifyListeners();
-    unawaited(_persistScore());
-  }
-
-  Future<void> _persistScore() async {
-    final target = store;
-    if (target == null || _scoreSaved) return;
-    _isNewBest = await target.submitGameRouteScore(
-      gameId: gameId,
-      originId: _journey.origin.id,
-      destinationId: _journey.destination.id,
-      score: _score,
-    );
-    _scoreSaved = true;
-    notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _stopTimer();
-    super.dispose();
   }
 }
 

@@ -91,21 +91,24 @@ void main() {
       expect(controller.lineLevel, 3);
     });
 
-    test('45 geçişten sonra M11 trenine dönüşür (son hat, artık ilerlemez)', () {
-      final controller = controllerFor();
-      addTearDown(controller.dispose);
-      controller.debugSetFlight(
-        trainY: 0.5,
-        velocity: 0,
-        obstacles: passedObstacles(45),
-      );
+    test(
+      '45 geçişten sonra M11 trenine dönüşür (son hat, artık ilerlemez)',
+      () {
+        final controller = controllerFor();
+        addTearDown(controller.dispose);
+        controller.debugSetFlight(
+          trainY: 0.5,
+          velocity: 0,
+          obstacles: passedObstacles(45),
+        );
 
-      controller.debugStep(0.01);
+        controller.debugStep(0.01);
 
-      expect(controller.gatesPassed, 45);
-      expect(controller.lineLabel, 'M11');
-      expect(controller.lineLevel, 10);
-    });
+        expect(controller.gatesPassed, 45);
+        expect(controller.lineLabel, 'M11');
+        expect(controller.lineLevel, 10);
+      },
+    );
 
     test('ray sınırına çarpmak oyunu bitirir', () {
       final controller = controllerFor();
