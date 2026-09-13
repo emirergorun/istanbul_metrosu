@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,7 +40,14 @@ Future<void> main() async {
   final audio = AudioService()
     ..enabled = store.soundEnabled
     ..musicEnabled = store.musicEnabled;
-  await audio.init();
+  // `runApp`'ı bunun bitmesini BEKLEMEDEN çağır. Web'de her ses dosyası
+  // tarayıcının otomatik oynatma kısıtlaması yüzünden ayrı ayrı 30 saniye
+  // zaman aşımına düşebiliyor (bkz. AudioService.init dokümantasyonu);
+  // altı sesin hepsi sırayla timeout olursa açılış ~3 dakika bomboş
+  // ekranda kalıyordu. `AudioService.play`/`resumeMusic` zaten `_ready`
+  // olmadan sessizce hiçbir şey yapmıyor, o yüzden arka planda yüklenmesi
+  // güvenli — kullanıcı arayüzü görmek için sesin yüklenmesini beklemesin.
+  unawaited(audio.init());
 
   runApp(MetroGameApp(store: store, audio: audio, metro: metro));
 }

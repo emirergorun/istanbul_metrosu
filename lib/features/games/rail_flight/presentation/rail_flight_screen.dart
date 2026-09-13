@@ -9,6 +9,7 @@ import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/metro_train.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
@@ -96,7 +97,12 @@ class _RailFlightScreenState extends State<RailFlightScreen>
     }
 
     _syncMusic();
-    setState(() {});
+    // Not: burada bilerek setState() çağrılmıyor. Fizik ~60 kez/sn
+    // notifyListeners() çağırıyor; tüm ekranı (Scaffold/PopScope/HUD/
+    // ilerleme çubuğu dahil) her tikte yeniden kurmak zayıf bir telefonda
+    // gerçek kare düşmesine yol açabiliyordu. Ekranın canlı kalması
+    // gereken kısmı build()'deki ListenableBuilder hallediyor; bu metodun
+    // işi yalnızca tek seferlik yan etkiler (ses, titreşim, banner).
   }
 
   void _syncMusic() {
@@ -194,70 +200,84 @@ class _RailFlightScreenState extends State<RailFlightScreen>
         autofocus: true,
         onKeyEvent: _handleKeyEvent,
         child: Scaffold(
-          body: Stack(
-            children: <Widget>[
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      _FlightHud(
-                        controller: controller,
-                        accent: accent,
-                        onPause: controller.pause,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Expanded(
-                        child: _FlightPlayArea(
+          // Yalnızca bu içerik controller'ı dinler ve her fizik tikinde
+          // yeniden kurulur; PopScope/KeyboardListener/Scaffold sarmalayıcıları
+          // hiç değişmediği için bir kez kurulup öyle kalır. Eskiden
+          // controller her tikte State.setState() tetikliyordu ve bu
+          // sarmalayıcılar da dahil tüm ağaç saniyede ~60 kez yeniden
+          // kuruluyordu — zayıf bir telefonda gerçek kare düşmesine yol
+          // açan asıl sebeplerden biri buydu.
+          body: ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) => Stack(
+              children: <Widget>[
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        _FlightHud(
                           controller: controller,
-                          onFlap: _flap,
+                          accent: accent,
+                          onPause: controller.pause,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      JourneyProgressBar(
-                        lineId: journey.lineId,
-                        originName: journey.origin.name,
-                        destinationName: journey.destination.name,
-                        progress: controller.progress,
-                        remainingSeconds: controller.remainingSeconds,
-                        nextStopName: _nextStopName(controller),
-                        accent: accent,
-                        isMoving: controller.status == GameStatus.playing,
-                      ),
-                    ],
+                        const SizedBox(height: AppSpacing.md),
+                        Expanded(
+                          child: _FlightPlayArea(
+                            controller: controller,
+                            onFlap: _flap,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        JourneyProgressBar(
+                          lineId: journey.lineId,
+                          originName: journey.origin.name,
+                          destinationName: journey.destination.name,
+                          progress: controller.progress,
+                          remainingSeconds: controller.remainingSeconds,
+                          nextStopName: _nextStopName(controller),
+                          accent: accent,
+                          isMoving: controller.status == GameStatus.playing,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _Banner(
-                animation: _bannerAnimation,
-                text: _bannerText,
-                accent: accent,
-              ),
-              if (controller.status == GameStatus.paused)
-                PauseOverlay(
+                _Banner(
+                  animation: _bannerAnimation,
+                  text: _bannerText,
                   accent: accent,
-                  score: controller.score,
-                  remainingSeconds: controller.remainingSeconds,
-                  onResume: controller.resume,
-                  onRestart: controller.restart,
-                  onSettings: () => AppRoutes.openSettings(context),
-                  onExit: _exitToHome,
                 ),
-              if (controller.status == GameStatus.arrived)
-                ArrivalSequence(
-                  accent: accent,
-                  lineId: journey.lineId,
-                  stationName: journey.destination.name,
-                  child: _buildResult(controller, accent, showBackdrop: false),
-                )
-              else if (controller.status == GameStatus.gameOver)
-                _buildResult(controller, accent),
-            ],
+                if (controller.status == GameStatus.paused)
+                  PauseOverlay(
+                    accent: accent,
+                    score: controller.score,
+                    remainingSeconds: controller.remainingSeconds,
+                    onResume: controller.resume,
+                    onRestart: controller.restart,
+                    onSettings: () => AppRoutes.openSettings(context),
+                    onExit: _exitToHome,
+                  ),
+                if (controller.status == GameStatus.arrived)
+                  ArrivalSequence(
+                    accent: accent,
+                    lineId: journey.lineId,
+                    stationName: journey.destination.name,
+                    child: _buildResult(
+                      controller,
+                      accent,
+                      showBackdrop: false,
+                    ),
+                  )
+                else if (controller.status == GameStatus.gameOver)
+                  _buildResult(controller, accent),
+              ],
+            ),
           ),
         ),
       ),
@@ -446,27 +466,175 @@ class _RailFlightPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bg = Paint()..color = AppColors.boardBackground;
-    canvas.drawRect(Offset.zero & size, bg);
-
-    _drawGrid(canvas, size);
+    final accent = _railFlightLineColor(controller.lineLevel);
+    _drawTunnelBackground(canvas, size, accent);
     _drawObstacles(canvas, size);
-    _drawTrain(canvas, size);
+    _drawTrain(canvas, size, accent);
   }
 
-  void _drawGrid(Canvas canvas, Size size) {
-    final rail = Paint()
-      ..color = AppColors.outline.withValues(alpha: 0.55)
-      ..strokeWidth = 2;
-    for (var y = size.height * 0.16; y < size.height; y += size.height * 0.16) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), rail);
+  /// Düz gri zemin yerine metro tüneli hissi veren, yalnızca basit
+  /// şekillerden kurulu bir sahne: kesit gradyanı, aktif hattın rengiyle
+  /// boyanmış tavan ışıkları ve ray tabanı, kaydıran tünel kemerleri, kenarlarda
+  /// hafif bir vinyet.
+  ///
+  /// Renk tamamen nötr (gri) bırakılmıyor — [accent] (o an geçilmekte olan
+  /// hattın rengi) tavan ışıklarına ve rayın hemen üstüne çok düşük alfa ile
+  /// karışıyor. Bu, uygulamanın kendi renk hiyerarşisiyle de tutarlı ("hat
+  /// rengi: rozet, tren, RAY, ilerleme" — bkz. AppColors dokümantasyonu) ve
+  /// tünelin jenerik/şablon değil, o an oynanan hatta ait hissetmesini
+  /// sağlıyor.
+  ///
+  /// Gerçek bir istasyon fotoğrafı bilinçli olarak kullanılmıyor — bu
+  /// oyunun tüm görselleri (bkz. README "Tasarım Dili") özgün ve basit
+  /// şekillerden kurulu; lisanssız bir fotoğraf hem bu ilkeyi bozar hem de
+  /// her karede yeniden boyanan bir bitmap, zayıf telefonlarda tam da
+  /// düzelttiğimiz akıcılık sorununu geri getirebilir.
+  void _drawTunnelBackground(Canvas canvas, Size size, Color accent) {
+    final rect = Offset.zero & size;
+    final gradient = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[
+          AppColors.brandNavyDeep,
+          Color.lerp(AppColors.boardBackground, AppColors.surfaceHigh, 0.45)!,
+          AppColors.boardBackground,
+        ],
+        stops: const <double>[0.0, 0.5, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, gradient);
+
+    _drawTunnelRibs(canvas, size);
+    _drawCeilingLights(canvas, size, accent);
+    _drawTrackGlow(canvas, size, accent);
+    _drawTrackBed(canvas, size);
+    _drawVignette(canvas, size);
+  }
+
+  /// Ekranın sol/sağ kenarlarını hafifçe koyultan basit bir vinyet — bir
+  /// bakışta "düz doldurulmuş dikdörtgen" hissini kırıp sahneye derinlik
+  /// katan ucuz bir dokunuş (blur yok, tek bir gradyanlı dikdörtgen).
+  void _drawVignette(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final vignette = Paint()
+      ..shader = LinearGradient(
+        colors: <Color>[
+          AppColors.background.withValues(alpha: 0.55),
+          Colors.transparent,
+          Colors.transparent,
+          AppColors.background.withValues(alpha: 0.55),
+        ],
+        stops: const <double>[0.0, 0.18, 0.82, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, vignette);
+  }
+
+  /// Mesafeye göre kayan (paralaks) düzenli aralıklı tünel kemerleri.
+  void _drawTunnelRibs(Canvas canvas, Size size) {
+    const period = 0.24;
+    final phase = _scrollPhase(period, speedFactor: 0.45);
+    final rib = Paint()
+      ..color = AppColors.outline.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    for (var wx = -phase; wx < 1.08; wx += period) {
+      final x = wx * size.width;
+      final bow = size.width * 0.035;
+      final path = Path()
+        ..moveTo(x, size.height * 0.05)
+        ..quadraticBezierTo(x - bow, size.height * 0.5, x, size.height * 0.95);
+      canvas.drawPath(path, rib);
     }
   }
 
+  /// Tavanda kayan lamba dizisi — sodyum buharlı tünel aydınlatmasını
+  /// anımsatan sıcak bir ton (düz beyaz yerine), üstüne çok hafif [accent]
+  /// karışımıyla o hattın ışığı gibi okunuyor.
+  void _drawCeilingLights(Canvas canvas, Size size, Color accent) {
+    const period = 0.32;
+    final phase = _scrollPhase(period, speedFactor: 0.7);
+    final warmWhite = Color.lerp(Colors.white, const Color(0xFFFFE1A8), 0.4)!;
+    final tint = Color.lerp(warmWhite, accent, 0.18)!;
+    final halo = Paint()..color = tint.withValues(alpha: 0.10);
+    final core = Paint()..color = tint.withValues(alpha: 0.62);
+    for (var wx = -phase; wx < 1.08; wx += period) {
+      final center = Offset(wx * size.width, size.height * 0.07);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: size.width * 0.11,
+          height: size.height * 0.028,
+        ),
+        halo,
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center,
+          width: size.width * 0.055,
+          height: size.height * 0.014,
+        ),
+        core,
+      );
+    }
+  }
+
+  /// Rayın hemen üstünde, [accent] renginde çok hafif bir zemin parıltısı —
+  /// tünelin o an oynanan hatta ait olduğunu hissettiren, ucuz (blur'suz)
+  /// bir gradyan dikdörtgeni.
+  void _drawTrackGlow(Canvas canvas, Size size, Color accent) {
+    final rect = Rect.fromLTWH(
+      0,
+      size.height * 0.72,
+      size.width,
+      size.height * 0.28,
+    );
+    final glow = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[
+          accent.withValues(alpha: 0.0),
+          accent.withValues(alpha: 0.14),
+        ],
+      ).createShader(rect);
+    canvas.drawRect(rect, glow);
+  }
+
+  /// Alt kenarda, obstacle'larla aynı hızda kayan ray + travers şeridi.
+  void _drawTrackBed(Canvas canvas, Size size) {
+    final y = size.height * 0.985;
+    final rail = Paint()
+      ..color = AppColors.textMuted.withValues(alpha: 0.55)
+      ..strokeWidth = 2;
+    canvas.drawLine(Offset(0, y), Offset(size.width, y), rail);
+
+    const period = 0.09;
+    final phase = _scrollPhase(period, speedFactor: 1.0);
+    final tie = Paint()
+      ..color = AppColors.textMuted.withValues(alpha: 0.4)
+      ..strokeWidth = 3;
+    for (var wx = -phase; wx < 1.05; wx += period) {
+      final x = wx * size.width;
+      canvas.drawLine(
+        Offset(x, y - size.height * 0.012),
+        Offset(x, y + size.height * 0.012),
+        tie,
+      );
+    }
+  }
+
+  /// Oyun süresine ve tünel hızına göre 0..period aralığında döngüsel bir
+  /// kaydırma fazı. `speedFactor` < 1 daha yakın/yavaş (uzak) katmanlar,
+  /// 1.0 travers gibi tam hızda ön-plan katmanları için.
+  double _scrollPhase(double period, {required double speedFactor}) {
+    final distance =
+        controller.elapsedSeconds * controller.config.speed * speedFactor;
+    return distance % period;
+  }
+
   void _drawObstacles(Canvas canvas, Size size) {
-    final obstaclePaint = Paint()..color = AppColors.surfaceHigh;
     final railPaint = Paint()
-      ..color = AppColors.textMuted.withValues(alpha: 0.7)
+      ..color = AppColors.textMuted.withValues(alpha: 0.55)
       ..strokeWidth = 3;
     for (final obstacle in controller.obstacles) {
       final x = obstacle.x * size.width;
@@ -476,16 +644,11 @@ class _RailFlightPainter extends CustomPainter {
       final gapBottom =
           (obstacle.gapCenter + obstacle.gapHeight / 2) * size.height;
 
-      final top = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, 0, width, gapTop),
-        const Radius.circular(10),
-      );
-      final bottom = RRect.fromRectAndRadius(
+      _drawObstaclePanel(canvas, Rect.fromLTWH(x, 0, width, gapTop));
+      _drawObstaclePanel(
+        canvas,
         Rect.fromLTWH(x, gapBottom, width, size.height - gapBottom),
-        const Radius.circular(10),
       );
-      canvas.drawRRect(top, obstaclePaint);
-      canvas.drawRRect(bottom, obstaclePaint);
 
       final railX = x + width / 2;
       canvas.drawLine(Offset(railX, 0), Offset(railX, gapTop), railPaint);
@@ -497,58 +660,125 @@ class _RailFlightPainter extends CustomPainter {
     }
   }
 
-  void _drawTrain(Canvas canvas, Size size) {
-    final color = _railFlightLineColor(controller.lineLevel);
-    final onColor = LineTheme.readableOn(color);
+  /// Düz dolgu yerine tünel duvar panelini anımsatan hafif kabartmalı bir
+  /// blok: soldan aydınlatılmış gibi bir gradyan taban (yuvarlak bir sütun
+  /// hissi) ve üst üste dizilmiş, her biri ince bir parlama/gölge çiftiyle
+  /// ayrılmış yatay paneller — tuğla örgüsü değil, gerçek metro tünellerinde
+  /// olduğu gibi düz istiflenmiş beton segmentler (bkz. gerçek tünel
+  /// halkaları). Blur yok, yalnızca gradyan + birkaç çizgi — ucuz.
+  void _drawObstaclePanel(Canvas canvas, Rect rect) {
+    if (rect.height <= 1) return;
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(10));
+
+    final base = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: <Color>[
+          Color.lerp(AppColors.surfaceHigh, Colors.white, 0.12)!,
+          AppColors.surfaceHigh,
+          Color.lerp(AppColors.surfaceHigh, Colors.black, 0.3)!,
+        ],
+        stops: const <double>[0.0, 0.45, 1.0],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, base);
+
+    canvas.save();
+    canvas.clipRRect(rrect);
+    const panelHeight = 26.0;
+    final highlight = Paint()..color = Colors.white.withValues(alpha: 0.12);
+    final shadow = Paint()..color = Colors.black.withValues(alpha: 0.24);
+    for (var y = rect.top + panelHeight; y < rect.bottom; y += panelHeight) {
+      canvas.drawLine(
+        Offset(rect.left, y - 1),
+        Offset(rect.right, y - 1),
+        highlight,
+      );
+      canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), shadow);
+    }
+    canvas.restore();
+
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = AppColors.background.withValues(alpha: 0.6),
+    );
+  }
+
+  /// Oynadığımız karakteri çizer — alt ilerleme çubuğunda ve varış
+  /// sahnesinde kullanılan [MetroTrainPainter] ile TAM AYNI çizim kodu.
+  ///
+  /// Önceki sürüm bu ekrana özel, elle çizilmiş ayrı bir tren şekliydi;
+  /// uygulamanın geri kalanındaki (2 vagonlu, yuvarlak burunlu, pencere
+  /// sıralı) tren diliyle tutarsız durup "üretilmiş" hissediyordu. Artık
+  /// oynanan karakter ile alttaki sayaçtaki tren birebir aynı çizim —
+  /// tutarlılık, ayrı bir "oyun karakteri" tasarımından daha güçlü.
+  void _drawTrain(Canvas canvas, Size size, Color accent) {
     final center = Offset(
       railFlightTrainX * size.width,
       controller.trainY * size.height,
     );
-    final radius = railFlightTrainRadius * size.shortestSide * 1.35;
+    // Görsel ölçek çarpanı çarpışma yarıçapından (railFlightTrainRadius)
+    // ayrı: tren biraz büyük çizilse bile oyuncu boşluktan geçebiliyordu
+    // (gerçek hitbox zaten daha küçük). 2.3 yerine 1.85 — biraz daha küçük
+    // çizilince boşluklara sığdığı hissi de gerçeğe daha yakın oluyor.
+    final trainHeight = railFlightTrainRadius * size.shortestSide * 1.85;
+    final trainWidth = MetroTrain.widthFor(height: trainHeight);
 
-    final body = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: center,
-        width: radius * 2.8,
-        height: radius * 1.65,
-      ),
-      Radius.circular(radius * 0.45),
-    );
-    canvas.drawRRect(body, Paint()..color = color);
-    canvas.drawRRect(
-      body,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = Colors.white.withValues(alpha: 0.72),
-    );
+    canvas.save();
+    canvas.translate(center.dx - trainWidth / 2, center.dy - trainHeight / 2);
+    MetroTrainPainter(
+      color: accent,
+    ).paint(canvas, Size(trainWidth, trainHeight));
+    canvas.restore();
 
-    final windowPaint = Paint()..color = onColor.withValues(alpha: 0.88);
-    final windowRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: center.translate(radius * 0.08, -radius * 0.18),
-        width: radius * 1.35,
-        height: radius * 0.42,
-      ),
-      Radius.circular(radius * 0.15),
-    );
-    canvas.drawRRect(windowRect, windowPaint);
+    _drawLineBadge(canvas, center, trainHeight, accent);
+  }
 
+  /// Trenin üstünde, gerçek bir peron tabelası gibi hat etiketini gösteren
+  /// küçük bir rozet.
+  void _drawLineBadge(
+    Canvas canvas,
+    Offset trainCenter,
+    double trainHeight,
+    Color accent,
+  ) {
+    final onAccent = LineTheme.readableOn(accent);
     final textPainter = TextPainter(
       text: TextSpan(
         text: controller.lineLabel,
         style: TextStyle(
           fontFamily: AppFonts.display,
-          fontSize: radius * 0.52,
+          fontSize: trainHeight * 0.38,
           fontWeight: FontWeight.w900,
-          color: onColor,
+          color: onAccent,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
+
+    final padding = trainHeight * 0.14;
+    final badgeCenter = trainCenter.translate(
+      0,
+      -trainHeight / 2 - textPainter.height / 2 - trainHeight * 0.16,
+    );
+    final badgeRect = Rect.fromCenter(
+      center: badgeCenter,
+      width: textPainter.width + padding * 2,
+      height: textPainter.height + padding,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(badgeRect, Radius.circular(badgeRect.height / 2)),
+      Paint()..color = accent,
+    );
     textPainter.paint(
       canvas,
-      center.translate(-textPainter.width / 2, radius * 0.07),
+      Offset(
+        badgeCenter.dx - textPainter.width / 2,
+        badgeCenter.dy - textPainter.height / 2,
+      ),
     );
   }
 

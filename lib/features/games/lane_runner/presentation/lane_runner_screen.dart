@@ -9,6 +9,7 @@ import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/metro_train.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
@@ -96,7 +97,11 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
     }
 
     _syncMusic();
-    setState(() {});
+    // Not: bilerek setState() çağrılmıyor — fizik ~60 kez/sn
+    // notifyListeners() çağırıyor; tüm ekranı her tikte yeniden kurmak
+    // zayıf bir telefonda gerçek kare düşmesine yol açabiliyordu (bkz.
+    // RailFlightScreen'de uygulanan aynı düzeltme). Canlı kalması gereken
+    // kısmı build()'deki ListenableBuilder hallediyor.
   }
 
   void _syncMusic() {
@@ -203,73 +208,83 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
         autofocus: true,
         onKeyEvent: _handleKeyEvent,
         child: Scaffold(
-          body: Stack(
-            children: <Widget>[
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      _RunnerHud(
-                        controller: controller,
-                        accent: accent,
-                        onPause: controller.pause,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Expanded(
-                        child: _RunnerPlayArea(
+          // Yalnızca bu içerik controller'ı dinler ve her fizik tikinde
+          // yeniden kurulur; PopScope/KeyboardListener/Scaffold sarmalayıcıları
+          // hiç değişmediği için bir kez kurulup öyle kalır.
+          body: ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) => Stack(
+              children: <Widget>[
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        _RunnerHud(
                           controller: controller,
-                          onLeft: _moveLeft,
-                          onRight: _moveRight,
+                          accent: accent,
+                          onPause: controller.pause,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _LaneControls(onLeft: _moveLeft, onRight: _moveRight),
-                      const SizedBox(height: AppSpacing.md),
-                      JourneyProgressBar(
-                        lineId: journey.lineId,
-                        originName: journey.origin.name,
-                        destinationName: journey.destination.name,
-                        progress: controller.progress,
-                        remainingSeconds: controller.remainingSeconds,
-                        nextStopName: _nextStopName(controller),
-                        accent: accent,
-                        isMoving: controller.status == GameStatus.playing,
-                      ),
-                    ],
+                        const SizedBox(height: AppSpacing.md),
+                        Expanded(
+                          child: _RunnerPlayArea(
+                            controller: controller,
+                            onLeft: _moveLeft,
+                            onRight: _moveRight,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _LaneControls(onLeft: _moveLeft, onRight: _moveRight),
+                        const SizedBox(height: AppSpacing.md),
+                        JourneyProgressBar(
+                          lineId: journey.lineId,
+                          originName: journey.origin.name,
+                          destinationName: journey.destination.name,
+                          progress: controller.progress,
+                          remainingSeconds: controller.remainingSeconds,
+                          nextStopName: _nextStopName(controller),
+                          accent: accent,
+                          isMoving: controller.status == GameStatus.playing,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _Banner(
-                animation: _bannerAnimation,
-                text: _bannerText,
-                accent: accent,
-              ),
-              if (controller.status == GameStatus.paused)
-                PauseOverlay(
+                _Banner(
+                  animation: _bannerAnimation,
+                  text: _bannerText,
                   accent: accent,
-                  score: controller.score,
-                  remainingSeconds: controller.remainingSeconds,
-                  onResume: controller.resume,
-                  onRestart: controller.restart,
-                  onSettings: () => AppRoutes.openSettings(context),
-                  onExit: _exitToHome,
                 ),
-              if (controller.status == GameStatus.arrived)
-                ArrivalSequence(
-                  accent: accent,
-                  lineId: journey.lineId,
-                  stationName: journey.destination.name,
-                  child: _buildResult(controller, accent, showBackdrop: false),
-                )
-              else if (controller.status == GameStatus.gameOver)
-                _buildResult(controller, accent),
-            ],
+                if (controller.status == GameStatus.paused)
+                  PauseOverlay(
+                    accent: accent,
+                    score: controller.score,
+                    remainingSeconds: controller.remainingSeconds,
+                    onResume: controller.resume,
+                    onRestart: controller.restart,
+                    onSettings: () => AppRoutes.openSettings(context),
+                    onExit: _exitToHome,
+                  ),
+                if (controller.status == GameStatus.arrived)
+                  ArrivalSequence(
+                    accent: accent,
+                    lineId: journey.lineId,
+                    stationName: journey.destination.name,
+                    child: _buildResult(
+                      controller,
+                      accent,
+                      showBackdrop: false,
+                    ),
+                  )
+                else if (controller.status == GameStatus.gameOver)
+                  _buildResult(controller, accent),
+              ],
+            ),
           ),
         ),
       ),
@@ -494,112 +509,238 @@ class _LaneControls extends StatelessWidget {
   }
 }
 
+/// Ray Değiştir'in sahnesi: önden bakışla 3 metro rayı uzaklara doğru
+/// daralıyor (basit bir güç-eğrisiyle taklit edilen pseudo-3B perspektif),
+/// oyuncu ve gelen engeller artık soyut çizgi/kapsül değil gerçek
+/// [MetroTrainPainter] trenleri — oyuncunun treni yukarı (gelen trafiğe
+/// doğru), engel trenleri aşağı (oyuncuya doğru) bakıyor. Düz nötr zemin
+/// yerine kesit gradyanlı bir tünel var.
 class _LaneRunnerPainter extends CustomPainter {
   const _LaneRunnerPainter(this.controller);
 
   final LaneRunnerController controller;
 
+  /// Uzaklık (0=ufuk, 1=oyuncu) sıkıştırma eğrisi. >1 değer, uzaktaki
+  /// nesnelerin ufka doğru daha hızlı küçülüp yaklaşmasını sağlar — gerçek
+  /// bir kameradan bakıyormuş hissi verir.
+  static const double _perspectiveGamma = 1.65;
+  static const double _vanishXFraction = 0.5;
+  static const double _farSpreadFactor = 0.16;
+
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = AppColors.boardBackground,
-    );
-    _drawLanes(canvas, size);
+    _drawTunnelBackground(canvas, size);
+    _drawTracks(canvas, size);
     _drawObstacles(canvas, size);
     _drawTrain(canvas, size);
   }
 
-  void _drawLanes(Canvas canvas, Size size) {
+  double _perspective(double s) =>
+      math.pow(s.clamp(0.0, 1.2), _perspectiveGamma).toDouble();
+
+  /// `lane` kesirli olabilir — oyuncu iki ray arasında kayarken düzgün
+  /// aradeğerleme için.
+  double _laneXAtT(Size size, double lane, double t) {
+    final nearX = size.width * (0.22 + lane * 0.28);
+    final vanishX = size.width * _vanishXFraction;
+    final farX = vanishX + (nearX - vanishX) * _farSpreadFactor;
+    return farX + (nearX - farX) * t;
+  }
+
+  double _scaleAtT(double t) => 0.42 + 0.58 * t;
+
+  double _scrollPhase(double step, double speedFactor) {
+    final distance = controller.elapsedSeconds * speedFactor;
+    return distance % step;
+  }
+
+  void _drawTunnelBackground(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final gradient = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[
+          AppColors.brandNavyDeep,
+          Color.lerp(AppColors.boardBackground, AppColors.surfaceHigh, 0.4)!,
+          AppColors.boardBackground,
+        ],
+        stops: const <double>[0.0, 0.55, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, gradient);
+
+    final vignette = Paint()
+      ..shader = LinearGradient(
+        colors: <Color>[
+          AppColors.background.withValues(alpha: 0.5),
+          Colors.transparent,
+          Colors.transparent,
+          AppColors.background.withValues(alpha: 0.5),
+        ],
+        stops: const <double>[0.0, 0.2, 0.8, 1.0],
+      ).createShader(rect);
+    canvas.drawRect(rect, vignette);
+  }
+
+  /// Üç rayı da (iki ray çubuğu + traversler) ufka doğru daralan bir
+  /// perspektifle çizer — düz dikey çizgiler yerine gerçek bir ray hattı.
+  void _drawTracks(Canvas canvas, Size size) {
     final railPaint = Paint()
-      ..color = AppColors.outline.withValues(alpha: 0.55)
-      ..strokeWidth = 3
+      ..color = AppColors.outline.withValues(alpha: 0.75)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
-    final dashPaint = Paint()
-      ..color = AppColors.surface.withValues(alpha: 0.4)
-      ..strokeWidth = 1.4;
 
     for (var lane = 0; lane < laneRunnerLaneCount; lane++) {
-      final x = _laneX(size, lane);
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), railPaint);
-      for (var y = 20.0; y < size.height; y += 52) {
-        canvas.drawLine(Offset(x - 18, y), Offset(x + 18, y + 26), dashPaint);
+      canvas.drawPath(_railPath(size, lane.toDouble(), -1), railPaint);
+      canvas.drawPath(_railPath(size, lane.toDouble(), 1), railPaint);
+    }
+    _drawTies(canvas, size);
+  }
+
+  Path _railPath(Size size, double lane, double side) {
+    const steps = 12;
+    final path = Path();
+    for (var i = 0; i <= steps; i++) {
+      final s = i / steps;
+      final t = _perspective(s);
+      final centerX = _laneXAtT(size, lane, t);
+      final gauge = size.width * 0.052 * _scaleAtT(t);
+      final point = Offset(centerX + side * gauge, size.height * s);
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    return path;
+  }
+
+  /// Kayan traversler — sahneye ileri hareket hissi katan, uzakta sık,
+  /// yakında seyrek görünen çapraz çizgiler.
+  void _drawTies(Canvas canvas, Size size) {
+    const step = 0.09;
+    final phase = _scrollPhase(step, 0.55);
+    final tiePaint = Paint()
+      ..color = AppColors.textMuted.withValues(alpha: 0.5);
+
+    for (var lane = 0; lane < laneRunnerLaneCount; lane++) {
+      for (var s = -phase; s < 1.12; s += step) {
+        if (s < 0) continue;
+        final t = _perspective(s);
+        final centerX = _laneXAtT(size, lane.toDouble(), t);
+        final scale = _scaleAtT(t);
+        final gauge = size.width * 0.052 * scale;
+        final y = size.height * s;
+        tiePaint.strokeWidth = 2.5 * scale;
+        canvas.drawLine(
+          Offset(centerX - gauge * 1.35, y),
+          Offset(centerX + gauge * 1.35, y),
+          tiePaint,
+        );
       }
     }
   }
 
   void _drawObstacles(Canvas canvas, Size size) {
-    final obstaclePaint = Paint()..color = AppColors.danger;
     for (final obstacle in controller.obstacles) {
-      final x = _laneX(size, obstacle.lane);
-      final y = obstacle.y * size.height;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          width: size.width * 0.19,
-          height: size.height * 0.065,
-        ),
-        const Radius.circular(14),
+      final s = obstacle.y;
+      final t = _perspective(s);
+      final center = Offset(
+        _laneXAtT(size, obstacle.lane.toDouble(), t),
+        size.height * s,
       );
-      canvas.drawRRect(rect, obstaclePaint);
-      final mark = Paint()
-        ..color = Colors.white.withValues(alpha: 0.75)
-        ..strokeWidth = 3;
-      canvas.drawLine(
-        Offset(rect.left + 12, rect.center.dy),
-        Offset(rect.right - 12, rect.center.dy),
-        mark,
+      _drawTrainSprite(
+        canvas,
+        size: size,
+        center: center,
+        scale: _scaleAtT(t),
+        color: AppColors.danger,
+        // Burun aşağı: oyuncuya doğru gelen bir tren.
+        rotation: math.pi / 2,
       );
     }
   }
 
   void _drawTrain(Canvas canvas, Size size) {
-    final x = _laneX(size, controller.trainLane);
-    final y = laneRunnerTrainY * size.height;
-    final body = RRect.fromRectAndRadius(
-      Rect.fromCenter(
-        center: Offset(x, y),
-        width: size.width * 0.2,
-        height: size.height * 0.105,
-      ),
-      const Radius.circular(20),
+    const s = laneRunnerTrainY;
+    final t = _perspective(s);
+    final center = Offset(
+      _laneXAtT(size, controller.trainLaneVisual, t),
+      size.height * s,
     );
-    canvas.drawRRect(
-      body,
-      Paint()..color = _runnerLineColor(controller.lineLevel),
+    _drawTrainSprite(
+      canvas,
+      size: size,
+      center: center,
+      scale: _scaleAtT(t),
+      color: _runnerLineColor(controller.lineLevel),
+      // Burun yukarı: gelen trafiğe doğru ilerleyen oyuncu.
+      rotation: -math.pi / 2,
+      label: controller.lineLabel,
     );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          body.left + 12,
-          body.top + 12,
-          body.width - 24,
-          body.height * 0.3,
-        ),
-        const Radius.circular(9),
-      ),
-      Paint()..color = Colors.white.withValues(alpha: 0.82),
-    );
-    final labelPainter = TextPainter(
+  }
+
+  void _drawTrainSprite(
+    Canvas canvas, {
+    required Size size,
+    required Offset center,
+    required double scale,
+    required Color color,
+    required double rotation,
+    String? label,
+  }) {
+    // 2 vagon: tek vagon (yalnızca yuvarlak burun + düz gövde) küçük
+    // ölçekte kapsül/kalkan gibi okunuyordu; kuplajla ayrılmış iki parça
+    // "tren" olarak çok daha net tanınıyor.
+    final trainHeight = size.shortestSide * 0.075 * scale;
+    final trainWidth = MetroTrain.widthFor(height: trainHeight, wagons: 2);
+
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+    canvas.translate(-trainWidth / 2, -trainHeight / 2);
+    MetroTrainPainter(
+      color: color,
+      wagons: 2,
+    ).paint(canvas, Size(trainWidth, trainHeight));
+    canvas.restore();
+
+    if (label == null) return;
+    final onColor = LineTheme.readableOn(color);
+    final textPainter = TextPainter(
       text: TextSpan(
-        text: controller.lineLabel,
-        style: const TextStyle(
-          color: Colors.white,
+        text: label,
+        style: TextStyle(
           fontFamily: AppFonts.display,
-          fontSize: 18,
+          fontSize: trainHeight * 0.4,
           fontWeight: FontWeight.w900,
+          color: onColor,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    labelPainter.paint(
-      canvas,
-      Offset(x - labelPainter.width / 2, y + body.height * 0.05),
+    final padding = trainHeight * 0.14;
+    final badgeCenter = center.translate(
+      0,
+      -trainHeight / 2 - textPainter.height / 2 - trainHeight * 0.18,
     );
-  }
-
-  double _laneX(Size size, int lane) {
-    return size.width * (0.22 + lane * 0.28);
+    final badgeRect = Rect.fromCenter(
+      center: badgeCenter,
+      width: textPainter.width + padding * 2,
+      height: textPainter.height + padding,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(badgeRect, Radius.circular(badgeRect.height / 2)),
+      Paint()..color = color,
+    );
+    textPainter.paint(
+      canvas,
+      Offset(
+        badgeCenter.dx - textPainter.width / 2,
+        badgeCenter.dy - textPainter.height / 2,
+      ),
+    );
   }
 
   @override

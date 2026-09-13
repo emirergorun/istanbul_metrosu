@@ -117,4 +117,84 @@ void main() {
       expect(controller.status, GameStatus.gameOver);
     });
   });
+
+  group('kare zamanlaması', () {
+    // Bu grup, fiziğin her Timer tetiklenişinde "tam olarak 16ms geçti"
+    // varsaymak yerine gerçekte ne kadar süre geçtiğini ölçtüğünü
+    // doğruluyor. Telefonlarda zamanlayıcı gerçek zamandan sapabiliyor
+    // (arka plan kısıtlaması, GC duraklaması); sabit-dt varsayımı akışın
+    // düzensiz/sarsıntılı görünmesine yol açan asıl sebepti.
+
+    test('ilk ölçüm yalnızca referansı kurar, 0 döner', () {
+      final controller = RailFlightController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+
+      expect(controller.debugElapsedSecondsSince(DateTime(2026)), 0);
+    });
+
+    test('gecikmeli bir tik, sabit 16ms değil gerçek geçen süreyi döner', () {
+      final controller = RailFlightController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+      final t0 = DateTime(2026);
+      controller.debugElapsedSecondsSince(t0);
+
+      // Zamanlayıcı 30ms gecikmiş olsun (kırpma sınırının altında kalacak
+      // kadar küçük — burada kırpma değil, ÖLÇÜMÜN doğruluğu test ediliyor).
+      final t1 = t0.add(const Duration(milliseconds: 30));
+      final dt = controller.debugElapsedSecondsSince(t1);
+
+      expect(
+        dt,
+        closeTo(0.03, 0.001),
+        reason: 'sabit-dt varsayımı burada hep 0.016 dönerdi',
+      );
+    });
+
+    test('düzenli ~16ms aralıkta ölçülen süre tik hedefine yakın kalır', () {
+      final controller = RailFlightController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+      final t0 = DateTime(2026);
+      controller.debugElapsedSecondsSince(t0);
+
+      final t1 = t0.add(const Duration(milliseconds: 16));
+      final dt = controller.debugElapsedSecondsSince(t1);
+
+      expect(dt, closeTo(0.016, 0.001));
+    });
+
+    test('uzun bir donma tek adımda dev bir fizik sıçramasına izin vermez', () {
+      final controller = RailFlightController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+      final t0 = DateTime(2026);
+      controller.debugElapsedSecondsSince(t0);
+
+      // 2 saniyelik donma (arka plana alınma, GC duraklaması, vb.).
+      final t1 = t0.add(const Duration(seconds: 2));
+      final dt = controller.debugElapsedSecondsSince(t1);
+
+      expect(
+        dt,
+        lessThanOrEqualTo(0.05),
+        reason:
+            'kırpma olmasa 2 saniyelik yerçekimi tek karede uygulanır, '
+            'tren zeminin/tavanın "içine ışınlanırdı"',
+      );
+    });
+  });
 }

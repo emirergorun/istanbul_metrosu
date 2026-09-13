@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/storage/local_store.dart';
 import '../../blocks/domain/scoring.dart';
 import '../../../journey/models/journey.dart';
@@ -23,20 +23,47 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
 
   static const String gameId = 'lane_runner';
 
+  /// Hızın ve engel doğuşunun ayarlandığı hedef kare süresi. Eskiden her
+  /// `Timer` tetiklenişinde bu kadar süre geçmiş VARSAYILIYORDU (gerçek
+  /// süre hiç ölçülmüyordu) — telefonda zamanlayıcı sapınca oyun akışı
+  /// düzensizleşiyordu. Artık gerçek ölçülen süre bu nominal değere
+  /// oranlanıp hız buna göre ölçekleniyor; aynı ayarlamayı (0.0075 vb.)
+  /// korur, yalnızca gerçek zamana bağlar.
+  static const double _nominalFrameSeconds = 0.016;
+
+  /// Tek bir karede en fazla bu kadar saniye geçmiş sayılır — uzun bir
+  /// donmadan (arka plana alınma, GC duraklaması) sonra dev bir sıçramayla
+  /// bir engelin çarpışma penceresini atlayıp "içinden geçmeyi" önler.
+  static const double _maxFrameSeconds = 0.05;
+
+  /// Ray değiştirirken trenin görsel konumu hedefe ne hızda yaklaşsın.
+  /// Yüksek değer daha keskin/çevik bir geçiş demek.
+  static const double _laneEaseRate = 18.0;
+
   final LocalStore? store;
   final Duration tick;
   final Journey _journey;
   final Random _random;
 
   Timer? _timer;
+
+  /// `tick`, zamanlayıcının yalnızca HEDEF aralığıdır; her kare bunun
+  /// yerine bu alanla ÖLÇÜLEN gerçek süreyi kullanır (bkz. [RailFlightController]
+  /// için uygulanan aynı düzeltme).
+  DateTime? _lastFrameTime;
   final List<LaneObstacle> _obstacles = <LaneObstacle>[];
   int _nextObstacleId = 0;
   int _score = 0;
   int _passes = 0;
-  int _elapsedTicks = 0;
+  double _elapsedSeconds = 0;
   int _stationsPassed = 0;
   int _recordToBeat;
   int _trainLane = 1;
+
+  /// Trenin ekranda çizilen konumu — [_trainLane]'e (hedef ray) doğru
+  /// yumuşak bir şekilde yaklaşır, anında ışınlanmaz. Bu, ray
+  /// değiştirmenin en görünür "smooth değil" hissini veren kısmıydı.
+  double _trainLaneVisual = 1.0;
   double _spawnDistance = 0.0;
   bool _recordBeaten = false;
   bool _isNewBest = false;
@@ -94,9 +121,9 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
 
   @override
   double get progress {
-    final totalTicks = _journey.estimatedSeconds * _ticksPerSecond;
-    if (totalTicks <= 0) return 1;
-    return (_elapsedTicks / totalTicks).clamp(0.0, 1.0);
+    final total = _journey.estimatedSeconds;
+    if (total <= 0) return 1;
+    return (_elapsedSeconds / total).clamp(0.0, 1.0);
   }
 
   @override
@@ -107,18 +134,17 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
 
   @override
   int get remainingSeconds {
-    final elapsed = _elapsedTicks ~/ _ticksPerSecond;
-    final left = _journey.estimatedSeconds - elapsed;
+    final left = _journey.estimatedSeconds - _elapsedSeconds.ceil();
     return left < 0 ? 0 : left;
   }
 
-  int get _ticksPerSecond {
-    final millis = tick.inMilliseconds <= 0 ? 16 : tick.inMilliseconds;
-    return (AppConstants.playTick.inMilliseconds / millis).round().clamp(
-      1,
-      120,
-    );
-  }
+  /// Oyun süresine göre kayan arka plan dokuları için (bkz.
+  /// [RailFlightController.elapsedSeconds] ile aynı amaç).
+  double get elapsedSeconds => _elapsedSeconds;
+
+  /// Trenin çizilecek yumuşatılmış ray konumu — tamsayı [trainLane]'e
+  /// (hedef) doğru kayar, ışınlanmaz.
+  double get trainLaneVisual => _trainLaneVisual;
 
   double get _speed => 0.0075 + min(_passes, 35) * 0.00018;
 
@@ -153,9 +179,10 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
     _nextObstacleId = 0;
     _score = 0;
     _passes = 0;
-    _elapsedTicks = 0;
+    _elapsedSeconds = 0;
     _stationsPassed = 0;
     _trainLane = 1;
+    _trainLaneVisual = 1.0;
     _spawnDistance = 0.0;
     _recordBeaten = false;
     _isNewBest = false;
@@ -187,29 +214,67 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
     notifyListeners();
   }
 
+  /// Testte gerçek zamanlayıcıyı beklemeden nominal kare adımları ilerletir
+  /// — her çağrı [_nominalFrameSeconds] kadar gerçek süre geçmiş gibi
+  /// davranır, böylece eski `step(n)` tabanlı testler aynı ayarlamayla
+  /// çalışmaya devam eder.
   @visibleForTesting
   void step([int frames = 1]) {
     for (var i = 0; i < frames; i++) {
       if (_status != GameStatus.playing) return;
-      _onFrame();
+      _onFrame(_nominalFrameSeconds);
     }
   }
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(tick, (_) => _onFrame());
+    _lastFrameTime = clock.now();
+    // _onFrame kendi sonunda (ya da _finish üzerinden) notifyListeners
+    // çağırıyor; burada tekrar çağırmaya gerek yok.
+    _timer = Timer.periodic(
+      tick,
+      (_) => _onFrame(_elapsedSecondsSince(clock.now())),
+    );
   }
 
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;
+    _lastFrameTime = null;
   }
 
-  void _onFrame() {
+  /// Son kareden bu yana ölçülen, güvenli bir üst sınıra kırpılmış süre.
+  /// `now` parametre alır ki [debugElapsedSecondsSince] ile testte gerçek
+  /// zamanı beklemeden doğrulanabilsin.
+  double _elapsedSecondsSince(DateTime now) {
+    final last = _lastFrameTime;
+    _lastFrameTime = now;
+    if (last == null) return 0;
+    final elapsed =
+        now.difference(last).inMicroseconds / Duration.microsecondsPerSecond;
+    return elapsed.clamp(0.0, _maxFrameSeconds);
+  }
+
+  @visibleForTesting
+  double debugElapsedSecondsSince(DateTime now) => _elapsedSecondsSince(now);
+
+  void _onFrame(double dt) {
     if (_status != GameStatus.playing) return;
 
-    _elapsedTicks++;
-    _spawnDistance += _speed;
+    _elapsedSeconds += dt;
+    // `_speed` nominal (16ms) bir kare için ayarlanmış bir sabit; gerçek
+    // dt'yi buna oranlayarak ölçeklemek, eski dengeyi (0.0075 vb.) aynen
+    // korurken hareketi gerçek zamana bağlıyor. Eskiden her Timer
+    // tetiklenişinde `_speed` olduğu gibi eklenirdi — zamanlayıcı gerçek
+    // zamandan saptığında (telefonda sık) oyun ya yavaşlar ya sıçrardı.
+    final frameScale = dt / _nominalFrameSeconds;
+    final step = _speed * frameScale;
+
+    // Ray değiştirme artık ışınlanmıyor, hedefe doğru yumuşak kayıyor.
+    _trainLaneVisual +=
+        (_trainLane - _trainLaneVisual) * (1 - exp(-_laneEaseRate * dt));
+
+    _spawnDistance += step;
     if (_obstacles.isEmpty || _spawnDistance >= _nextGap()) {
       _spawnObstacle();
       _spawnDistance = 0.0;
@@ -217,7 +282,7 @@ class LaneRunnerController extends ChangeNotifier implements JourneyRun {
 
     for (var i = 0; i < _obstacles.length; i++) {
       final obstacle = _obstacles[i];
-      final moved = obstacle.copyWith(y: obstacle.y + _speed);
+      final moved = obstacle.copyWith(y: obstacle.y + step);
       _obstacles[i] = moved;
 
       if (!moved.passed && moved.y > laneRunnerTrainY + 0.08) {

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/storage/local_store.dart';
 import '../../blocks/domain/scoring.dart';
 import '../../../journey/models/journey.dart';
@@ -26,6 +26,16 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
 
   static const String gameId = 'rail_flight';
 
+  /// Tek bir fizik adımında en fazla bu kadar saniye geçmiş sayılır.
+  ///
+  /// Telefonlarda `Timer` çağrıları düzenli aralıklarla gelmeyebilir — arka
+  /// plan sekme kısıtlaması, çöp toplama duraklaması, kısa bir donma. Ölçülen
+  /// süreyi olduğu gibi fiziğe vermek, böyle bir sıçramadan sonra treni tek
+  /// bir karede bir engelin/zeminin içinden "ışınlayabilir" (tünelleme) ya da
+  /// haksız bir ölüme yol açabilir. Bu sınır öyle bir sıçramayı güvenli bir
+  /// üst sınıra hapseder (nominal tik süresinin ~3 katı).
+  static const double _maxFrameSeconds = 0.05;
+
   final LocalStore? store;
   final Duration tick;
   final Journey _journey;
@@ -33,6 +43,22 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
   final RailFlightConfig config;
 
   Timer? _timer;
+
+  /// `tick`, zamanlayıcının yalnızca HEDEF aralığıdır; fizik adımı bunun
+  /// yerine bir önceki karadan bu yana ÖLÇÜLEN gerçek süreyi kullanır.
+  ///
+  /// Eskiden her `Timer` tetiklenişinde "tam olarak `tick` kadar süre
+  /// geçti" varsayılıyordu. Bu varsayım masaüstünde neredeyse hep doğru
+  /// çıkar, ama telefonda zamanlayıcı gerçek zamandan saptığında (ki sık
+  /// olur) trenin hızı gerçek zamana göre yanlış hesaplanır — akış ya
+  /// yavaşlar ya da birden sıçrar. Bu, oyunun "smooth değil" hissetmesinin
+  /// kök nedeniydi.
+  ///
+  /// `package:clock` kullanılıyor (ham `DateTime.now()`/`Stopwatch` değil)
+  /// çünkü testte `fakeAsync` ile birlikte deterministik olarak
+  /// sahtelenebiliyor — gerçek zamanı beklemeden titrek/gecikmeli tik
+  /// senaryoları simüle edilebiliyor.
+  DateTime? _lastFrameTime;
   double _routeElapsedSeconds = 0;
   double _trainY = 0.5;
   double _velocity = 0;
@@ -61,6 +87,10 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
   String get lineLabel => railFlightLineLabelForPasses(_gatesPassed);
   List<RailObstacle> get obstacles =>
       List<RailObstacle>.unmodifiable(_obstacles);
+
+  /// Tünel arka planını kaydırmak için: oynanışın başından beri geçen,
+  /// duraklatmalarda ilerlemeyen gerçek oyun süresi.
+  double get elapsedSeconds => _routeElapsedSeconds;
 
   @visibleForTesting
   void debugSetFlight({
@@ -205,15 +235,35 @@ class RailFlightController extends ChangeNotifier implements JourneyRun {
 
   void _startTimer() {
     _timer?.cancel();
+    _lastFrameTime = clock.now();
     _timer = Timer.periodic(tick, (_) {
-      _advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
+      _advance(_elapsedSecondsSince(clock.now()));
       notifyListeners();
     });
   }
 
+  /// Son kareden bu yana ölçülen, güvenli bir üst sınıra kırpılmış süre.
+  ///
+  /// `now` parametre olarak alınır (doğrudan `DateTime.now()` çağırmak
+  /// yerine) ki [debugElapsedSecondsSince] ile testte gerçek zamanı
+  /// beklemeden — ve gerçek `Timer` zamanlamasıyla uğraşmadan — düzensiz/
+  /// gecikmeli kare senaryoları deterministik olarak doğrulanabilsin.
+  double _elapsedSecondsSince(DateTime now) {
+    final last = _lastFrameTime;
+    _lastFrameTime = now;
+    if (last == null) return 0;
+    final elapsed =
+        now.difference(last).inMicroseconds / Duration.microsecondsPerSecond;
+    return elapsed.clamp(0.0, _maxFrameSeconds);
+  }
+
+  @visibleForTesting
+  double debugElapsedSecondsSince(DateTime now) => _elapsedSecondsSince(now);
+
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;
+    _lastFrameTime = null;
   }
 
   void _advance(double dt) {
