@@ -221,9 +221,12 @@ class LocalStore extends ChangeNotifier {
 
     final records = <RouteRecord>[];
     for (final key in prefs.getKeys()) {
-      final score = prefs.getInt(key) ?? 0;
-
+      // Sayı, anahtarın bir rekor anahtarı olduğu **doğrulandıktan sonra**
+      // okunur. Önce okunuyordu ve `getInt` içeride `as int?` yaptığı için
+      // sayı olmayan ilk tercihte (titreşim, ses, yarım kalan oyun) ayarlar
+      // ekranı açılır açılmaz çöküyordu.
       if (key.startsWith(_bestGameScorePrefix)) {
+        final score = prefs.getInt(key) ?? 0;
         final rest = key.substring(_bestGameScorePrefix.length);
         final split = rest.indexOf(_gameRouteSeparator);
         if (split <= 0) continue;
@@ -244,7 +247,11 @@ class LocalStore extends ChangeNotifier {
         final pair = key.substring(_bestScorePrefix.length).split('__');
         if (pair.length != 2) continue;
         records.add(
-          RouteRecord(originId: pair[0], destinationId: pair[1], score: score),
+          RouteRecord(
+            originId: pair[0],
+            destinationId: pair[1],
+            score: prefs.getInt(key) ?? 0,
+          ),
         );
       }
     }

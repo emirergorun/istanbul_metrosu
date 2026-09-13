@@ -56,6 +56,7 @@ class MetroTrainPainter extends CustomPainter {
     required this.color,
     this.wagons = 2,
     this.wagonAspect = defaultWagonAspect,
+    this.opacity = 1,
   });
 
   static const double defaultWagonAspect = 1.1;
@@ -64,6 +65,14 @@ class MetroTrainPainter extends CustomPainter {
   final Color color;
   final int wagons;
   final double wagonAspect;
+
+  /// Trenin tamamının görünürlüğü (0-1).
+  ///
+  /// Yalnız [color]'ı soldurmak yetmiyor: kontur, pencereler ve bağlantı
+  /// beyaz ve **sabit** alfalı. Uzaktaki tren soldurulunca gövdesi kayboluyor
+  /// ama beyaz konturu duruyor, tren değil içi boş bir kutu gibi okunuyordu.
+  /// Bu değer o sabit alfaları da birlikte ölçekler.
+  final double opacity;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -74,12 +83,13 @@ class MetroTrainPainter extends CustomPainter {
     // Gövde hat rengiyle aynı; ray da öyle. İnce açık kontur olmazsa tren
     // rayın üstünde kaybolur.
     final outline = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
+      ..color = Colors.white.withValues(alpha: 0.9 * opacity)
       ..style = PaintingStyle.stroke
       ..strokeWidth = (h * 0.078).clamp(1.0, 3.0);
 
     // Vagonları birleştiren kısa bağlantı.
-    final couplingPaint = Paint()..color = Colors.white.withValues(alpha: 0.55);
+    final couplingPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55 * opacity);
     for (var i = 0; i < wagons - 1; i++) {
       final x = (i + 1) * wagonWidth + i * coupling;
       canvas.drawRect(
@@ -141,7 +151,7 @@ class MetroTrainPainter extends CustomPainter {
         wagonWidth - h * 0.28,
         h * 0.10,
       ),
-      Paint()..color = Colors.black.withValues(alpha: 0.22),
+      Paint()..color = Colors.black.withValues(alpha: 0.22 * opacity),
     );
   }
 
@@ -163,7 +173,7 @@ class MetroTrainPainter extends CustomPainter {
     final totalW = count * windowW + (count - 1) * gap;
     final startX = left + (wagonWidth - totalW) / 2;
 
-    final paint = Paint()..color = Colors.white;
+    final paint = Paint()..color = Colors.white.withValues(alpha: opacity);
     for (var i = 0; i < count; i++) {
       // Öndeki vagonun en sağdaki penceresi ön camdır: biraz daha yuvarlak.
       final isWindshield = isFront && i == count - 1;

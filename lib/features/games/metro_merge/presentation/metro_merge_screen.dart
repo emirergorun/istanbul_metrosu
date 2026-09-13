@@ -167,7 +167,7 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
 
     if (outcome.beatRecord) {
       _haptic(HapticFeedback.mediumImpact);
-      _showBanner('Rekoru geçtin, durağa kadar devam');
+      _showBanner('Rekoru geçtin — durağına kadar devam');
     }
   }
 
@@ -631,8 +631,7 @@ class _Banner extends StatelessWidget {
             text ?? '',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppText.bodyStrong.copyWith(
               fontWeight: FontWeight.w800,
               color: LineTheme.readableOn(accent),
             ),

@@ -71,6 +71,7 @@ class _GameScreenState extends State<GameScreen>
   );
   Timer? _stationBonusTimer;
   int _seenStationPulse = 0;
+  int _seenStationClearPulse = 0;
 
   double _cellSize = 40;
 
@@ -110,6 +111,7 @@ class _GameScreenState extends State<GameScreen>
   void _onControllerChanged() {
     if (!mounted) return;
     _showStationBonusIfNew();
+    _showStationClearIfNew();
     if (_controller?.status == GameStatus.arrived && !_playedArrivalSound) {
       _playedArrivalSound = true;
       _sound(GameSound.arrival);
@@ -147,6 +149,29 @@ class _GameScreenState extends State<GameScreen>
     } else {
       audio.pauseMusic();
     }
+  }
+
+  /// Durakta boşalan satırları oyuncuya **göster**.
+  ///
+  /// Kendi hamlesiyle temizlediği satırla aynı patlama efekti kullanılıyor:
+  /// oyuncu için olay tek — "satır boşaldı". Efekt olmadan bloklar sessizce
+  /// kayboluyor ve oyun hile yapıyormuş gibi duruyordu.
+  void _showStationClearIfNew() {
+    final controller = _controller;
+    if (controller == null) return;
+    if (controller.stationClearPulse == _seenStationClearPulse) return;
+
+    _seenStationClearPulse = controller.stationClearPulse;
+    if (controller.lastStationClearedRows.isEmpty) return;
+
+    _flash.value = BoardFlash(
+      rows: controller.lastStationClearedRows,
+      columns: const <int>[],
+      cellValues: controller.lastStationClearedCells,
+    );
+    _flashController.forward(from: 0);
+    _haptic(HapticFeedback.mediumImpact);
+    _sound(GameSound.clear);
   }
 
   /// Controller yeni bir durak bonusu verdiyse kısa bildirim göster.
@@ -336,24 +361,36 @@ class _GameScreenState extends State<GameScreen>
                         if (session.combo >= 2)
                           ComboChip(combo: session.combo, accent: accent),
                       ],
-                      actions: <Widget>[
-                        if (session.undoLeft > 0)
-                          HudButton(
-                            icon: Icons.undo_rounded,
-                            tooltip: 'Geri al (${session.undoLeft})',
-                            onPressed: controller.canUndo
-                                ? () {
-                                    if (controller.undo()) {
-                                      _haptic(HapticFeedback.selectionClick);
-                                    }
-                                  }
-                                : null,
-                          ),
-                      ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Expanded(child: _buildPlayArea(controller, accent)),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.sm),
+                    // Geri al **aşağıda**, tepsinin hemen altında.
+                    //
+                    // Önce HUD'un sağ üst köşesindeydi: tek elle tutulan bir
+                    // telefonda başparmağın en zor eriştiği nokta orası, oysa
+                    // bu oyunun en sık basılan ikinci düğmesi. Duraklat
+                    // yukarıda kaldı — o nadiren ve aceleyle basılmıyor.
+                    //
+                    // Kalan hak artık ipucu metninde değil düğmenin üstünde
+                    // yazıyor: kaç hakkın kaldığını görmek için basılı
+                    // tutmak gerekmiyor.
+                    if (session.undoLeft > 0) ...<Widget>[
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: HudButton(
+                          icon: Icons.undo_rounded,
+                          tooltip: 'Geri al',
+                          label: '${session.undoLeft}',
+                          // Titreşimi `HudButton` veriyor; burada bir kez
+                          // daha çağrılırsa geri alma iki kez titriyor.
+                          onPressed: controller.canUndo
+                              ? controller.undo
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
                     _StationBonusPulse(
                       animation: _stationBonus,
                       accent: accent,
@@ -604,11 +641,7 @@ class _TargetBanner extends StatelessWidget {
                   'Rekoru geçtin — durağına kadar devam',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
+                  style: AppText.bodyStrong.copyWith(color: Colors.white),
                 ),
               ),
             ],
@@ -668,11 +701,7 @@ class _StationBonusPulse extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'Durak bonusu +$amount',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: accent,
-                ),
+                style: AppText.captionStrong.copyWith(color: accent),
               ),
             ],
           ),

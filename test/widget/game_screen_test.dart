@@ -100,9 +100,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Duraklatıldı'), findsOneWidget);
-    expect(find.text('Devam et'), findsOneWidget);
+    expect(find.text('DEVAM ET'), findsOneWidget);
 
-    await tester.tap(find.text('Devam et'));
+    await tester.tap(find.text('DEVAM ET'));
     await tester.pumpAndSettle();
 
     expect(find.text('Duraklatıldı'), findsNothing);

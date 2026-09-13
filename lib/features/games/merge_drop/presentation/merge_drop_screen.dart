@@ -383,18 +383,12 @@ class _HudChip extends StatelessWidget {
         children: <Widget>[
           Text(
             label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: accent,
-            ),
+            style: AppText.micro.copyWith(color: accent),
           ),
           Text(
             value,
             maxLines: 1,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppText.captionStrong.copyWith(
               fontWeight: FontWeight.w800,
               color: accent,
             ),
@@ -431,15 +425,14 @@ class _DropPlayArea extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             child: CustomPaint(
               painter: _MergeDropPainter(controller),
-              child: const SizedBox.expand(
+              child: SizedBox.expand(
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: EdgeInsets.only(bottom: AppSpacing.md),
                     child: Text(
                       'Sürükle, dokun ve aynı hatları birleştir',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppText.caption.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.textSecondary,
                       ),
@@ -593,8 +586,7 @@ class _Banner extends StatelessWidget {
             text ?? '',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
+            style: AppText.bodyStrong.copyWith(
               fontWeight: FontWeight.w800,
               color: LineTheme.readableOn(accent),
             ),

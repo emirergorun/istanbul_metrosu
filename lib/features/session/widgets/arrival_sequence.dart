@@ -378,12 +378,7 @@ class _PlatformSign extends StatelessWidget {
                 stationName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+                style: AppText.title,
               ),
             ),
           ],

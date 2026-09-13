@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import 'overlay_panel.dart';
+import '../../../core/widgets/pressable.dart';
 
 /// Oyun sonu paneli — **her oyun için ortak**.
 ///
@@ -97,14 +98,18 @@ class ResultOverlay extends StatelessWidget {
           const _NewRecordBadge(),
         ],
         const SizedBox(height: AppSpacing.lg),
+        // Birincil eylem her hatta ve her bitişte aynı: `theme.dart`'taki
+        // hiyerarşi kuralı gereği hat rengi kimliktir, aksiyon rengi değil.
+        // Kutlama tonu butondan değil, yukarıdaki rozetlerden ve accent'li
+        // skor satırından geliyor.
         FilledButton(
-          onPressed: onRestart,
-          style: FilledButton.styleFrom(
-            backgroundColor: isArrival ? accent : AppColors.brandNavy,
-          ),
+          onPressed: AppFeedback.onTap(context, onRestart),
           child: const Text('TEKRAR OYNA'),
         ),
-        TextButton(onPressed: onExit, child: const Text('Başka oyun seç')),
+        TextButton(
+          onPressed: AppFeedback.onTap(context, onExit),
+          child: const Text('Başka oyun seç'),
+        ),
       ],
     );
   }
@@ -135,11 +140,7 @@ class _ChallengeBadge extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             'Rekorunu geçtin',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              color: accent,
-            ),
+            style: AppText.bodyStrong.copyWith(color: accent),
           ),
         ],
       ),
@@ -161,18 +162,14 @@ class _NewRecordBadge extends StatelessWidget {
         color: AppColors.warning.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Icon(Icons.star_rounded, size: 18, color: AppColors.warning),
           SizedBox(width: AppSpacing.sm),
           Text(
-            'Yeni rekor!',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.warning,
-            ),
+            'Yeni rekor',
+            style: AppText.bodyStrong.copyWith(color: AppColors.warning),
           ),
         ],
       ),

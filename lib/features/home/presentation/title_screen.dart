@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../games/blocks/application/game_snapshot.dart';
 import '../../games/blocks/domain/game_state.dart';
 import '../../journey/models/journey.dart';
@@ -94,7 +95,41 @@ class _TitleScreenState extends State<TitleScreen>
     if (mounted) setState(() {});
   }
 
+  /// Yarım kalan oyunu siler.
+  ///
+  /// Onay isteniyor: kayıt geri getirilemez ve buton, oyuna devam eden
+  /// birincil kartın hemen altında duruyor — yanlış dokunuşun bedeli
+  /// yolculuğun ortasında biriktirilmiş skorun kaybı.
   Future<void> _discardSaved() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Yarım kalan oyun silinsin mi?'),
+        content: const Text(
+          'Bu yolculuktaki skorun ve kalan süren silinecek. '
+          'Bu geri alınamaz.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: AppFeedback.onTap(
+              context,
+              () => Navigator.of(context).pop(false),
+            ),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: AppFeedback.onTap(
+              context,
+              () => Navigator.of(context).pop(true),
+            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     await AppScope.of(context).store.clearSavedGame();
     if (mounted) setState(() {});
   }
@@ -142,18 +177,26 @@ class _TitleScreenState extends State<TitleScreen>
             ),
           ),
           // Alt yarıyı karartarak metnin okunmasını garanti et.
-          const Positioned.fill(
+          //
+          // Renk [AppColors.background]'tan **türetilir**, elle yazılmaz:
+          // önceki palet değişiminde buradaki sabit güncellenmeden kalmış,
+          // ekranın üstü yeni zemini, altı eski lacivertini gösteriyordu.
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  // Alt uçta bilerek tam opak değil (%95): arkadaki uzak
+                  // raylar hafifçe okunsun, ekran düz bir zemine dönmesin.
+                  // Metin kontrastı yine 15:1'in üstünde kalıyor.
                   colors: <Color>[
-                    Color(0x260B1622),
-                    Color(0x990B1622),
-                    AppColors.background,
+                    AppColors.background.withValues(alpha: 0.12),
+                    AppColors.background.withValues(alpha: 0.56),
+                    AppColors.background.withValues(alpha: 0.95),
+                    AppColors.background.withValues(alpha: 0.95),
                   ],
-                  stops: <double>[0.0, 0.40, 0.62],
+                  stops: const <double>[0.0, 0.38, 0.60, 1.0],
                 ),
               ),
             ),
@@ -166,16 +209,26 @@ class _TitleScreenState extends State<TitleScreen>
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     child: IconButton(
-                      onPressed: _openSettings,
+                      onPressed: AppFeedback.onTap(context, _openSettings),
                       tooltip: 'Ayarlar',
                       icon: const Icon(Icons.settings_rounded),
                       color: AppColors.textSecondary,
                     ),
                   ),
                 ),
-                const Spacer(),
+                // Dikey boşluk 3-2-1 bölünüyor: marka biraz aşağıda, kart
+                // ise ekranın **dibinde değil**, dipten bir tutam yukarıda
+                // duruyor.
+                //
+                // Eşit bölünmüşken marka ile kart arasında ekranın %15'i
+                // bomboş kalıyor, kart da en alta yapışıyordu; ikisi birden
+                // kartı ekrana sonradan iliştirilmiş gibi gösteriyordu.
+                // Alta bırakılan pay hem o boşluğu kapatıyor hem de kartı
+                // başparmağın rahat eriştiği banda taşıyor: uzun telefonda
+                // ekranın **en** dibi, ortasından daha zor erişilen yerdir.
+                const Spacer(flex: 3),
                 const _Wordmark(),
-                const Spacer(),
+                const Spacer(flex: 2),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.xl,
@@ -198,7 +251,7 @@ class _TitleScreenState extends State<TitleScreen>
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextButton(
-                          onPressed: _openPlanner,
+                          onPressed: AppFeedback.onTap(context, _openPlanner),
                           child: const Text('Yeni bir yolculuk başlat'),
                         ),
                       ] else if (last != null) ...<Widget>[
@@ -216,15 +269,108 @@ class _TitleScreenState extends State<TitleScreen>
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextButton(
-                          onPressed: _openPlanner,
+                          onPressed: AppFeedback.onTap(context, _openPlanner),
                           child: const Text('Başka bir rota seç'),
                         ),
                       ] else
                         FilledButton(
-                          onPressed: _openPlanner,
+                          onPressed: AppFeedback.onTap(context, _openPlanner),
                           child: const Text('OYUNA BAŞLA'),
                         ),
                     ],
+                  ),
+                ),
+                const Spacer(flex: 1),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Açılışın markası: perona asılı **istasyon tabelası**.
+///
+/// Önce burada uygulama ikonunun kendisi duruyordu (mavi köşeli kare +
+/// tren). İkonun ana ekranda işi yok: kullanıcı zaten uygulamanın
+/// içinde, ikon ona hangi uygulamayı açtığını ikinci kez anlatıyor ve
+/// ekrana yapıştırılmış bir çıkartma gibi duruyor.
+///
+/// Tabela ise ekranın kendi dünyasına ait: arkasından trenler geçiyor,
+/// üstündeki renk şeridi bu istasyondan geçen hatları söylüyor — gerçek
+/// peron tabelalarındaki gibi. Yazı ortalanmış değil sola yaslı, çünkü
+/// tabela okunacak bir levha, poster değil.
+class _Wordmark extends StatelessWidget {
+  const _Wordmark();
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = AppScope.of(context).metro.lines();
+    // Veri yüklenememişse tabela renksiz kalmasın.
+    final colors = lines.isEmpty
+        ? <Color>[AppColors.action]
+        : <Color>[for (final line in lines) LineTheme.from(line.color).accent];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          // Tavandan inen iki askı — tabelanın havada asılı durduğunu
+          // anlatan tek detay. Olmayınca levha ekrana çakılı bir kutu.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _SignStem(),
+              const SizedBox(width: 120),
+              _SignStem(),
+            ],
+          ),
+          Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: AppColors.brandNavyDeep,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.10),
+                width: 1.2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // Bu istasyondan geçen hatlar. Şerit hat sayısı kadar
+                // eşit parçaya bölünüyor; yeni hat eklenince kendiliğinden
+                // güncellenir.
+                SizedBox(
+                  height: 6,
+                  // `stretch` şart: `Row`'un varsayılan hizası `center` ve
+                  // çocuksuz bir `ColoredBox`'ın kendi yüksekliği sıfırdır —
+                  // şerit çizilir ama 0 piksel yüksekliğinde, yani görünmez.
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      for (final color in colors)
+                        Expanded(child: ColoredBox(color: color)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
+                  child: Text(
+                    'İSTANBUL\nMETROSU OYUNU',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontSize: 28,
+                      height: 1.12,
+                    ),
                   ),
                 ),
               ],
@@ -236,51 +382,16 @@ class _TitleScreenState extends State<TitleScreen>
   }
 }
 
-class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        const AppLogo(size: 84),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'İSTANBUL\nMETROSU OYUNU',
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontSize: 30, height: 1.1),
-        ),
-      ],
-    );
-  }
-}
-
-/// Uygulama markası: metro treni, hat renginde pencerelerle.
-///
-/// Aynı [MetroTrain] çizimini kullanır — ikon, alt çubuktaki tren ve varış
-/// sahnesindeki tren aynı şekildir.
-class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, required this.size});
-
-  final double size;
+/// Tabelayı tavana bağlayan ince askı.
+class _SignStem extends StatelessWidget {
+  const _SignStem();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.brandNavy,
-        borderRadius: BorderRadius.circular(size * 0.24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.14),
-          width: size * 0.02,
-        ),
-      ),
-      child: MetroTrain(color: AppColors.success, height: size * 0.30),
+      width: 3,
+      height: 20,
+      color: AppColors.outline.withValues(alpha: 0.7),
     );
   }
 }
@@ -309,11 +420,12 @@ class _SavedGameCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Material(
-          color: AppColors.action,
+        Pressable(
+          onTap: onResume,
+          onLightSurface: true,
           borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-          child: InkWell(
-            onTap: onResume,
+          child: Material(
+            color: AppColors.action,
             borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -327,9 +439,7 @@ class _SavedGameCard extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           'YARIM KALAN OYUN',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                          style: AppText.micro.copyWith(
                             letterSpacing: 0.9,
                             color: AppColors.onAction.withValues(alpha: 0.55),
                           ),
@@ -339,9 +449,7 @@ class _SavedGameCard extends StatelessWidget {
                           '${journey.origin.name} → ${journey.destination.name}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: AppFonts.display,
-                            fontSize: 16,
+                          style: AppText.lead.copyWith(
                             fontWeight: FontWeight.w800,
                             color: AppColors.onAction,
                           ),
@@ -349,8 +457,7 @@ class _SavedGameCard extends StatelessWidget {
                         Text(
                           'Skor ${Formatters.score(session.score)} · '
                           '${Formatters.remaining(session.remainingSeconds)} kaldı',
-                          style: TextStyle(
-                            fontSize: 12.5,
+                          style: AppText.caption.copyWith(
                             color: AppColors.onAction.withValues(alpha: 0.7),
                           ),
                         ),
@@ -367,7 +474,25 @@ class _SavedGameCard extends StatelessWidget {
             ),
           ),
         ),
-        TextButton(onPressed: onDiscard, child: const Text('Bu oyunu bırak')),
+        // Yıkıcı eylem geri çekiliyor: normal akış ("yeni yolculuk") ile
+        // kaydı silmek aynı gri metinde, aynı genişlikte duruyordu. Artık
+        // bu buton yalnızca yazısı kadar geniş, daha küçük ve daha soluk;
+        // ekranı tarayan göz önce devam etmeyi görüyor.
+        Center(
+          child: TextButton(
+            onPressed: AppFeedback.onTap(context, onDiscard),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textMuted,
+              textStyle: AppText.caption.copyWith(fontWeight: FontWeight.w600),
+              minimumSize: const Size(0, 40),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+            ),
+            child: const Text('Bu oyunu bırak'),
+          ),
+        ),
       ],
     );
   }
@@ -388,11 +513,12 @@ class _ResumeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.action,
+    return Pressable(
+      onTap: onTap,
+      onLightSurface: true,
       borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: AppColors.action,
         borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -408,9 +534,7 @@ class _ResumeButton extends StatelessWidget {
                       '${journey.origin.name} → ${journey.destination.name}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 16,
+                      style: AppText.lead.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.onAction,
                       ),
@@ -419,8 +543,7 @@ class _ResumeButton extends StatelessWidget {
                       record > 0
                           ? '~${journey.estimatedMinutes} dk · rekorun ${Formatters.score(record)}'
                           : '~${journey.estimatedMinutes} dk · ilk yolculuk',
-                      style: TextStyle(
-                        fontSize: 12.5,
+                      style: AppText.caption.copyWith(
                         color: AppColors.onAction.withValues(alpha: 0.7),
                       ),
                     ),
@@ -467,17 +590,108 @@ class _TrafficPainter extends CustomPainter {
   final double progress;
   final List<MetroLine> lines;
 
-  /// Her ray için: dikey konum oranı, hız çarpanı, yön, faz.
+  /// Her ray için: dikey konum oranı, hız çarpanı, yön, faz, solukluk ve
+  /// **üstündeki tren sayısı**.
   ///
-  /// Raylar ekranın üst bölgesinde tutulur; alt yarı marka ve butona ayrılmış
-  /// olduğu için oraya tren girmez — hareket metni okumayı zorlaştırmasın.
-  static const List<({double y, double speed, int direction, double phase})>
-  _tracks = <({double y, double speed, int direction, double phase})>[
-    (y: 0.16, speed: 0.85, direction: 1, phase: 0.0),
-    (y: 0.23, speed: 1.30, direction: -1, phase: 0.35),
-    (y: 0.30, speed: 0.60, direction: 1, phase: 0.7),
-    (y: 0.37, speed: 1.05, direction: -1, phase: 0.15),
-  ];
+  /// Üç kural:
+  ///
+  /// 1. **Aralıklar eşit değil.** Eşit aralıklı yatay çizgiler ağ değil,
+  ///    desen gibi okunuyor. Sıklık yukarıda fazla, aşağıda seyrek.
+  /// 2. **Bir rayda birden fazla tren olabilir.** Tek trenle ray zamanın
+  ///    çoğunda boş kalıyor, ağ ölü görünüyordu. İkinci tren yarım faz
+  ///    ötelenmiş girer.
+  /// 3. **Üstte ve altta yasak bölgeler var.** 0.07'nin üstünde saat ve
+  ///    Dynamic Island, 0.09-0.14 arasında sağ üstteki ayar çarkı, 0.72'nin
+  ///    altında kart ve metin butonları duruyor. Ray bunların içinden
+  ///    geçerse ikisi de okunmuyor.
+  static const List<
+    ({
+      double y,
+      double speed,
+      int direction,
+      double phase,
+      double fade,
+      int trains,
+    })
+  >
+  _tracks =
+      <
+        ({
+          double y,
+          double speed,
+          int direction,
+          double phase,
+          double fade,
+          int trains,
+        })
+      >[
+        (
+          y: 0.078,
+          speed: 0.85,
+          direction: 1,
+          phase: 0.00,
+          fade: 1.00,
+          trains: 2,
+        ),
+        (
+          y: 0.150,
+          speed: 1.30,
+          direction: -1,
+          phase: 0.35,
+          fade: 1.00,
+          trains: 1,
+        ),
+        (
+          y: 0.200,
+          speed: 0.60,
+          direction: 1,
+          phase: 0.70,
+          fade: 0.95,
+          trains: 2,
+        ),
+        (
+          y: 0.252,
+          speed: 1.05,
+          direction: -1,
+          phase: 0.15,
+          fade: 0.86,
+          trains: 1,
+        ),
+        (
+          y: 0.300,
+          speed: 0.72,
+          direction: 1,
+          phase: 0.50,
+          fade: 0.74,
+          trains: 2,
+        ),
+        (
+          y: 0.345,
+          speed: 1.15,
+          direction: -1,
+          phase: 0.90,
+          fade: 0.58,
+          trains: 1,
+        ),
+        // Marka ile kartın arasını dolduran uzak raylar: daha soluk, daha
+        // yavaş, daha küçük tren — mesafe hissi.
+        (
+          y: 0.575,
+          speed: 0.42,
+          direction: 1,
+          phase: 0.25,
+          fade: 0.46,
+          trains: 2,
+        ),
+        (
+          y: 0.628,
+          speed: 0.32,
+          direction: -1,
+          phase: 0.60,
+          fade: 0.34,
+          trains: 1,
+        ),
+      ];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -487,7 +701,11 @@ class _TrafficPainter extends CustomPainter {
 
     for (var i = 0; i < _tracks.length; i++) {
       final track = _tracks[i];
-      final line = lines[i % lines.length];
+      // Sırayla alınırsa ilk iki ray M1A ve M1B oluyor; ikisi de aynı
+      // kırmızı, yan yana tek bir kalın çizgi gibi okunuyordu. Üçer atlayarak
+      // dolaşmak (10 hat ile aynı hatta dönmeden hepsini gezer) renkleri
+      // ayırıyor.
+      final line = lines[(i * 3) % lines.length];
       final theme = LineTheme.from(line.color);
       final y = size.height * track.y;
 
@@ -496,37 +714,47 @@ class _TrafficPainter extends CustomPainter {
         Offset(-4, y),
         Offset(size.width + 4, y),
         Paint()
-          ..color = theme.accent.withValues(alpha: 0.30)
+          ..color = theme.accent.withValues(alpha: 0.30 * track.fade)
           ..strokeWidth = 2,
       );
 
       // Durak işaretleri
-      final dotPaint = Paint()..color = theme.accent.withValues(alpha: 0.22);
+      final dotPaint = Paint()
+        ..color = theme.accent.withValues(alpha: 0.22 * track.fade);
       const dots = 7;
       for (var d = 0; d <= dots; d++) {
         canvas.drawCircle(Offset(size.width * d / dots, y), 2.5, dotPaint);
       }
 
-      // Tren
-      final trainHeight = size.height * 0.030;
+      // Trenler
+      // Uzaklık yalnız solmayla değil **boyutla** da anlatılır. Ölçek
+      // 0.72-1.00 arasında oynarken aradaki fark gözle seçilmiyordu; alttaki
+      // trenler uzak değil, yalnızca soluk görünüyordu.
+      final trainHeight = size.height * 0.030 * (0.45 + 0.55 * track.fade);
       final width = MetroTrain.widthFor(height: trainHeight);
       final travel = size.width + width * 2;
-      final t = (progress * track.speed + track.phase) % 1.0;
-      final x = track.direction > 0
-          ? -width + travel * t
-          : size.width + width - travel * t;
+      final trainPaint = MetroTrainPainter(
+        color: theme.accent.withValues(alpha: 0.85 * track.fade),
+        opacity: track.fade,
+      );
 
-      canvas.save();
-      canvas.translate(x, y - trainHeight / 2);
-      if (track.direction < 0) {
-        // Ters yöndeki treni aynala ki burnu gittiği yöne baksın.
-        canvas.translate(width, 0);
-        canvas.scale(-1, 1);
+      for (var n = 0; n < track.trains; n++) {
+        final t =
+            (progress * track.speed + track.phase + n / track.trains) % 1.0;
+        final x = track.direction > 0
+            ? -width + travel * t
+            : size.width + width - travel * t;
+
+        canvas.save();
+        canvas.translate(x, y - trainHeight / 2);
+        if (track.direction < 0) {
+          // Ters yöndeki treni aynala ki burnu gittiği yöne baksın.
+          canvas.translate(width, 0);
+          canvas.scale(-1, 1);
+        }
+        trainPaint.paint(canvas, Size(width, trainHeight));
+        canvas.restore();
       }
-      MetroTrainPainter(
-        color: theme.accent.withValues(alpha: 0.85),
-      ).paint(canvas, Size(width, trainHeight));
-      canvas.restore();
     }
   }
 

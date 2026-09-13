@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../core/widgets/pressable.dart';
 import '../../models/station.dart';
 
 /// Yatay hat seçici.
@@ -61,11 +62,17 @@ class _LineChip extends StatelessWidget {
       button: true,
       selected: isSelected,
       label: '${line.id} hattı, ${line.name}',
-      child: Material(
-        color: isSelected ? theme.color : Colors.transparent,
+      child: Pressable(
+        onTap: onTap,
+        // Seçili çip hattın kendi rengindedir; sarı M9 ile mor M5'in
+        // basılı tonu aynı olamaz, zeminin parlaklığından türetiliyor.
+        onLightSurface:
+            isSelected &&
+            ThemeData.estimateBrightnessForColor(theme.color) ==
+                Brightness.light,
         borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          onTap: onTap,
+        child: Material(
+          color: isSelected ? theme.color : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           child: Container(
             alignment: Alignment.center,
@@ -82,8 +89,7 @@ class _LineChip extends StatelessWidget {
             ),
             child: Text(
               line.id,
-              style: TextStyle(
-                fontSize: 14,
+              style: AppText.bodyStrong.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
                 color: isSelected ? theme.onColor : theme.accent,

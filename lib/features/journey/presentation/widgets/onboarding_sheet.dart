@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../core/widgets/pressable.dart';
 
 /// İlk açılışta bir kez gösterilen üç kartlık tanıtım.
 ///
@@ -100,12 +101,15 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
-              onPressed: _next,
-              child: Text(_isLast ? 'HADİ BAŞLAYALIM' : 'DEVAM'),
+              onPressed: AppFeedback.onTap(context, _next),
+              child: Text(_isLast ? 'BAŞLA' : 'DEVAM'),
             ),
             if (!_isLast)
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: AppFeedback.onTap(
+                  context,
+                  () => Navigator.of(context).pop(),
+                ),
                 child: const Text('Atla'),
               ),
           ],

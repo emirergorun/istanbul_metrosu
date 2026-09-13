@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
+import 'game_glyph.dart';
+
 /// Yolculuk sırasında oynanabilecek bir oyun.
 ///
 /// Uygulama tek oyunla başladı; artık yolculuk ve oyun ayrı seçimler.
@@ -10,7 +13,8 @@ class MiniGame {
     required this.id,
     required this.name,
     required this.tagline,
-    required this.icon,
+    required this.glyph,
+    required this.color,
     this.isAvailable = false,
   });
 
@@ -22,7 +26,12 @@ class MiniGame {
   /// Kartta adın altında görünen tek cümlelik tanım.
   final String tagline;
 
-  final IconData icon;
+  /// Kartta görünen elle çizilmiş şekil. Stok `Icons.*` kullanılmaz —
+  /// gerekçesi [GameGlyph] üzerinde.
+  final GameGlyph glyph;
+
+  /// Oyunun kendi kimlik rengi; seçili hattan bağımsız.
+  final Color color;
 
   /// `false` ise kart kilitli görünür ve seçilemez.
   final bool isAvailable;
@@ -52,7 +61,8 @@ class MiniGames {
     id: 'blocks',
     name: 'Blok Metro',
     tagline: 'Parçaları yerleştir, dolan satır ve sütunları temizle.',
-    icon: Icons.grid_view_rounded,
+    glyph: GameGlyph.blocks,
+    color: AppColors.gameBlocks,
     isAvailable: true,
   );
 
@@ -60,7 +70,8 @@ class MiniGames {
     id: 'metro_merge',
     name: 'Hat Birleştir',
     tagline: 'M1 hatlarını birleştir, M2 ve M3 seviyelerine yükselt.',
-    icon: Icons.train_rounded,
+    glyph: GameGlyph.merge,
+    color: AppColors.gameMerge,
     isAvailable: true,
   );
 
@@ -68,7 +79,8 @@ class MiniGames {
     id: 'rail_flight',
     name: 'Ray Uçuşu',
     tagline: 'Treni uçur, raylara çarpmadan tünellerden geç.',
-    icon: Icons.flight_takeoff_rounded,
+    glyph: GameGlyph.tunnel,
+    color: AppColors.gameTunnel,
     isAvailable: true,
   );
 
@@ -76,7 +88,8 @@ class MiniGames {
     id: 'merge_drop',
     name: 'Hat Düşür',
     tagline: 'M1 rozetlerini düşür, aynı hatları M7’ye kadar büyüt.',
-    icon: Icons.bubble_chart_rounded,
+    glyph: GameGlyph.drop,
+    color: AppColors.gameDrop,
     isAvailable: true,
   );
 
@@ -84,7 +97,8 @@ class MiniGames {
     id: 'station_memory',
     name: 'Durak Hafıza',
     tagline: 'Durak sırasını aklında tut, aynı sırayla seç.',
-    icon: Icons.psychology_rounded,
+    glyph: GameGlyph.sequence,
+    color: AppColors.gameSequence,
     isAvailable: true,
   );
 
@@ -92,7 +106,8 @@ class MiniGames {
     id: 'lane_runner',
     name: 'Ray Değiştir',
     tagline: 'Kapalı raylardan kaç, treni M7’ye kadar yükselt.',
-    icon: Icons.swap_horiz_rounded,
+    glyph: GameGlyph.lanes,
+    color: AppColors.gameLanes,
     isAvailable: true,
   );
 
@@ -100,21 +115,24 @@ class MiniGames {
     id: 'transfer',
     name: 'Aktarma',
     tagline: 'Yolcuları doğru hatta yönlendir.',
-    icon: Icons.alt_route_rounded,
+    glyph: GameGlyph.locked,
+    color: AppColors.textMuted,
   );
 
   static const MiniGame signal = MiniGame(
     id: 'signal',
     name: 'Sinyal',
     tagline: 'Işıkları zamanında çevir, trenleri çarpıştırma.',
-    icon: Icons.traffic_rounded,
+    glyph: GameGlyph.locked,
+    color: AppColors.textMuted,
   );
 
   static const MiniGame wagon = MiniGame(
     id: 'wagon',
     name: 'Vagon',
     tagline: 'Vagonları en verimli şekilde doldur.',
-    icon: Icons.view_week_rounded,
+    glyph: GameGlyph.locked,
+    color: AppColors.textMuted,
   );
 
   static const List<MiniGame> all = <MiniGame>[

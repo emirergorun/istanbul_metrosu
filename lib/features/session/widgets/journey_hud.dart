@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../journey_run.dart';
+import '../../../core/widgets/pressable.dart';
 
 /// Oyun ekranlarının üst bilgi alanı — **her oyun için ortak**.
 ///
@@ -64,10 +65,12 @@ class JourneyHud extends StatelessWidget {
                         _recordLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
+                        // Skorun üstündeki künye satırı: büyük harf
+                        // etiket ölçeğinde, skorun kendisiyle yarışmamalı.
+                        style: AppText.label.copyWith(
                           letterSpacing: 1.2,
                           fontWeight: FontWeight.w700,
+                          fontFeatures: kTabularFigures,
                           color: run.recordBeaten
                               ? accent
                               : AppColors.textMuted,
@@ -77,12 +80,9 @@ class JourneyHud extends StatelessWidget {
                         Formatters.score(run.score),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
+                        style: AppText.display.copyWith(
                           height: 1.1,
+                          fontFeatures: kTabularFigures,
                         ),
                       ),
                     ],
@@ -140,18 +140,14 @@ class SprintChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.6)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Icon(Icons.flag_rounded, size: 15, color: AppColors.warning),
           SizedBox(width: 3),
           Text(
             'SON DURAK ×2',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: AppColors.warning,
-            ),
+            style: AppText.label.copyWith(color: AppColors.warning),
           ),
         ],
       ),
@@ -183,14 +179,7 @@ class ComboChip extends StatelessWidget {
           children: <Widget>[
             Icon(Icons.bolt_rounded, size: 15, color: accent),
             const SizedBox(width: 2),
-            Text(
-              'x$combo',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: accent,
-              ),
-            ),
+            Text('x$combo', style: AppText.statSmall.copyWith(color: accent)),
           ],
         ),
       ),
@@ -205,10 +194,16 @@ class HudButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.label,
   });
 
   final IconData icon;
   final String tooltip;
+
+  /// İkonun yanında görünen kısa metin — geri alma hakkı gibi sayılar için.
+  /// `null` ise düğme kare kalır.
+  final String? label;
+
   final VoidCallback? onPressed;
 
   @override
@@ -217,23 +212,41 @@ class HudButton extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: enabled,
-      label: tooltip,
+      label: label == null ? tooltip : '$tooltip, $label hak',
       child: Tooltip(
         message: tooltip,
-        child: Material(
-          color: AppColors.surfaceHigh,
+        child: Pressable(
+          onTap: onPressed,
           borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            onTap: onPressed,
+          child: Material(
+            color: AppColors.surfaceHigh,
             borderRadius: BorderRadius.circular(12),
             child: SizedBox(
-              width: 44,
+              width: label == null ? 44 : 66,
               height: 44,
               child: ExcludeSemantics(
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: enabled
+                          ? AppColors.textPrimary
+                          : AppColors.textMuted,
+                    ),
+                    if (label != null) ...<Widget>[
+                      const SizedBox(width: 4),
+                      Text(
+                        label!,
+                        style: AppText.statSmall.copyWith(
+                          color: enabled
+                              ? AppColors.textPrimary
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

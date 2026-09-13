@@ -358,18 +358,12 @@ class _HudChip extends StatelessWidget {
         children: <Widget>[
           Text(
             label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: accent,
-            ),
+            style: AppText.micro.copyWith(color: accent),
           ),
           Text(
             value,
             maxLines: 1,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppText.captionStrong.copyWith(
               fontWeight: FontWeight.w800,
               color: accent,
             ),
@@ -410,12 +404,7 @@ class _MemoryPlayArea extends StatelessWidget {
                 ? 'Durak sırasını aklında tut'
                 : 'Aynı sırayla seç',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
+            style: AppText.title.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -423,11 +412,7 @@ class _MemoryPlayArea extends StatelessWidget {
                 ? 'Birazdan bu kartlar kapanacak.'
                 : '${round.answerIndex + 1}. durağı seç',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
+            style: AppText.captionStrong,
           ),
           const SizedBox(height: AppSpacing.lg),
           _SequenceStrip(

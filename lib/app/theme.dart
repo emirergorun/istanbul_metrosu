@@ -32,27 +32,56 @@ class AppColors {
   const AppColors._();
 
   // --- Nötr skala ---
-  static const Color background = Color(0xFF0B1622);
-  static const Color surface = Color(0xFF142335);
-  static const Color surfaceHigh = Color(0xFF1D3149);
-  static const Color boardBackground = Color(0xFF0F1D2C);
-  static const Color emptyCell = Color(0xFF1A2C41);
-  static const Color outline = Color(0xFF26405C);
+  //
+  // Tek ton (218°) üzerine kurulu, **algısal olarak eşit adımlı** bir
+  // merdiven: L* değerleri 6 → 11 → 16 → 22 → 33. Daha önce ilk iki adım
+  // 3 L* idi; o fark gözle seçilemediği için tahta ve kartlar zeminden
+  // ayrışmıyor, arayüz düz bir leke gibi duruyordu.
+  //
+  // **Doygunluk bilerek düşük (%10-14).** Zemin önce doygun bir laciverttti
+  // (%52) ve bu iki sorun üretiyordu:
+  //
+  // 1. **İşlevsel.** M8'in resmi rengi (`#447ABE`) zeminle *birebir aynı
+  //    tondaydı*, M3 (`#05A8E2`) 18° uzaktaydı. Yani bu iki hatta kimlik
+  //    rengi zeminin açığı oluyor, "hat rengi kimliktir" kuralı çalışmıyordu.
+  // 2. **Görsel.** Dokuz hat renk çemberinin tamamına yayılmış durumda;
+  //    hiçbir tona kaçarak hepsinden uzaklaşmak mümkün değil. Sıcak bir
+  //    zemin bu sefer M6 (bej) ve M9 (sarı) ile akraba oluyordu.
+  //
+  // Çözüm tonu değiştirmek değil, **doygunluğu düşürmek**: zemin nötre
+  // yaklaştıkça hiçbir hattın akrabası olmuyor ve ekrandaki tek renk hat
+  // rengi kalıyor. Tamamen nötr de yapılmadı (%0 gri jenerik durur); serin
+  // cast korunuyor.
+  static const Color background = Color(0xFF111317);
+  static const Color surface = Color(0xFF24282E);
+  static const Color surfaceHigh = Color(0xFF31353D);
+  static const Color boardBackground = Color(0xFF1B1E23);
+  static const Color emptyCell = Color(0xFF292D34);
+  static const Color outline = Color(0xFF484E58);
+
+  /// Tahtadaki boş hücrenin ızgara çizgisi.
+  ///
+  /// Izgara dolgu farkıyla çizilemiyor: boş hücreyi tahta zemininden 3:1
+  /// ayıracak kadar açmak gerekirdi, o açıklıkta da engel hücresiyle
+  /// (`blocker`) karışırdı. Bunun yerine dolgu koyu kalır, ızgarayı bu ince
+  /// çizgi çizer — zemine 3.83:1, dolguya 3.02:1, ikisi de WCAG'in ince
+  /// grafik nesne sınırının (3.0) üstünde.
+  static const Color cellGrid = Color(0xFF697D9F);
 
   /// Kurumsal lacivert — başlık şeritleri ve ikincil yüzeyler.
   static const Color brandNavy = Color(0xFF164874);
   static const Color brandNavyDeep = Color(0xFF0E2A46);
 
   // --- Metin ---
-  static const Color textPrimary = Color(0xFFF2F6FA);
-  static const Color textSecondary = Color(0xFF9BB0C6);
-  static const Color textMuted = Color(0xFF6F87A0);
+  static const Color textPrimary = Color(0xFFF4F5F7);
+  static const Color textSecondary = Color(0xFFBBC1CC);
+  static const Color textMuted = Color(0xFF99A1AF);
 
   // --- Aksiyon (sabit) ---
   /// Birincil buton. Koyu zeminde en parlak öge olması hiyerarşiyi kurar ve
   /// hiçbir hat rengiyle çakışmaz.
-  static const Color action = Color(0xFFF2F6FA);
-  static const Color onAction = Color(0xFF0B1622);
+  static const Color action = Color(0xFFF4F5F7);
+  static const Color onAction = Color(0xFF111317);
 
   // --- Semantik ---
   /// Yalnız hata ve geçersiz hamle. Aksiyon rengiyle karıştırılmamalı.
@@ -60,8 +89,25 @@ class AppColors {
   static const Color success = Color(0xFF2FB37A);
   static const Color warning = Color(0xFFF5C518);
 
+  /// Oyun kimlik renkleri — her mini oyunun kendi tonu.
+  ///
+  /// Hat renginden **bağımsız**: oyun kataloğu hangi rotayı seçtiğinle
+  /// değişmez, altı oyun her zaman aynı altı renkte görünür. Aksi hâlde
+  /// (eskiden olduğu gibi) tüm kartlar seçili hattın tonuna boyanıyor ve
+  /// birbirinden ayırt edilemiyordu.
+  ///
+  /// Renk tek ayrım değil: her oyunun ayrıca kendi çizilmiş glifi var
+  /// (`GameGlyph`), yani renk körlüğünde de kartlar ayrışır. Hepsi
+  /// [surfaceHigh] üzerinde en az 5.2:1 kontrasta sahip.
+  static const Color gameBlocks = Color(0xFFE8A33D);
+  static const Color gameMerge = Color(0xFF5BB8E8);
+  static const Color gameTunnel = Color(0xFF4FC08D);
+  static const Color gameDrop = Color(0xFFD98BB8);
+  static const Color gameSequence = Color(0xFFC9A0F0);
+  static const Color gameLanes = Color(0xFFF0D95E);
+
   /// Engel hücresi (zorluk profilinden gelen başlangıç doluluğu).
-  static const Color blocker = Color(0xFF40566F);
+  static const Color blocker = Color(0xFF535A66);
 
   /// Blok renkleri — **Okabe–Ito** renk körlüğü güvenli paletinden, İstanbul
   /// metro palet ailesine en yakın beş ton seçilerek.
@@ -248,6 +294,130 @@ class AppTheme {
     );
   }
 }
+
+/// Tipografi ölçeği.
+///
+/// Uygulamada daha önce **85 ayrı `TextStyle`** elle yazılmıştı ve içlerinde
+/// 19 farklı punto vardı: 9, 9.5, 10, 11, 12, 12.5, 13, 13.5, 14, 14.5, 15,
+/// 15.5, 16, 17, 18, 19, 20, 22, 32. Bu bir ölçek değil, birikmiş
+/// tercihlerdi; iki ekranda aynı işi yapan yazı iki farklı boyuttaydı ve
+/// tema değiştiğinde hangi yazının nereden beslendiği görünmüyordu.
+///
+/// Ölçek yedi basamak: **10 · 12 · 13 · 15 · 17 · 20 · 28**. Basamaklar
+/// arası oran ~1.15-1.25; bitişik iki basamak gözle ayırt edilebiliyor ama
+/// sıçrama yapmıyor. Her basamağın bir işi var:
+///
+/// | Rol | Punto | Nerede |
+/// |---|---|---|
+/// | [display] | 28 | açılış tabelası |
+/// | [title] | 20 | ekran başlığı |
+/// | [lead] | 17 | kart başlığı, panel başlığı |
+/// | [body] | 15 | gövde metni |
+/// | [caption] | 13 | yardımcı açıklama |
+/// | [label] | 12 | büyük harf bölüm etiketi |
+/// | [micro] | 10 | rozet, sayaç etiketi |
+///
+/// Renk **taşınmaz**: her rol kendi varsayılan rengiyle gelir, farklı renk
+/// gerektiğinde `copyWith(color: ...)` yazılır. Böylece "bu yazı neden bu
+/// renkte" sorusunun cevabı tek satırda görünür.
+class AppText {
+  const AppText._();
+
+  /// Açılış tabelası. Raleway, sıkı satır arası.
+  static const TextStyle display = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 28,
+    fontWeight: FontWeight.w800,
+    height: 1.12,
+    color: AppColors.textPrimary,
+  );
+
+  /// Ekran başlığı (AppBar, panel başlığı).
+  static const TextStyle title = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Kart başlığı, öne çıkan satır.
+  static const TextStyle lead = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 17,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Gövde metni.
+  static const TextStyle body = TextStyle(
+    fontSize: 15,
+    height: 1.3,
+    color: AppColors.textSecondary,
+  );
+
+  /// Vurgulu gövde.
+  static const TextStyle bodyStrong = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+  );
+
+  /// Yardımcı açıklama.
+  static const TextStyle caption = TextStyle(
+    fontSize: 13,
+    height: 1.3,
+    color: AppColors.textMuted,
+  );
+
+  /// Vurgulu yardımcı metin (durak adı, süre).
+  static const TextStyle captionStrong = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+  );
+
+  /// Büyük harf bölüm etiketi. Metro tabelası dili: harf arası açık.
+  static const TextStyle label = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 1.0,
+    color: AppColors.textMuted,
+  );
+
+  /// Rozet ve minik sayaç etiketi.
+  static const TextStyle micro = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w800,
+    letterSpacing: 0.8,
+    color: AppColors.textMuted,
+  );
+
+  /// Değişen büyük sayı — skor, sayaç. Rakamlar sabit genişlikte.
+  static const TextStyle stat = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    fontFeatures: kTabularFigures,
+    color: AppColors.textPrimary,
+  );
+
+  /// Değişen küçük sayı.
+  static const TextStyle statSmall = TextStyle(
+    fontSize: 15,
+    fontWeight: FontWeight.w800,
+    fontFeatures: kTabularFigures,
+    color: AppColors.textPrimary,
+  );
+}
+
+/// Değişen sayılar için ortak stil parçası.
+///
+/// Open Sans'ta rakam genişlikleri eşit değildir: skor 1'den 2'ye geçerken
+/// metnin kapladığı yer değişir ve satır oynar. Saniyede bir güncellenen
+/// sayaçta ve her hamlede artan skorda bu titreme sürekli görünür.
+/// [FontFeature.tabularFigures] rakamları sabit genişliğe sabitler.
+const List<FontFeature> kTabularFigures = <FontFeature>[
+  FontFeature.tabularFigures(),
+];
 
 /// Ortak ölçüler.
 class AppSpacing {

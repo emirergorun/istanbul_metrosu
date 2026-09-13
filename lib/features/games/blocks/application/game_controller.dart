@@ -112,6 +112,15 @@ class GameController extends ChangeNotifier implements JourneyRun {
   @override
   int stationBonusPulse = 0;
 
+  /// Durakta boşalan satır ve hücrelerin boşalmadan önceki renkleri.
+  ///
+  /// UI bunu yerleştirme temizliğiyle aynı patlama efektinde kullanır:
+  /// oyuncu için "satır temizlendi" olayı tektir, sebebi ister hamlesi
+  /// ister durak olsun.
+  List<int> lastStationClearedRows = const <int>[];
+  Map<int, int> lastStationClearedCells = const <int, int>{};
+  int stationClearPulse = 0;
+
   GameSession get session => _session;
 
   // --- JourneyRun sözleşmesi ---
@@ -262,6 +271,15 @@ class GameController extends ChangeNotifier implements JourneyRun {
     _timer = null;
   }
 
+  /// Testte saniyeleri elle ilerletmek için — gerçek zamanlayıcıyı beklemeden
+  /// durak geçişi ve varış sınanabilsin diye.
+  @visibleForTesting
+  void debugAdvanceSeconds(int seconds) {
+    for (var i = 0; i < seconds; i++) {
+      _onTick();
+    }
+  }
+
   void _onTick() {
     if (_session.status != GameStatus.playing) return;
     _session = _session.copyWith(elapsedSeconds: _session.elapsedSeconds + 1);
@@ -299,6 +317,41 @@ class GameController extends ChangeNotifier implements JourneyRun {
       stationBonusPulse++;
       _checkRecord();
     }
+
+    _emptyCrowdedRowsAtStation();
+  }
+
+  /// Durağa varınca **kalabalık vagonlar boşalır**: en az yarısı dolu olan
+  /// satırlar temizlenir.
+  ///
+  /// Ölçümle konuldu, süs değil. `balance_report_test` 150 oyun simüle
+  /// ediyor ve tablo şunu söylüyordu: 9 dakikanın üstündeki her yolculukta
+  /// varış oranı %0-3. Yani oyuncu tahtayı dolduruyor, oyun "hamle kalmadı"
+  /// ile bitiyor ve **ürünün ana vaadi olan varış sahnesi gerçek bir işe
+  /// gidiş yolculuğunda hiç oynamıyordu.** Aynı ölçümle uzun yolculukta
+  /// varış %3'ten %35-48'e çıkıyor, kısa yolculuk ise değişmiyor.
+  ///
+  /// Zorluk ayarlarına dokunulmadı (engel oranı, parça havuzu, undo hakkı
+  /// aynı). Skora da dokunmaz: boşalan satır puan getirmez, yalnız yer
+  /// açar — puanı hâlâ oyuncunun kendi temizlediği satırlar kazandırır.
+  void _emptyCrowdedRowsAtStation() {
+    final rows = crowdedRows(_session.board);
+    if (rows.isEmpty) return;
+
+    lastStationClearedRows = rows;
+    lastStationClearedCells = _cellValuesOf(
+      _session.board,
+      rows: rows,
+      columns: const <int>[],
+    );
+    stationClearPulse++;
+
+    _session = _session.copyWith(board: clearLines(_session.board, rows: rows));
+
+    // Geri alma durağın öncesine dönemez: dönebilseydi boşalan satırlar
+    // geri gelir, oyuncu da "geri aldım, tahtam doldu" diye cezalandırılmış
+    // hissederdi.
+    _undoSnapshot = null;
   }
 
   /// Rekor bu anda geçildiyse işaretler ve geçildiğini döner.

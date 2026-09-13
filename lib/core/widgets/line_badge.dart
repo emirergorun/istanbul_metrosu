@@ -38,11 +38,14 @@ class LineBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
+        // Punto rozetin kutusuna bağlı, ölçek basamağına değil: rozet
+        // metro haritasındaki kare etiketin karşılığı, kutusunun içinde
+        // durmak zorunda.
+        style: AppText.captionStrong.copyWith(
           fontSize: compact ? 11 : 13,
           fontWeight: FontWeight.w800,
-          color: onColor ?? LineTheme.readableOn(color),
           letterSpacing: 0.5,
+          color: onColor ?? LineTheme.readableOn(color),
         ),
       ),
     );

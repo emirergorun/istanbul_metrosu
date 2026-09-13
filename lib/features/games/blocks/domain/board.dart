@@ -176,6 +176,40 @@ Board clearLines(
   return Board.fromGrid(grid);
 }
 
+/// Durakta boşalan satırlar: **en az yarısı dolu olanlar**.
+///
+/// "Kalabalık vagon boşalır." Eşik bilinçli olarak doluluğa bağlı, sabit
+/// sayıya değil: tahta rahatken hiçbir şey olmaz, oyuncunun sıkıştığı anda
+/// rahatlama büyür. Böylece kısa yolculuğun gerilimi bozulmadan uzun
+/// yolculuktaki ölüm sarmalı kırılıyor.
+///
+/// Eşik ölçümle seçildi (`test/balance_report_test.dart`, 150 oyun, 7 sn
+/// hamle aralığı). Varış oranı — önce → sonra:
+///
+/// | Profil | 1 satır | **≥4 dolu** | ≥5 dolu | ≥6 dolu |
+/// |---|---|---|---|---|
+/// | Kısa (9 dk) | %56 | **%86** | %70 | %59 |
+/// | Standart (14 dk) | %25 | **%62** | %47 | %31 |
+/// | Uzun (32 dk) | %11 | **%48** | %25 | %8 |
+/// | Maraton (52 dk) | %3 | **%35** | %19 | %4 |
+///
+/// Daha cömert bir eşik (≥3) yolculuğu tamamen gerilimsiz bırakıyordu;
+/// daha cimrisi (≥6) uzun yolculuğu yine oynanamaz yapıyor.
+const int kStationReliefMinFilled = 4;
+
+/// Durakta boşalacak satırlar — bkz. [kStationReliefMinFilled].
+List<int> crowdedRows(Board board, {int minFilled = kStationReliefMinFilled}) {
+  final rows = <int>[];
+  for (var r = 0; r < board.rows; r++) {
+    var filled = 0;
+    for (var c = 0; c < board.cols; c++) {
+      if (!board.isEmptyAt(r, c)) filled++;
+    }
+    if (filled >= minFilled) rows.add(r);
+  }
+  return rows;
+}
+
 /// Parça board üzerinde herhangi bir yere konabiliyor mu?
 bool canPlaceAnywhere(Board board, BlockPiece piece) =>
     findFirstLegalPosition(board, piece) != null;

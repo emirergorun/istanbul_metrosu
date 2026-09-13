@@ -89,7 +89,7 @@ class _SprintBannerState extends State<SprintBanner>
             color: AppColors.warning,
             borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Icon(Icons.flag_rounded, size: 18, color: AppColors.background),
@@ -99,8 +99,7 @@ class _SprintBannerState extends State<SprintBanner>
                   'SON DURAK BONUSU ×2',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppText.bodyStrong.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
                     color: AppColors.background,

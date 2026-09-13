@@ -140,6 +140,13 @@ class _BoardPainter extends CustomPainter {
 
   void _paintCells(Canvas canvas) {
     final emptyPaint = Paint()..color = AppColors.emptyCell;
+    // Izgara boş hücrenin dolgusuyla değil bu ince çizgiyle çiziliyor;
+    // gerekçesi `AppColors.cellGrid` üzerinde. Çizgi hücre sınırının tam
+    // üstüne oturmasın diye yarım kalınlık içeri alınır.
+    final gridPaint = Paint()
+      ..color = AppColors.cellGrid
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
 
     for (var r = 0; r < board.rows; r++) {
       for (var c = 0; c < board.cols; c++) {
@@ -148,6 +155,7 @@ class _BoardPainter extends CustomPainter {
 
         if (value == kEmptyCell) {
           canvas.drawRRect(rrect, emptyPaint);
+          canvas.drawRRect(rrect.deflate(0.5), gridPaint);
           continue;
         }
 

@@ -122,7 +122,7 @@ Hepsi bilinçlidir ve ürün gereksinimini değiştirmez:
 | 3 | Tek tema (koyu), yalnız portrait | Light tema ve yatay yok |
 | 3b | Kurumsal renk/tipografi referansı | Ticari yayın öncesi marka incelemesi şart |
 | 4 | Ses efekti yok | Haptic var, opsiyonel; ayar UI'ı yok |
-| 5 | **Uzun yolculuklar tamamlanamıyor** | Ölçüm: 14 dk+ rotalarda varış oranı ~%0 |
+| 5 | Uzun yolculuklarda varış hâlâ zor | Durak rahatlamasından sonra 7 sn/hamle temposunda Uzun %48, Maraton %35; 4 sn/hamle gibi hızlı bir tempoda %1-2 |
 | 6 | Skor yalnız local | Cloud save/leaderboard yok (MVP dışı) |
 | 7 | Yazı ölçeği 1.6'da sınırlı | Tahta/HUD düzeni ölçekten bağımsız değil |
 | 8 | Piece rotasyonu yok | Katalog varyantlarla telafi ediliyor |
@@ -240,34 +240,43 @@ kayıtlar atılır.
 Geri yüklenen oturum daima `GameStatus.paused` başlar; mevcut duraklatma
 paneli olduğu gibi kullanılır, yeni bir ekran gerekmez.
 
-### Denge ölçümü — kritik bulgu
+### Denge ölçümü — kritik bulgu ve çözümü
 
 `flutter test test/balance_report_test.dart` gerçek kurallarla (yalnız zaman
 döngüsü ve oyuncu davranışı modellenir) 150 oyun simüle eder.
 
-| Profil | Süre | Medyan | **Varış oranı** | Durak bonusu | Sprint |
-|---|---|---:|---:|---:|---:|
-| Mini | 2 dk | 169–306 | %97–100 | %8–14 | %34–42 |
-| Kısa | 9 dk | 645–712 | %19–46 | %6–12 | %13–19 |
-| Standart | 14 dk | 398–423 | %0–5 | %6–11 | %1–5 |
-| Uzun | 32 dk | 280–291 | %0 | %5–10 | %0 |
-| Maraton | 52 dk | 160–170 | %0 | %3–8 | %0 |
+**Bulgu:** 9 dakikadan uzun yolculuklarda oyuncu durağına varamıyordu. Tahta
+doluyor, oyun "Hamle kalmadı" ile bitiyordu; varış sahnesi gerçek bir işe
+gidiş yolculuğunda hiç oynamıyordu — ürünün ana vaadi karşılanmıyordu.
 
-**9 dakikadan uzun yolculuklarda oyuncu durağına varamıyor.** Tahta doluyor,
-oyun "Hamle kalmadı" ile bitiyor. Varış sahnesi gerçek bir işe gidiş
-yolculuğunda hiç oynamıyor — ürünün ana vaadi karşılanmıyor.
+**Çözüm: durakta kalabalık vagonlar boşalır.** Tren bir durağı geçtiğinde
+tahtada **en az yarısı dolu olan satırlar** temizlenir
+(`crowdedRows`, `kStationReliefMinFilled`). Eşik doluluğa bağlı olduğu için
+rahatlama kendiliğinden ölçekleniyor: tahta rahatken hiçbir şey olmuyor,
+oyuncu sıkıştıkça boşalma büyüyor. Boşalan satır **puan getirmez**; skoru
+hâlâ yalnızca oyuncunun kendi temizlediği satırlar kazandırır. Durak
+geçildikten sonra geri alma kapanır (yoksa boşalan satırlar geri yüklenirdi).
+
+Varış oranı, 7 sn/hamle temposunda:
+
+| Profil | Süre | Önce | **Sonra** | Medyan (sonra) |
+|---|---|---:|---:|---:|
+| Mini | 2 dk | %100 | %100 | 169 |
+| Kısa | 9 dk | %46 | **%86** | 722 |
+| Standart | 14 dk | %19 | **%62** | 1096 |
+| Uzun | 32 dk | %3 | **%48** | 2202 |
+| Maraton | 52 dk | %0 | **%35** | 2635 |
+
+4 sn/hamle (dakikada 15 parça) temposunda uzun yolculuklarda varış hâlâ
+%1-2: o tempoda oyuncu tahtayı rahatlamadan hızlı dolduruyor. Bilinçli
+bırakıldı — hız skor getiriyor, hayatta kalma değil.
 
 İki yan bulgu:
 
 - **Zorluk ters yönde çalışıyor.** Uzun yolculuğa daha çok engel + daha zor
-  parça veriliyor; oysa uzun yolculukta zaten hayatta kalmak zor. Engeller
-  kaldırılınca Maraton medyanı 160 → 275.
-- **Sprint pratikte ölü.** Son %15'e ulaşılamadığı için Standart ve üstünde
-  payı %0–5.
-
-Çözüm yönü (henüz uygulanmadı, karar bekliyor): her durak geçişinde tahtadan
-bir miktar boşaltmak. Hem hayatta kalmayı uzatır hem tematik olarak doğrudur
-("durakta yolcular iner").
+  parça veriliyor; oysa uzun yolculukta zaten hayatta kalmak zor. Hâlâ açık.
+- **Sprint artık ölü değil.** Son %15'e ulaşılabildiği için payı %0-4'ten
+  %17-18'e çıktı.
 
 ### Sürükle-bırak nasıl çalışıyor?
 

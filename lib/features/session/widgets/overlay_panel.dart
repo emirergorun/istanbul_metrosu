@@ -108,24 +108,16 @@ class StatRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         children: <Widget>[
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
+          Expanded(child: Text(label, style: AppText.body)),
           Text(
             value,
-            style: TextStyle(
-              fontSize: highlight ? 18 : 15,
-              fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
-              color: highlight
-                  ? (accent ?? AppColors.textPrimary)
-                  : AppColors.textPrimary,
-            ),
+            // Vurgulu satır bir basamak yukarı çıkar; ikisi de ölçekten.
+            style: highlight
+                ? AppText.stat.copyWith(
+                    fontSize: 18,
+                    color: accent ?? AppColors.textPrimary,
+                  )
+                : AppText.statSmall.copyWith(),
           ),
         ],
       ),

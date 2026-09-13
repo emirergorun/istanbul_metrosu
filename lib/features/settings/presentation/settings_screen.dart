@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/app_scope.dart';
 import '../../../app/theme.dart';
@@ -8,6 +9,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/storage/local_store.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../games/catalog/mini_game.dart';
+import '../../../core/widgets/pressable.dart';
 
 /// Ayarlar: ses, titreşim, rekorlar ve uygulama bilgisi.
 class SettingsScreen extends StatefulWidget {
@@ -28,15 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Ayarlar',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('Ayarlar', style: AppText.title),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -81,6 +75,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: store.hapticsEnabled,
                 onChanged: (value) async {
                   await store.setHapticsEnabled(value);
+                  // Açan dokunuşta tek onay titreşimi: ayarın ne yaptığı
+                  // anlatılmadan hissettirilir.
+                  if (value) HapticFeedback.selectionClick();
                   if (mounted) setState(() {});
                 },
               ),
@@ -90,18 +87,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: AppSpacing.xl),
           _SectionTitle('REKORLAR (${_visible(records).length})'),
           if (records.isEmpty)
-            const _SettingsCard(
+            _SettingsCard(
               children: <Widget>[
                 Padding(
                   padding: EdgeInsets.all(AppSpacing.lg),
                   child: Text(
                     'Henüz rekor yok. Bir yolculuk tamamladığında burada '
                     'görünecek.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.35,
-                    ),
+                    style: AppText.body.copyWith(height: 1.35),
                   ),
                 ),
               ],
@@ -118,7 +111,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (records.isNotEmpty) ...<Widget>[
             const SizedBox(height: AppSpacing.sm),
             TextButton.icon(
-              onPressed: () => _confirmReset(context, store.clearRecords),
+              onPressed: AppFeedback.onTap(
+                context,
+                () => _confirmReset(context, store.clearRecords),
+              ),
               icon: const Icon(
                 Icons.delete_outline_rounded,
                 size: 18,
@@ -261,10 +257,7 @@ class _RecordRow extends StatelessWidget {
                   '${origin.name} – ${destination.name}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppText.body.copyWith(color: AppColors.textPrimary),
                 ),
                 // Aynı rotanın her oyunda ayrı rekoru var; hangisi olduğu
                 // yazılmazsa liste anlamsız tekrarlar gibi görünür.
@@ -272,10 +265,7 @@ class _RecordRow extends StatelessWidget {
                   _game.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
+                  style: AppText.label,
                 ),
               ],
             ),
@@ -283,12 +273,7 @@ class _RecordRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Text(
             Formatters.score(record.score),
-            style: TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: theme.accent,
-            ),
+            style: AppText.lead.copyWith(color: theme.accent),
           ),
         ],
       ),
@@ -310,11 +295,9 @@ class _SectionTitle extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          fontSize: 11,
+        style: AppText.micro.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
-          color: AppColors.textMuted,
         ),
       ),
     );
@@ -367,18 +350,21 @@ class _SwitchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SwitchListTile.adaptive(
       value: value,
-      onChanged: onChanged,
+      onChanged: (bool next) {
+        // Titreşim kapalıyken bu çağrı sessizdir; "titreşim" anahtarını
+        // kapatan dokunuş son bir kez titrer, açan dokunuş ise aşağıdaki
+        // özel onay titreşimiyle karşılık bulur.
+        AppFeedback.tap(context);
+        onChanged(next);
+      },
       activeThumbColor: AppColors.action,
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       secondary: Icon(icon, color: AppColors.textSecondary),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 15.5, color: AppColors.textPrimary),
+        style: AppText.body.copyWith(color: AppColors.textPrimary),
       ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 12.5, color: AppColors.textMuted),
-      ),
+      subtitle: Text(subtitle, style: AppText.caption),
     );
   }
 }
@@ -409,20 +395,10 @@ class _InfoRow extends StatelessWidget {
               children: <Widget>[
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppText.body.copyWith(color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textMuted,
-                    height: 1.35,
-                  ),
-                ),
+                Text(subtitle, style: AppText.caption.copyWith(height: 1.35)),
               ],
             ),
           ),
@@ -451,7 +427,7 @@ class _ActionRow extends StatelessWidget {
       leading: Icon(icon, size: 20, color: AppColors.textSecondary),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+        style: AppText.body.copyWith(color: AppColors.textPrimary),
       ),
       trailing: const Icon(
         Icons.chevron_right_rounded,

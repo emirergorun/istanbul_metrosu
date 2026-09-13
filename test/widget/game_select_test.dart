@@ -6,6 +6,7 @@ import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/game_screen.dart';
+import 'package:istanbul_metro_game/features/games/catalog/game_glyph.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 import 'package:istanbul_metro_game/features/games/catalog/game_select_screen.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/presentation/lane_runner_screen.dart';
@@ -91,7 +92,14 @@ void main() {
       await scrollToGame(tester, game);
       expect(find.text(game.name), findsOneWidget, reason: game.id);
       expect(find.text('YAKINDA'), findsWidgets);
-      expect(find.byIcon(Icons.lock_rounded), findsWidgets);
+      // Kilit artık stok `Icons.lock_rounded` değil, elle çizilmiş glif.
+      // Kontrol edilen şey aynı: kilitli kartta kilit işareti görünmeli.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is GameGlyphIcon && w.glyph == GameGlyph.locked,
+        ),
+        findsWidgets,
+      );
     }
   });
 

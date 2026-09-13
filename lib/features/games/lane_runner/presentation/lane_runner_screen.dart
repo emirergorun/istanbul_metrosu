@@ -378,18 +378,12 @@ class _HudChip extends StatelessWidget {
         children: <Widget>[
           Text(
             label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: accent,
-            ),
+            style: AppText.micro.copyWith(color: accent),
           ),
           Text(
             value,
             maxLines: 1,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppText.captionStrong.copyWith(
               fontWeight: FontWeight.w800,
               color: accent,
             ),
@@ -427,15 +421,14 @@ class _RunnerPlayArea extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         child: CustomPaint(
           painter: _LaneRunnerPainter(controller),
-          child: const SizedBox.expand(
+          child: SizedBox.expand(
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: EdgeInsets.only(bottom: AppSpacing.md),
                 child: Text(
                   'Sağa/sola kaydır ya da ok tuşlarıyla ray değiştir',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppText.caption.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
                   ),
@@ -569,10 +562,8 @@ class _LaneRunnerPainter extends CustomPainter {
     final labelPainter = TextPainter(
       text: TextSpan(
         text: controller.lineLabel,
-        style: const TextStyle(
+        style: AppText.lead.copyWith(
           color: Colors.white,
-          fontFamily: AppFonts.display,
-          fontSize: 18,
           fontWeight: FontWeight.w900,
         ),
       ),

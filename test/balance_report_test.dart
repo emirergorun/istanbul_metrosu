@@ -192,6 +192,11 @@ _Result _run({
             if (isSprint) sprintTotal += ScoreRules.stationBonus;
           }
           clearedSinceStation = false;
+
+          // Durakta en dolu satır boşalır ("yolcular indi") — gerçek
+          // kuraldaki `busiestRow` + `clearLines` çağrılıyor, simülasyon
+          // kendi kopyasını uydurmuyor.
+          board = clearLines(board, rows: crowdedRows(board));
         }
       }
     }

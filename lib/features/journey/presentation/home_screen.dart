@@ -5,6 +5,7 @@ import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/journey.dart';
 import '../models/station.dart';
 import '../services/route_service.dart';
@@ -141,7 +142,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: <Widget>[
                             const Spacer(),
                             IconButton(
-                              onPressed: () => AppRoutes.openSettings(context),
+                              onPressed: AppFeedback.onTap(
+                                context,
+                                () => AppRoutes.openSettings(context),
+                              ),
                               tooltip: 'Ayarlar',
                               icon: const Icon(Icons.settings_rounded),
                               color: AppColors.textSecondary,
@@ -323,7 +327,7 @@ class _PlannerCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(
-                  onPressed: onStart,
+                  onPressed: AppFeedback.onTap(context, onStart),
                   child: const Text('YOLCULUĞU BAŞLAT'),
                 ),
               ],
@@ -361,11 +365,7 @@ class _CardHeader extends StatelessWidget {
             ),
             child: Text(
               line.id,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: lineTheme.onColor,
-              ),
+              style: AppText.label.copyWith(color: lineTheme.onColor),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -374,10 +374,8 @@ class _CardHeader extends StatelessWidget {
               line.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: AppText.bodyStrong.copyWith(
                 fontFamily: AppFonts.display,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
@@ -441,7 +439,7 @@ class _OriginDestinationFields extends StatelessWidget {
               shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
               child: IconButton(
-                onPressed: onSwap,
+                onPressed: AppFeedback.onTap(context, onSwap),
                 tooltip: 'Yönü değiştir',
                 iconSize: 18,
                 constraints: const BoxConstraints.tightFor(
@@ -480,11 +478,11 @@ class _StationField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceHigh,
+    return Pressable(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: AppColors.surfaceHigh,
         borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
         child: Container(
           height: 58,
@@ -504,11 +502,8 @@ class _StationField extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       label,
-                      style: const TextStyle(
-                        fontSize: 10,
+                      style: AppText.micro.copyWith(
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: AppColors.textMuted,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -516,9 +511,7 @@ class _StationField extends StatelessWidget {
                       station?.name ?? hint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 17,
+                      style: AppText.lead.copyWith(
                         fontWeight: FontWeight.w600,
                         color: station == null
                             ? AppColors.textMuted
@@ -559,8 +552,7 @@ class _AbMarker extends StatelessWidget {
       ),
       child: Text(
         letter,
-        style: TextStyle(
-          fontSize: 12,
+        style: AppText.label.copyWith(
           fontWeight: FontWeight.w700,
           color: lineTheme.onAccent,
           height: 1,
@@ -634,10 +626,7 @@ class _JourneySummary extends StatelessWidget {
               child: Text(
                 '${journey.stopCount} durak'
                 '${bestScore > 0 ? '  ·  En iyi ${Formatters.score(bestScore)}' : ''}',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
+                style: AppText.caption.copyWith(color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -660,11 +649,9 @@ class _Metric extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 9.5,
+          style: AppText.micro.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
-            color: AppColors.textMuted,
           ),
         ),
         const SizedBox(height: 3),
@@ -672,12 +659,7 @@ class _Metric extends StatelessWidget {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+          style: AppText.lead.copyWith(fontFeatures: kTabularFigures),
         ),
       ],
     );
@@ -709,10 +691,7 @@ class _InfoBanner extends StatelessWidget {
           Icon(icon, size: 17, color: color),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 13.5, color: color, height: 1.3),
-            ),
+            child: Text(text, style: AppText.caption.copyWith(color: color)),
           ),
         ],
       ),

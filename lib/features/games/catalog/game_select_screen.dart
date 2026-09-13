@@ -5,7 +5,9 @@ import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../journey/models/journey.dart';
+import 'game_glyph.dart';
 import 'mini_game.dart';
 
 /// Rota seçildikten sonra gelen oyun seçim ekranı.
@@ -25,22 +27,15 @@ class GameSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final line = AppScope.of(context).metro.lineById(journey.lineId);
+    final scope = AppScope.of(context);
+    final line = scope.metro.lineById(journey.lineId);
     final lineTheme = LineTheme.from(line?.color ?? AppColors.brandNavy);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'Oyun seç',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('Oyun seç', style: AppText.title),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -56,7 +51,13 @@ class GameSelectScreen extends StatelessWidget {
           for (final game in MiniGames.all) ...<Widget>[
             _GameCard(
               game: game,
-              accent: lineTheme.accent,
+              // Rekor **oyuna ve rotaya** birlikte bağlı: aynı rotada Blok
+              // Metro'daki rekor, Ray Uçuşu'ndakiyle karşılaştırılamaz.
+              record: scope.store.bestScoreForGameRoute(
+                gameId: game.id,
+                originId: journey.origin.id,
+                destinationId: journey.destination.id,
+              ),
               onTap: () => _start(context, game),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -101,12 +102,7 @@ class _JourneySummary extends StatelessWidget {
                     '${journey.origin.name} → ${journey.destination.name}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+                    style: AppText.lead.copyWith(color: Colors.white),
                   ),
                 ),
               ],
@@ -134,8 +130,7 @@ class _JourneySummary extends StatelessWidget {
                         ' · ${journey.stopCount} durak',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13.5,
+                        style: AppText.caption.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
                         ),
@@ -146,8 +141,7 @@ class _JourneySummary extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   'Seçtiğin oyun bu süre kadar sürecek.',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppText.caption.copyWith(
                     color: AppColors.textMuted.withValues(alpha: 0.9),
                   ),
                 ),
@@ -165,12 +159,15 @@ class _JourneySummary extends StatelessWidget {
 class _GameCard extends StatelessWidget {
   const _GameCard({
     required this.game,
-    required this.accent,
+    required this.record,
     required this.onTap,
   });
 
   final MiniGame game;
-  final Color accent;
+
+  /// Bu oyunun **bu rotadaki** rekoru; 0 ise rotada henüz oynanmamış.
+  final int record;
+
   final VoidCallback onTap;
 
   @override
@@ -187,87 +184,108 @@ class _GameCard extends StatelessWidget {
       child: ExcludeSemantics(
         child: Opacity(
           opacity: locked ? 0.55 : 1,
-          child: Material(
-            color: AppColors.surface,
+          child: Pressable(
+            // Kilitli kartta `onTap: null` — dokunma geri bildirimi de olmaz,
+            // böylece "bozuk mu?" hissi vermez.
+            onTap: locked ? null : onTap,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            child: InkWell(
-              // Kilitli kartta `onTap: null` — dokunma geri bildirimi de olmaz,
-              // böylece "bozuk mu?" hissi vermez.
-              onTap: locked ? null : onTap,
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                  border: Border.all(
-                    color: locked ? AppColors.outline : accent,
-                    width: locked ? 1 : 1.6,
-                  ),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                // Kenarlık nötr: altı kartın da hat renginde çerçevesi
+                // olunca hepsi "seçili" gibi görünüyor ve aralarında
+                // hiyerarşi kalmıyordu. Hat kimliği yukarıdaki yolculuk
+                // şeridinde zaten var; kart burada içeriğiyle ayrışmalı.
+                border: Border.all(
+                  color: locked ? AppColors.outline : AppColors.surfaceHigh,
+                  width: locked ? 1 : 1.6,
                 ),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 46,
-                      height: 46,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: locked
-                            ? AppColors.surfaceHigh
-                            : accent.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        locked ? Icons.lock_rounded : game.icon,
-                        size: 22,
-                        color: locked ? AppColors.textMuted : accent,
-                      ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  // Kutu oyunun kendi renginde, hattın değil: altı kart da
+                  // seçili hattın tonuna boyanınca birbirinden ayırt
+                  // edilemiyordu. Kimlik burada oyuna ait.
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: locked
+                          ? AppColors.surfaceHigh
+                          : game.color.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              Flexible(
-                                child: Text(
-                                  game.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: AppFonts.display,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: foreground,
-                                  ),
-                                ),
+                    child: GameGlyphIcon(
+                      glyph: locked ? GameGlyph.locked : game.glyph,
+                      color: locked ? AppColors.textMuted : game.color,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: Text(
+                                game.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.lead.copyWith(color: foreground),
                               ),
-                              if (locked) ...<Widget>[
-                                const SizedBox(width: AppSpacing.sm),
-                                const _SoonBadge(),
-                              ],
+                            ),
+                            if (locked) ...<Widget>[
+                              const SizedBox(width: AppSpacing.sm),
+                              const _SoonBadge(),
                             ],
-                          ),
-                          const SizedBox(height: 3),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          game.tagline,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.caption,
+                        ),
+                        // Seçim körlemesine yapılmasın: oyuncu bu oyunu bu
+                        // rotada oynadıysa geçmesi gereken sayı kartta yazar.
+                        // Rekor oyunun kendi renginde — hangi oyuna ait
+                        // olduğu bir bakışta anlaşılır.
+                        if (!locked) ...<Widget>[
+                          const SizedBox(height: 5),
                           Text(
-                            game.tagline,
-                            maxLines: 2,
+                            record > 0
+                                ? 'BU ROTADA REKORUN  ${Formatters.score(record)}'
+                                : 'BU ROTADA İLK KEZ',
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              height: 1.3,
-                              color: AppColors.textMuted,
+                            style: AppText.micro.copyWith(
+                              fontFeatures: kTabularFigures,
+                              color: record > 0
+                                  ? game.color
+                                  : AppColors.textMuted.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (!locked) ...<Widget>[
-                      const SizedBox(width: AppSpacing.sm),
-                      Icon(Icons.play_arrow_rounded, size: 28, color: accent),
-                    ],
+                  ),
+                  if (!locked) ...<Widget>[
+                    const SizedBox(width: AppSpacing.sm),
+                    // Oynat oku bir eylem çağrısı, kimlik değil: hattan
+                    // bağımsız sabit aksiyon renginde kalır.
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 28,
+                      color: AppColors.action,
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -289,15 +307,7 @@ class _SoonBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: AppColors.outline),
       ),
-      child: const Text(
-        'YAKINDA',
-        style: TextStyle(
-          fontSize: 9.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: AppColors.textMuted,
-        ),
-      ),
+      child: const Text('YAKINDA', style: AppText.micro),
     );
   }
 }
@@ -316,11 +326,9 @@ class _SectionTitle extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          fontSize: 11,
+        style: AppText.micro.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
-          color: AppColors.textMuted,
         ),
       ),
     );

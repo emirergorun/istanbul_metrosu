@@ -65,8 +65,7 @@ class JourneyProgressBar extends StatelessWidget {
                   originName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: AppText.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
                   ),
@@ -79,10 +78,9 @@ class JourneyProgressBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
+                  // Durak adı tabela dilinde: Raleway. Punto ölçekten gelir.
+                  style: AppText.captionStrong.copyWith(
                     fontFamily: AppFonts.display,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -107,10 +105,7 @@ class JourneyProgressBar extends StatelessWidget {
                   nextStopName == null ? '' : 'Sonraki durak: $nextStopName',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                  ),
+                  style: AppText.caption,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -118,9 +113,8 @@ class JourneyProgressBar extends StatelessWidget {
                 remainingSeconds <= 0
                     ? 'Durağına yaklaştın'
                     : '${Formatters.remaining(remainingSeconds)} kaldı',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+                style: AppText.captionStrong.copyWith(
+                  fontFeatures: kTabularFigures,
                   fontWeight: FontWeight.w600,
                 ),
               ),

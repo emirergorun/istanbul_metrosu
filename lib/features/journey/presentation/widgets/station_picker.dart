@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/line_badge.dart';
+import '../../../../core/widgets/pressable.dart';
 import '../../models/station.dart';
 
 /// İstasyon seçim sayfası (modal bottom sheet).
@@ -128,13 +129,7 @@ class _StationPickerSheetState extends State<_StationPickerSheet> {
                         const SizedBox(width: AppSpacing.sm),
                         Text(
                           Formatters.upperTr(widget.title),
-                          style: const TextStyle(
-                            fontFamily: AppFonts.display,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color: AppColors.textMuted,
-                          ),
+                          style: AppText.label,
                         ),
                       ],
                     ),
@@ -154,8 +149,8 @@ class _StationPickerSheetState extends State<_StationPickerSheet> {
                 ),
               ),
               if (stations.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
                     AppSpacing.xl,
                     AppSpacing.sm,
                     AppSpacing.xl,
@@ -163,7 +158,7 @@ class _StationPickerSheetState extends State<_StationPickerSheet> {
                   ),
                   child: Text(
                     'Bu hatta eşleşen durak yok.',
-                    style: TextStyle(color: AppColors.textMuted),
+                    style: AppText.body.copyWith(color: AppColors.textMuted),
                   ),
                 )
               else
@@ -212,12 +207,12 @@ class _SearchField extends StatelessWidget {
       onChanged: onChanged,
       autofocus: false,
       textInputAction: TextInputAction.search,
-      style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
+      style: AppText.body.copyWith(color: AppColors.textPrimary),
       cursorColor: accent,
       decoration: InputDecoration(
         isDense: true,
         hintText: 'Durak ara',
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 15),
+        hintStyle: AppText.body.copyWith(color: AppColors.textMuted),
         prefixIcon: const Icon(
           Icons.search_rounded,
           size: 20,
@@ -272,8 +267,12 @@ class _StationTile extends StatelessWidget {
       selected: isSelected,
       enabled: !isDisabled,
       label: station.name,
-      child: InkWell(
+      child: Pressable(
         onTap: onTap,
+        // Liste satırı ölçeklenmez: 52 piksellik bir şerit küçülünce
+        // komşu satırlarla arasındaki boşluk oynuyor ve liste titriyor.
+        // Satırda geri bildirim ton değişimiyle verilir.
+        scale: 1,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
           child: SizedBox(
@@ -310,10 +309,7 @@ class _StationTile extends StatelessWidget {
                   ),
                 ),
                 if (isDisabled)
-                  const Text(
-                    'seçili',
-                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                  )
+                  const Text('seçili', style: AppText.label)
                 else if (isSelected)
                   Icon(Icons.check_rounded, size: 20, color: accent),
               ],
