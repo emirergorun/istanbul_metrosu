@@ -94,6 +94,10 @@ class _MergeDropScreenState extends State<MergeDropScreen>
     if (controller.status == GameStatus.arrived && !_playedArrivalSound) {
       _playedArrivalSound = true;
       _sound(GameSound.arrival);
+    } else if (controller.status != GameStatus.arrived) {
+      // "Tekrar oyna" aynı ekranı yeniden kullanır; bayrak sıfırlanmazsa
+      // ikinci varışta kapı sesi çalmıyordu.
+      _playedArrivalSound = false;
     }
 
     _syncMusic();
@@ -238,6 +242,7 @@ class _MergeDropScreenState extends State<MergeDropScreen>
                       const SizedBox(height: AppSpacing.md),
                       JourneyProgressBar(
                         lineId: journey.lineId,
+                        stopCount: journey.stopCount,
                         originName: journey.origin.name,
                         destinationName: journey.destination.name,
                         progress: controller.progress,

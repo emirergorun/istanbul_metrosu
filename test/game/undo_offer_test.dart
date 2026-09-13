@@ -1,0 +1,132 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/game_state.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
+import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
+
+import '../helpers/metro_fixture.dart';
+
+void main() {
+  final journey = RouteService(
+    MetroFixture.load(),
+  ).estimate('m2_taksim', 'm2_levent').journey!;
+
+  /// Satranç tahtası: boş hücreler yan yana değil, her satır ve sütunda boş
+  /// var. Tek kare konunca hiçbir hat dolmaz; 2'lik parçalar hiç sığmaz.
+  Board checkerboard() => Board.fromGrid(<List<int>>[
+    for (var r = 0; r < 8; r++)
+      <int>[for (var c = 0; c < 8; c++) (r + c).isEven ? kEmptyCell : 1],
+  ]);
+
+  GameController lockingController({int? undoLeft}) {
+    final session = GameSession.initial(
+      journey: journey,
+      board: checkerboard(),
+      tray: <BlockPiece?>[
+        PieceShapes.dot.withColor(1),
+        PieceShapes.h2.withColor(2),
+        PieceShapes.v2.withColor(3),
+      ],
+    );
+    return GameController(
+      journey: journey,
+      resumeFrom: undoLeft == null
+          ? session
+          : session.copyWith(undoLeft: undoLeft),
+    )..start();
+  }
+
+  test('hamle kalmayınca hak varsa oyun bitmez, geri alma teklif edilir', () {
+    final controller = lockingController();
+    addTearDown(controller.dispose);
+    final undoBefore = controller.session.undoLeft;
+    expect(undoBefore, greaterThan(0));
+
+    controller.debugAdvanceSeconds(3);
+    expect(controller.place(0, 0, 0).accepted, isTrue);
+
+    expect(controller.status, GameStatus.playing);
+    expect(controller.awaitingUndo, isTrue);
+    expect(controller.canUndo, isTrue);
+
+    // Karar verilene kadar yolculuk ilerlemez.
+    controller.debugAdvanceSeconds(30);
+    expect(controller.session.elapsedSeconds, 3);
+
+    expect(controller.undo(), isTrue);
+    expect(controller.awaitingUndo, isFalse);
+    expect(controller.session.undoLeft, undoBefore - 1);
+    expect(controller.tray.whereType<BlockPiece>(), hasLength(3));
+
+    controller.debugAdvanceSeconds(1);
+    expect(controller.session.elapsedSeconds, 4);
+  });
+
+  test('oyuncu teklifi reddederse oyun biter', () {
+    final controller = lockingController();
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+
+    controller.acceptGameOver();
+
+    expect(controller.status, GameStatus.gameOver);
+    expect(controller.awaitingUndo, isFalse);
+    expect(controller.canUndo, isFalse);
+  });
+
+  test('hak yoksa oyun hemen biter', () {
+    final controller = lockingController(undoLeft: 0);
+    addTearDown(controller.dispose);
+
+    controller.place(0, 0, 0);
+
+    expect(controller.status, GameStatus.gameOver);
+    expect(controller.awaitingUndo, isFalse);
+  });
+
+  test('teklif açıkken çıkmak oyunu bitirir', () {
+    final controller = lockingController();
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+
+    controller.abandon();
+
+    expect(controller.status, GameStatus.gameOver);
+  });
+
+  test('teklif açıkken duraklat / devam: teklif sürer, sayaç durur', () {
+    final controller = lockingController();
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+
+    controller.pause();
+    controller.resume();
+
+    expect(controller.status, GameStatus.playing);
+    expect(controller.awaitingUndo, isTrue);
+    controller.debugAdvanceSeconds(10);
+    expect(controller.session.elapsedSeconds, 0);
+  });
+
+  test('kayıttan kilitli tahtayla dönen oyun devam edince biter', () {
+    // Teklif açıkken uygulama kapanırsa geri alma kaydı diske yazılmaz;
+    // oyun hamlesiz tahtayla sonsuza kadar "oynanıyor" kalmamalı.
+    final locked = GameSession.initial(
+      journey: journey,
+      board: checkerboard(),
+      tray: <BlockPiece?>[
+        null,
+        PieceShapes.h2.withColor(2),
+        PieceShapes.v2.withColor(3),
+      ],
+    ).copyWith(status: GameStatus.paused);
+    final controller = GameController(journey: journey, resumeFrom: locked);
+    addTearDown(controller.dispose);
+
+    controller.resume();
+
+    expect(controller.status, GameStatus.gameOver);
+  });
+}

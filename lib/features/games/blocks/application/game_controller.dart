@@ -96,6 +96,14 @@ class GameController extends ChangeNotifier implements JourneyRun {
   bool _isNewBest = false;
   bool _scoreSaved = false;
 
+  /// Hamle kalmadı ama son hamle geri alınabiliyor.
+  ///
+  /// Oyun bu durumda hemen bitmez: oyuncu hakkı varken "Hamle kalmadı"
+  /// görüp haksızlığa uğramış hissediyordu. Karar verilene kadar yolculuk
+  /// sayacı durur; yoksa oyuncu hiç oynamadan bekleyip varışa ulaşabilirdi.
+  bool _awaitingUndo = false;
+  bool get awaitingUndo => _awaitingUndo;
+
   /// Son durak geçişinden beri line temizlendi mi? Durak bonusunun koşulu.
   bool _clearedSinceLastStation = false;
 
@@ -201,6 +209,20 @@ class GameController extends ChangeNotifier implements JourneyRun {
   void resume() {
     if (_session.status != GameStatus.paused) return;
     _session = _session.copyWith(status: GameStatus.playing);
+
+    // Geri alma teklifi açıkken duraklatıldıysa sayaç yine durur.
+    if (_awaitingUndo) {
+      notifyListeners();
+      return;
+    }
+
+    // Kayıttan dönen oyunun tahtası kilitli olabilir: teklif açıkken uygulama
+    // kapandıysa geri alma kaydı diske yazılmadığı için hamle de yoktur.
+    if (!hasAnyLegalMove(_session.board, _session.tray)) {
+      _finish(GameStatus.gameOver);
+      return;
+    }
+
     _startTimer();
     notifyListeners();
   }
@@ -212,6 +234,7 @@ class GameController extends ChangeNotifier implements JourneyRun {
     _undoSnapshot = null;
     _isNewBest = false;
     _scoreSaved = false;
+    _awaitingUndo = false;
     _clearedSinceLastStation = false;
     lastStationBonus = 0;
     sprintPulse = 0;
@@ -245,6 +268,11 @@ class GameController extends ChangeNotifier implements JourneyRun {
   void abandon() {
     _stopTimer();
     if (_session.status.isFinished) return;
+    // Teklif açıkken çıkmak, geri almayı reddetmek demek.
+    if (_awaitingUndo) {
+      acceptGameOver();
+      return;
+    }
     _persistSnapshot();
     _session = _session.copyWith(status: GameStatus.abandoned);
     notifyListeners();
@@ -281,7 +309,7 @@ class GameController extends ChangeNotifier implements JourneyRun {
   }
 
   void _onTick() {
-    if (_session.status != GameStatus.playing) return;
+    if (_session.status != GameStatus.playing || _awaitingUndo) return;
     _session = _session.copyWith(elapsedSeconds: _session.elapsedSeconds + 1);
 
     _announceSprintIfStarted();
@@ -318,6 +346,12 @@ class GameController extends ChangeNotifier implements JourneyRun {
       _checkRecord();
     }
 
+    // Geri alma durağın öncesine dönemez. Dönebilseydi `stationsPassed` de
+    // eski değerine döner ve durak bir sonraki saniyede **yeniden** işlenirdi:
+    // geri alınmış tahtadaki kalabalık satırlar bedavaya boşalır, parça da
+    // tepsiye geri gelirdi. Boşalan satır olsun olmasın aynı kural geçerli.
+    _undoSnapshot = null;
+
     _emptyCrowdedRowsAtStation();
   }
 
@@ -347,11 +381,6 @@ class GameController extends ChangeNotifier implements JourneyRun {
     stationClearPulse++;
 
     _session = _session.copyWith(board: clearLines(_session.board, rows: rows));
-
-    // Geri alma durağın öncesine dönemez: dönebilseydi boşalan satırlar
-    // geri gelir, oyuncu da "geri aldım, tahtam doldu" diye cezalandırılmış
-    // hissederdi.
-    _undoSnapshot = null;
   }
 
   /// Rekor bu anda geçildiyse işaretler ve geçildiğini döner.
@@ -480,16 +509,33 @@ class GameController extends ChangeNotifier implements JourneyRun {
       undoLeft: snapshot.undoLeft - 1,
       status: GameStatus.playing,
     );
+    if (_awaitingUndo) {
+      _awaitingUndo = false;
+      _startTimer();
+    }
     notifyListeners();
     return true;
   }
 
+  /// Oyuncu geri alma teklifini reddetti: oyun "hamle kalmadı" ile biter.
+  void acceptGameOver() {
+    if (!_awaitingUndo) return;
+    _awaitingUndo = false;
+    _undoSnapshot = null;
+    _finish(GameStatus.gameOver);
+  }
+
   void _evaluateEndConditions() {
     // Hedefe ulaşmak oyunu bitirmez — tek final varıştır.
-    // Hiç legal hamle kalmadıysa: game over.
-    if (!hasAnyLegalMove(_session.board, _session.tray)) {
-      _finish(GameStatus.gameOver);
+    if (hasAnyLegalMove(_session.board, _session.tray)) return;
+
+    // Hak varsa oyun bitmez, son hamleyi geri alma şansı verilir.
+    if (canUndo) {
+      _awaitingUndo = true;
+      _stopTimer();
+      return;
     }
+    _finish(GameStatus.gameOver);
   }
 
   void _finish(GameStatus status) {

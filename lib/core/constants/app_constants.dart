@@ -27,9 +27,10 @@ class AppConstants {
   static const double trayHeightFactor = 2.6;
 
   // --- Animasyon süreleri (kısa tutulur, metroda hız önemli) ---
-  /// Satır temizleme patlaması: parlama, şok dalgası ve savrulan parçacıklar
-  /// bu süreye yayılır. 220 ms'de efekt bitmeden gözden kaçıyordu.
-  static const Duration lineClearDuration = Duration(milliseconds: 520);
+  /// Satır temizleme patlaması: yayılan dalga, patlayan bloklar, enkaz ve
+  /// yükselen puan bu süreye yayılır. Dalga hattın ucuna ~240 ms'de ulaşır;
+  /// kalan süre enkazın düşüp sönmesi ve puanın okunabilmesi için.
+  static const Duration lineClearDuration = Duration(milliseconds: 760);
   static const Duration piecePlaceDuration = Duration(milliseconds: 120);
   static const Duration progressTickDuration = Duration(milliseconds: 900);
   static const Duration overlayFadeDuration = Duration(milliseconds: 180);

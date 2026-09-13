@@ -293,7 +293,11 @@ void main() {
           moves++;
           break;
         }
-        if (!placed) break;
+        if (!placed) {
+          // Geri alma teklifini reddet: bu test oyunun bitişini sınıyor.
+          controller.acceptGameOver();
+          break;
+        }
       }
 
       expect(controller.status.isFinished, isTrue);
@@ -337,7 +341,10 @@ void main() {
               moves++;
               break;
             }
-            if (!placed) break;
+            if (!placed) {
+              controller.acceptGameOver();
+              break;
+            }
           }
 
           if (controller.status == GameStatus.gameOver) {

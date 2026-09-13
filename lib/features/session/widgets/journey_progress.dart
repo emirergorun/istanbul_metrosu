@@ -21,6 +21,7 @@ class JourneyProgressBar extends StatelessWidget {
     required this.accent,
     this.nextStopName,
     this.isMoving = true,
+    this.stopCount,
   });
 
   final String lineId;
@@ -38,6 +39,10 @@ class JourneyProgressBar extends StatelessWidget {
 
   /// Oyun duraklatıldığında tren de durur.
   final bool isMoving;
+
+  /// Yolculuktaki durak arası sayısı; ara istasyon noktaları buna göre
+  /// çizilir. Verilmezse eski davranış (%25 / %50 / %75) korunur.
+  final int? stopCount;
 
   @override
   Widget build(BuildContext context) {
@@ -94,8 +99,11 @@ class JourneyProgressBar extends StatelessWidget {
                 ? AppConstants.progressTickDuration
                 : Duration.zero,
             curve: Curves.linear,
-            builder: (context, value, _) =>
-                _ProgressTrack(progress: value, accent: accent),
+            builder: (context, value, _) => _ProgressTrack(
+              progress: value,
+              accent: accent,
+              stopCount: stopCount,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
@@ -127,10 +135,15 @@ class JourneyProgressBar extends StatelessWidget {
 }
 
 class _ProgressTrack extends StatelessWidget {
-  const _ProgressTrack({required this.progress, required this.accent});
+  const _ProgressTrack({
+    required this.progress,
+    required this.accent,
+    this.stopCount,
+  });
 
   final double progress;
   final Color accent;
+  final int? stopCount;
 
   static const double _height = 30;
   static const double _trainHeight = 18;
@@ -150,7 +163,11 @@ class _ProgressTrack extends StatelessWidget {
             children: <Widget>[
               Positioned.fill(
                 child: CustomPaint(
-                  painter: _TrackPainter(progress: progress, accent: accent),
+                  painter: _TrackPainter(
+                    progress: progress,
+                    accent: accent,
+                    stopCount: stopCount,
+                  ),
                 ),
               ),
               Positioned(
@@ -167,10 +184,27 @@ class _ProgressTrack extends StatelessWidget {
 }
 
 class _TrackPainter extends CustomPainter {
-  const _TrackPainter({required this.progress, required this.accent});
+  const _TrackPainter({
+    required this.progress,
+    required this.accent,
+    this.stopCount,
+  });
 
   final double progress;
   final Color accent;
+  final int? stopCount;
+
+  /// Ara istasyonların yolculuktaki konumu.
+  ///
+  /// Durak bonusu her gerçek durakta (`i / stopCount`) veriliyor; noktalar
+  /// da orada durmalı. Sabit %25/%50/%75, tek duraklık yolculukta var
+  /// olmayan üç istasyon, 17 duraklık yolculukta ise yalnız üç istasyon
+  /// gösteriyordu.
+  List<double> get _stationRatios {
+    final stops = stopCount;
+    if (stops == null) return const <double>[0.25, 0.5, 0.75];
+    return <double>[for (var i = 1; i < stops; i++) i / stops];
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -197,8 +231,8 @@ class _TrackPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // Ara istasyon işaretleri: %25 / %50 / %75.
-    for (final ratio in const <double>[0.25, 0.5, 0.75]) {
+    // Ara istasyon işaretleri.
+    for (final ratio in _stationRatios) {
       final x = left + (right - left) * ratio;
       final passed = progress >= ratio;
       canvas.drawCircle(
@@ -222,5 +256,7 @@ class _TrackPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TrackPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.accent != accent;
+      oldDelegate.progress != progress ||
+      oldDelegate.accent != accent ||
+      oldDelegate.stopCount != stopCount;
 }

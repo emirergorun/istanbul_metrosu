@@ -9,6 +9,7 @@ import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_progress.dart';
@@ -56,6 +57,17 @@ class _GameScreenState extends State<GameScreen>
     vsync: this,
     duration: const Duration(milliseconds: 260),
   );
+
+  /// Çok satırlı temizlikte tahtanın kısa dikey "vuruşu".
+  ///
+  /// Reddedilen hamlenin yatay sarsıntısından bilerek ayrı: o "olmadı"
+  /// der, bu "güçlü vurdun" der. Tek satırda çalışmaz; her temizlikte
+  /// sallanan tahta çabuk yorar.
+  late final AnimationController _impactController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+  );
+  double _impactStrength = 0;
 
   /// "Hedefi geçtin" şeridi: iner, bekler, kalkar. Oyunu durdurmaz.
   late final AnimationController _targetBanner = AnimationController(
@@ -112,9 +124,14 @@ class _GameScreenState extends State<GameScreen>
     if (!mounted) return;
     _showStationBonusIfNew();
     _showStationClearIfNew();
-    if (_controller?.status == GameStatus.arrived && !_playedArrivalSound) {
+    final status = _controller?.status;
+    if (status == GameStatus.arrived && !_playedArrivalSound) {
       _playedArrivalSound = true;
       _sound(GameSound.arrival);
+    } else if (status != GameStatus.arrived) {
+      // "Tekrar oyna" aynı ekranı yeniden kullanır; bayrak sıfırlanmazsa
+      // ikinci varışta kapı sesi çalmıyordu.
+      _playedArrivalSound = false;
     }
     _syncMusic();
     setState(() {});
@@ -168,6 +185,7 @@ class _GameScreenState extends State<GameScreen>
       rows: controller.lastStationClearedRows,
       columns: const <int>[],
       cellValues: controller.lastStationClearedCells,
+      reduceMotion: MediaQuery.disableAnimationsOf(context),
     );
     _flashController.forward(from: 0);
     _haptic(HapticFeedback.mediumImpact);
@@ -214,6 +232,7 @@ class _GameScreenState extends State<GameScreen>
     _stationBonus.dispose();
     _flashController.dispose();
     _shakeController.dispose();
+    _impactController.dispose();
     _targetBanner.dispose();
     _preview.dispose();
     _flash.dispose();
@@ -276,12 +295,23 @@ class _GameScreenState extends State<GameScreen>
     }
 
     if (outcome.didClear) {
+      final reduceMotion = MediaQuery.disableAnimationsOf(context);
       _flash.value = BoardFlash(
         rows: outcome.clearedRows,
         columns: outcome.clearedColumns,
         cellValues: outcome.clearedCellValues,
+        // Dalga parçanın ortasından başlar.
+        originRow: target.row + (data.piece.height - 1) / 2,
+        originCol: target.col + (data.piece.width - 1) / 2,
+        points: outcome.gainedPoints,
+        combo: outcome.combo,
+        reduceMotion: reduceMotion,
       );
       _flashController.forward(from: 0);
+      if (!reduceMotion && outcome.linesCleared >= 2) {
+        _impactStrength = math.min(outcome.linesCleared, 4) * 1.6;
+        _impactController.forward(from: 0);
+      }
       _haptic(
         outcome.linesCleared >= 2
             ? HapticFeedback.heavyImpact
@@ -398,13 +428,16 @@ class _GameScreenState extends State<GameScreen>
                     ),
                     JourneyProgressBar(
                       lineId: journey.lineId,
+                      stopCount: journey.stopCount,
                       originName: journey.origin.name,
                       destinationName: journey.destination.name,
                       progress: session.progress,
                       remainingSeconds: session.remainingSeconds,
                       nextStopName: _nextStopName(session),
                       accent: accent,
-                      isMoving: session.status == GameStatus.playing,
+                      isMoving:
+                          session.status == GameStatus.playing &&
+                          !controller.awaitingUndo,
                     ),
                   ],
                 ),
@@ -419,6 +452,14 @@ class _GameScreenState extends State<GameScreen>
                 onRestart: controller.restart,
                 onSettings: () => AppRoutes.openSettings(context),
                 onExit: _exitToHome,
+              ),
+            // Hamle kalmadı ama hak var: bitirmeden önce geri alma şansı.
+            if (session.status == GameStatus.playing && controller.awaitingUndo)
+              _UndoOffer(
+                accent: accent,
+                undoLeft: session.undoLeft,
+                onUndo: () => controller.undo(),
+                onGiveUp: controller.acceptGameOver,
               ),
             // Rekoru geçme bildirimi — oyunu durdurmaz.
             _TargetBanner(animation: _targetBanner, accent: accent),
@@ -518,7 +559,9 @@ class _GameScreenState extends State<GameScreen>
                     pieces: controller.tray,
                     board: controller.board,
                     boardCellSize: _cellSize,
-                    enabled: controller.status == GameStatus.playing,
+                    enabled:
+                        controller.status == GameStatus.playing &&
+                        !controller.awaitingUndo,
                     onDragStarted: (_) =>
                         _haptic(HapticFeedback.selectionClick),
                     onDragEnded: () => _preview.value = null,
@@ -543,12 +586,20 @@ class _GameScreenState extends State<GameScreen>
     );
 
     return AnimatedBuilder(
-      animation: _shakeController,
+      animation: Listenable.merge(<Listenable>[
+        _shakeController,
+        _impactController,
+      ]),
       builder: (context, child) {
         // Geçersiz bırakma: kısa yatay sarsıntı.
         final t = _shakeController.value;
         final dx = t == 0 ? 0.0 : math.sin(t * math.pi * 4) * 8 * (1 - t);
-        return Transform.translate(offset: Offset(dx, 0), child: child);
+        // Çok satırlı temizlik: sönümlenen dikey vuruş.
+        final i = _impactController.value;
+        final dy = i == 0 || i == 1
+            ? 0.0
+            : math.sin(i * math.pi * 3) * _impactStrength * (1 - i);
+        return Transform.translate(offset: Offset(dx, dy), child: child);
       },
       // Not: board konteynerinde padding/border yok — drag koordinatlarının
       // hücrelere birebir oturması için render box tam olarak board boyutunda
@@ -583,6 +634,46 @@ class _GameScreenState extends State<GameScreen>
       }
     }
     return null;
+  }
+}
+
+/// Hamle kalmadığında, geri alma hakkı varsa açılan panel.
+class _UndoOffer extends StatelessWidget {
+  const _UndoOffer({
+    required this.accent,
+    required this.undoLeft,
+    required this.onUndo,
+    required this.onGiveUp,
+  });
+
+  final Color accent;
+  final int undoLeft;
+  final VoidCallback onUndo;
+  final VoidCallback onGiveUp;
+
+  @override
+  Widget build(BuildContext context) {
+    return OverlayPanel(
+      icon: Icons.undo_rounded,
+      accent: accent,
+      title: 'Hamle kalmadı',
+      subtitle:
+          'Tahtaya sığacak parça yok. Son hamleni geri alıp farklı '
+          'oynayabilirsin.',
+      children: <Widget>[
+        StatRow(label: 'Kalan geri alma', value: '$undoLeft'),
+        const SizedBox(height: AppSpacing.lg),
+        FilledButton(
+          onPressed: AppFeedback.onTap(context, onUndo),
+          child: const Text('SON HAMLEYİ GERİ AL'),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextButton(
+          onPressed: AppFeedback.onTap(context, onGiveUp),
+          child: const Text('Oyunu bitir'),
+        ),
+      ],
+    );
   }
 }
 
