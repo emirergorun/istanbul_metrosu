@@ -14,10 +14,26 @@ class LaneRunnerController extends JourneyGameController {
     Random? random,
     super.tick = const Duration(milliseconds: 16),
   }) : _random = random ?? Random(),
-       super(gameId: id);
+       super(gameId: id, maxFrameSeconds: _maxFrameSeconds);
 
   /// Rekor anahtarında kullanılır; değiştirilmemeli.
   static const String id = 'lane_runner';
+
+  /// Hızın ve engel doğuşunun ayarlandığı hedef kare süresi.
+  ///
+  /// Eskiden her `Timer` tetiklenişinde bu kadar süre geçmiş varsayılıyordu;
+  /// telefonda zamanlayıcı sapınca akış düzensizleşiyordu. Artık ölçülen
+  /// gerçek süre bu değere oranlanıp hız ölçekleniyor: aynı denge (0.0075
+  /// vb.) korunur, yalnızca gerçek zamana bağlanır.
+  static const double _nominalFrameSeconds = 0.016;
+
+  /// Tek karede en fazla bu kadar süre sayılır; uzun bir donmadan sonra
+  /// engelin çarpışma penceresi atlanıp "içinden geçilmesin".
+  static const double _maxFrameSeconds = 0.05;
+
+  /// Ray değiştirirken trenin görsel konumu hedefe ne hızda yaklaşsın.
+  /// Yüksek değer daha keskin geçiş demek.
+  static const double _laneEaseRate = 18.0;
 
   final Random _random;
 
@@ -25,11 +41,18 @@ class LaneRunnerController extends JourneyGameController {
   int _nextObstacleId = 0;
   int _passes = 0;
   int _trainLane = 1;
+
+  /// Trenin ekranda çizilen konumu: [_trainLane]'e (hedef ray) doğru
+  /// yumuşakça yaklaşır, ışınlanmaz.
+  double _trainLaneVisual = 1.0;
   double _spawnDistance = 0.0;
 
   List<LaneObstacle> get obstacles =>
       List<LaneObstacle>.unmodifiable(_obstacles);
   int get trainLane => _trainLane;
+
+  /// Trenin çizilecek yumuşatılmış ray konumu.
+  double get trainLaneVisual => _trainLaneVisual;
   int get passes => _passes;
   int get lineLevel => laneRunnerLineLevelForPasses(_passes);
   String get lineLabel => laneRunnerLineLabelForPasses(_passes);
@@ -56,6 +79,7 @@ class LaneRunnerController extends JourneyGameController {
     _nextObstacleId = 0;
     _passes = 0;
     _trainLane = 1;
+    _trainLaneVisual = 1.0;
     _spawnDistance = 0.0;
   }
 
@@ -69,19 +93,25 @@ class LaneRunnerController extends JourneyGameController {
     notifyListeners();
   }
 
-  /// Testte kareyi elle ilerletmek için.
+  /// Testte gerçek zamanlayıcıyı beklemeden nominal kareler ilerletir.
   @visibleForTesting
   void step([int frames = 1]) {
-    final dt = tick.inMicroseconds / Duration.microsecondsPerSecond;
     for (var i = 0; i < frames; i++) {
       if (status != GameStatus.playing) return;
-      advance(dt);
+      advance(_nominalFrameSeconds);
     }
   }
 
   @override
   void onTick(double dt) {
-    _spawnDistance += _speed;
+    // `_speed` nominal (16 ms) kare için ayarlı; gerçek dt'ye oranlanır.
+    final frameStep = _speed * (dt / _nominalFrameSeconds);
+
+    // Ray değiştirme ışınlanmaz, hedefe doğru yumuşak kayar.
+    _trainLaneVisual +=
+        (_trainLane - _trainLaneVisual) * (1 - exp(-_laneEaseRate * dt));
+
+    _spawnDistance += frameStep;
     if (_obstacles.isEmpty || _spawnDistance >= _nextGap()) {
       _spawnObstacle();
       _spawnDistance = 0.0;
@@ -89,7 +119,7 @@ class LaneRunnerController extends JourneyGameController {
 
     for (var i = 0; i < _obstacles.length; i++) {
       final obstacle = _obstacles[i];
-      final moved = obstacle.copyWith(y: obstacle.y + _speed);
+      final moved = obstacle.copyWith(y: obstacle.y + frameStep);
       _obstacles[i] = moved;
 
       if (!moved.passed && moved.y > laneRunnerTrainY + 0.08) {

@@ -15,12 +15,20 @@ class RailFlightController extends JourneyGameController {
     super.tick = const Duration(milliseconds: 16),
   }) : _random = random ?? Random(),
        config = RailFlightConfig.forMinutes(journey.estimatedMinutes),
-       super(gameId: id) {
+       super(gameId: id, maxFrameSeconds: _maxFrameSeconds) {
     _resetFlight();
   }
 
   /// Rekor anahtarında kullanılır; değiştirilmemeli.
   static const String id = 'rail_flight';
+
+  /// Tek bir fizik adımında en fazla bu kadar saniye sayılır.
+  ///
+  /// Telefonda `Timer` düzenli gelmeyebilir (arka plan kısıtlaması, çöp
+  /// toplama, kısa donma). Ölçülen süreyi olduğu gibi fiziğe vermek treni
+  /// tek karede engelin içinden ışınlayabilir ya da haksız bir ölüme yol
+  /// açabilir; bu sınır sıçramayı nominal tikin ~3 katına hapseder.
+  static const double _maxFrameSeconds = 0.05;
 
   final Random _random;
   final RailFlightConfig config;

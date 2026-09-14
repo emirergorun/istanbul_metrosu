@@ -80,5 +80,82 @@ void main() {
       expect(controller.lineLabel, 'M2');
       expect(controller.lineLevel, 2);
     });
+
+    test('ray değişimi anında ışınlanmaz, hedefe doğru yumuşak kayar', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+
+      controller.moveRight();
+      expect(controller.trainLane, 2);
+      // Hedef anında güncellenir ama görsel konum henüz oraya varmamış
+      // olmalı — bu, "smooth değil" şikayetinin ana sebebiydi.
+      expect(controller.trainLaneVisual, 1.0);
+
+      controller.step();
+      expect(controller.trainLaneVisual, greaterThan(1));
+      expect(controller.trainLaneVisual, lessThan(2));
+
+      for (var i = 0; i < 60; i++) {
+        controller.step();
+      }
+      expect(controller.trainLaneVisual, closeTo(2, 0.01));
+    });
+  });
+
+  group('kare zamanlaması', () {
+    // Bu grup, Ray Uçuşu'nda uygulanan aynı düzeltmenin (gerçek geçen
+    // süreyi ölçme, sabit-dt varsaymama) Ray Değiştir'e de uygulandığını
+    // doğruluyor. Eskiden hız tamamen "kaç kere Timer tetiklendi"ye
+    // bağlıydı — telefonda zamanlayıcı gerçek zamandan saptığında oyun
+    // akışı düzensizleşiyordu.
+
+    test('ilk ölçüm yalnızca referansı kurar, 0 döner', () {
+      final controller = LaneRunnerController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+
+      expect(controller.debugElapsedSecondsSince(DateTime(2026)), 0);
+    });
+
+    test('gecikmeli bir tik, sabit 16ms değil gerçek geçen süreyi döner', () {
+      final controller = LaneRunnerController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+      final t0 = DateTime(2026);
+      controller.debugElapsedSecondsSince(t0);
+
+      final t1 = t0.add(const Duration(milliseconds: 30));
+      final dt = controller.debugElapsedSecondsSince(t1);
+
+      expect(dt, closeTo(0.03, 0.001));
+    });
+
+    test('uzun bir donma tek adımda dev bir sıçramaya izin vermez', () {
+      final controller = LaneRunnerController(
+        journey: shortJourney(),
+        recordToBeat: 0,
+        random: Random(1),
+      );
+      addTearDown(controller.dispose);
+      final t0 = DateTime(2026);
+      controller.debugElapsedSecondsSince(t0);
+
+      final t1 = t0.add(const Duration(seconds: 2));
+      final dt = controller.debugElapsedSecondsSince(t1);
+
+      expect(
+        dt,
+        lessThanOrEqualTo(0.05),
+        reason:
+            'kırpma olmasa engel bir karede çarpışma penceresini atlayıp '
+            '"içinden geçebilirdi"',
+      );
+    });
   });
 }

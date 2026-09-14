@@ -20,6 +20,14 @@ dependencies:
   # çalışma anında indirme yoktur.
   audioplayers: ^6.1.0
 
+  # Ray Uçuşu ve Ray Değiştir'in oyun döngüleri, her karede "gerçekte ne
+  # kadar süre geçti"yi ölçmek için bunu kullanır (bkz. RailFlightController,
+  # LaneRunnerController). flutter_test'in kendisi package:fake_async
+  # üzerine kurulu ve o da bu paketin ambient saatini tanıyor — bu sayede
+  # widget testlerinde tester.pump(süre) ile zamanlayıcı, ham DateTime.now()
+  # ile uyumsuz kalmadan hızlandırılabiliyor.
+  clock: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

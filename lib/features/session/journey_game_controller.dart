@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/storage/local_store.dart';
@@ -27,6 +28,7 @@ abstract class JourneyGameController extends ChangeNotifier
     required int recordToBeat,
     required this.tick,
     this.store,
+    this.maxFrameSeconds,
     // Alan private + mutable (restart tazeliyor), parametre public kalmalı;
     // `this._recordToBeat` dışarıdan kullanılamayacak bir ad üretirdi.
     // ignore: prefer_initializing_formals
@@ -39,6 +41,20 @@ abstract class JourneyGameController extends ChangeNotifier
 
   /// Sayaç periyodu. Sıra tabanlı oyunlarda 1 sn, gerçek zamanlıda ~16 ms.
   final Duration tick;
+
+  /// Gerçek zamanlı oyunlar için: tek karede en fazla sayılacak süre (sn).
+  ///
+  /// `null` ise her tik tam [tick] kadar sayılır (sıra tabanlı oyunlar).
+  /// Doluysa geçen süre `package:clock` ile **ölçülür** ve bu değere
+  /// kırpılır. Telefonda `Timer` düzenli gelmez; sabit [tick] varsaymak
+  /// akışı yavaşlatıp sıçratıyordu. Kırpma da uzun bir donmadan sonra
+  /// fiziğin tek karede engelin içinden geçmesini önler. `clock`, testte
+  /// `fakeAsync` ile sahtelenebildiği için ham `DateTime.now()` yerine
+  /// kullanılır. (Ray Uçuşu / Ray Değiştir ekibinin düzeltmesi; motora
+  /// taşındı ki her gerçek zamanlı oyun yararlansın.)
+  final double? maxFrameSeconds;
+
+  DateTime? _lastFrameTime;
 
   @override
   final Journey journey;
@@ -121,7 +137,9 @@ abstract class JourneyGameController extends ChangeNotifier
   bool _sprintAnnounced = false;
 
   /// Geçen süre (saniye). Gerçek zamanlı oyunlarda kesirli olabilir.
-  @protected
+  ///
+  /// Duraklatmada ilerlemez; ekranlar arka plan dokularını kaydırmak için
+  /// de kullanır.
   double get elapsedSeconds => _elapsedSeconds;
 
   // --- Yaşam döngüsü ---
@@ -240,15 +258,39 @@ abstract class JourneyGameController extends ChangeNotifier
 
   void _startTimer() {
     _timer?.cancel();
+    if (maxFrameSeconds == null) {
+      _timer = Timer.periodic(tick, (_) {
+        advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
+      });
+      return;
+    }
+    _lastFrameTime = clock.now();
     _timer = Timer.periodic(tick, (_) {
-      advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
+      advance(_elapsedSecondsSince(clock.now()));
     });
   }
 
   void _stopTimer() {
     _timer?.cancel();
     _timer = null;
+    _lastFrameTime = null;
   }
+
+  /// Son kareden bu yana ölçülen, [maxFrameSeconds] ile kırpılmış süre.
+  ///
+  /// İlk çağrı yalnızca referansı kurar ve 0 döner.
+  double _elapsedSecondsSince(DateTime now) {
+    final last = _lastFrameTime;
+    _lastFrameTime = now;
+    if (last == null) return 0;
+    final elapsed =
+        now.difference(last).inMicroseconds / Duration.microsecondsPerSecond;
+    return elapsed.clamp(0.0, maxFrameSeconds ?? double.infinity);
+  }
+
+  /// Testte düzensiz kare senaryolarını gerçek zamanı beklemeden sınamak için.
+  @visibleForTesting
+  double debugElapsedSecondsSince(DateTime now) => _elapsedSecondsSince(now);
 
   /// Yolculuğu [dt] saniye ilerletir.
   ///
