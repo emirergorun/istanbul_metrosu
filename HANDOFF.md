@@ -124,6 +124,7 @@ Hepsi bilinçlidir ve ürün gereksinimini değiştirmez:
 | 4 | Ses efekti yok | Haptic var, opsiyonel; ayar UI'ı yok |
 | 5 | Uzun yolculuklarda varış hâlâ zor | Durak rahatlamasından sonra 7 sn/hamle temposunda Uzun %48, Maraton %35; 4 sn/hamle gibi hızlı bir tempoda %1-2 |
 | 6 | Skor yalnız local | Cloud save/leaderboard yok (MVP dışı) |
+| 6b | Yazılı sorular doğrulanmadı | 62 soru yazıldı, kaynak alanları dolu ama içerik incelemesi yapılmadı |
 | 7 | Yazı ölçeği 1.6'da sınırlı | Tahta/HUD düzeni ölçekten bağımsız değil |
 | 8 | Piece rotasyonu yok | Katalog varyantlarla telafi ediliyor |
 | 9 | Endless modda hedef sabit kalır | Zafer sonrası yeni hedef gelmiyor |
@@ -174,6 +175,9 @@ Kod içinde `// TODO(PROD):` ile işaretlidir:
 | Rekor ve son rota kaydı | `core/storage/local_store.dart` |
 | Açılış ekranı / hareketli ağ | `features/home/presentation/title_screen.dart` |
 | Ayarlar | `features/settings/presentation/settings_screen.dart` |
+| Soru üretimi (Metro Bilgi) | `features/games/metro_quiz/domain/quiz_generator.dart` |
+| Quiz puan/seri kuralları | `features/games/metro_quiz/domain/quiz_rules.dart` |
+| Yazılı soru havuzu | `assets/data/questions.json` + `data/questions/question_repository.dart` |
 | Ses | `core/audio/audio_service.dart` |
 | Denge ölçümü (araç) | `test/balance_report_test.dart` |
 | İkon üretimi (araç) | `test/icon_generator_test.dart` |
@@ -204,6 +208,32 @@ Ekranın herhangi bir yerine dokunmak sahneyi 200 ms'de sonuna sarar.
 > okunuyor. Kapı genişliği de ortadaki vagonun içinde kalmalıdır
 > (`wagonWidth * 0.6`) — 3 vagon olduğu için ortadaki vagon ekranın
 > merkezine denk gelir.
+
+### Metro Bilgi soruları nereden geliyor?
+
+İki kaynak var ve ikisi çok farklı:
+
+1. **Üretilen sorular** (`QuizGenerator`). `assets/data/metro.json`'dan
+   türetilir: önceki/sonraki durak, durağın hattı, hattın uç durağı, hattaki
+   durak sayısı. 10 hat ve 161 durakla komşu durak sorusundan tek başına
+   **302 farklı soru** çıkıyor. Yeni hat eklenince sorular kendiliğinden
+   güncellenir; elle bakım yok.
+2. **Yazılı sorular** (`assets/data/questions.json`). İstanbul ve metro
+   bilgisi; üretilemez, yazılır. Her kaydın `source` alanı **zorunlu**:
+   oyun bir bilgiyi doğruymuş gibi söylüyorsa nereden aldığı da yazılı
+   olmalı. `test/game/question_bank_test.dart` dosyayı her koşuda denetler
+   (4 farklı şık, geçerli cevap indeksi, tekrarsız id, kaynak).
+
+Karışım ~%40 yazılı / %60 üretilen; yazılı havuz bitince akış üretilene
+düşer. 12 dakikalık bir yolculuk ~60 soru demek, yani omurga her zaman
+üretilen sorulardır.
+
+**Veritabanı yok ve gerekmiyor.** Uygulama çevrimdışı, soru sayısı birkaç
+yüz ve sürüm başına sabit. Kaynak ileride sunucuya taşınırsa yalnızca
+`QuestionRepository` implementasyonu değişir.
+
+> TODO(PROD): Yazılı soruların doğruluğu yayından önce kaynaklarıyla
+> birlikte gözden geçirilmeli.
 
 ### Parça torbası
 

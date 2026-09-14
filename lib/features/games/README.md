@@ -17,7 +17,7 @@ features/
     metro_merge/    Hat Birleştir
     rail_flight/    Ray Uçuşu
     merge_drop/     Hat Düşür
-    station_memory/ Durak Hafıza
+    metro_quiz/     Metro Bilgi
     lane_runner/    Ray Değiştir
     game2/          yeni oyun buraya
 ```

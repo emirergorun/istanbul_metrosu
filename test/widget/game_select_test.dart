@@ -5,6 +5,7 @@ import 'package:istanbul_metro_game/app/routes.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
+import 'package:istanbul_metro_game/core/widgets/pressable.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/game_screen.dart';
 import 'package:istanbul_metro_game/features/games/catalog/game_glyph.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
@@ -13,7 +14,7 @@ import 'package:istanbul_metro_game/features/games/lane_runner/presentation/lane
 import 'package:istanbul_metro_game/features/games/merge_drop/presentation/merge_drop_screen.dart';
 import 'package:istanbul_metro_game/features/games/metro_merge/presentation/metro_merge_screen.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/presentation/rail_flight_screen.dart';
-import 'package:istanbul_metro_game/features/games/station_memory/presentation/station_memory_screen.dart';
+import 'package:istanbul_metro_game/features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -167,16 +168,17 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('durak hafıza oyunu seçimden açılır', (tester) async {
+  testWidgets('metro bilgi oyunu seçimden açılır', (tester) async {
     await pumpSelect(tester);
 
-    await scrollToGame(tester, MiniGames.stationMemory);
-    await tester.tap(find.text(MiniGames.stationMemory.name));
+    await scrollToGame(tester, MiniGames.metroQuiz);
+    await tester.tap(find.text(MiniGames.metroQuiz.name));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
-    expect(find.byType(StationMemoryScreen), findsOneWidget);
-    expect(find.text('HAFIZA'), findsOneWidget);
+    expect(find.byType(MetroQuizScreen), findsOneWidget);
+    // Soru metni her oyunda değişir; sabit olan dört şıkkın çizilmesi.
+    expect(find.byType(Pressable), findsAtLeastNWidgets(4));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -203,7 +205,7 @@ void main() {
       MiniGames.metroMerge: MetroMergeScreen,
       MiniGames.railFlight: RailFlightScreen,
       MiniGames.mergeDrop: MergeDropScreen,
-      MiniGames.stationMemory: StationMemoryScreen,
+      MiniGames.metroQuiz: MetroQuizScreen,
       MiniGames.laneRunner: LaneRunnerScreen,
     };
 

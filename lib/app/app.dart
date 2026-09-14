@@ -4,6 +4,7 @@ import '../core/constants/app_constants.dart';
 import '../core/audio/audio_service.dart';
 import '../core/storage/local_store.dart';
 import '../data/metro/metro_repository.dart';
+import '../data/questions/question_repository.dart';
 import '../features/journey/services/route_service.dart';
 import 'app_scope.dart';
 import 'routes.dart';
@@ -16,11 +17,13 @@ class MetroGameApp extends StatelessWidget {
     required this.store,
     required this.audio,
     required this.metro,
+    this.questions = const EmptyQuestionRepository(),
   });
 
   final LocalStore store;
   final AudioService audio;
   final MetroRepository metro;
+  final QuestionRepository questions;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +31,7 @@ class MetroGameApp extends StatelessWidget {
       store: store,
       audio: audio,
       metro: metro,
+      questions: questions,
       routeService: RouteService(metro),
       child: MaterialApp(
         title: AppConstants.appTitle,

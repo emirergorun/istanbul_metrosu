@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/audio/audio_service.dart';
 import '../core/storage/local_store.dart';
 import '../data/metro/metro_repository.dart';
+import '../data/questions/question_repository.dart';
 import '../features/journey/services/route_service.dart';
 
 /// Uygulama seviyesindeki servisleri widget ağacına taşır.
@@ -15,6 +16,7 @@ class AppScope extends InheritedWidget {
     required this.store,
     required this.audio,
     required this.metro,
+    this.questions = const EmptyQuestionRepository(),
     required this.routeService,
     required super.child,
   });
@@ -22,6 +24,11 @@ class AppScope extends InheritedWidget {
   final LocalStore store;
   final AudioService audio;
   final MetroRepository metro;
+
+  /// Elle yazılmış bilgi soruları. Dosya okunamazsa boş havuz gelir ve
+  /// Metro Bilgi yalnızca üretilen sorularla oynanır.
+  final QuestionRepository questions;
+
   final RouteService routeService;
 
   static AppScope of(BuildContext context) {
@@ -35,5 +42,6 @@ class AppScope extends InheritedWidget {
       store != oldWidget.store ||
       audio != oldWidget.audio ||
       metro != oldWidget.metro ||
+      questions != oldWidget.questions ||
       routeService != oldWidget.routeService;
 }

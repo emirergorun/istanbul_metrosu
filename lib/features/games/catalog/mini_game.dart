@@ -93,10 +93,15 @@ class MiniGames {
     isAvailable: true,
   );
 
-  static const MiniGame stationMemory = MiniGame(
-    id: 'station_memory',
-    name: 'Durak Hafıza',
-    tagline: 'Durak sırasını aklında tut, aynı sırayla seç.',
+  /// Eski `station_memory` (Durak Hafıza) oyununun yerini aldı.
+  ///
+  /// Kimlik bilerek yeni: oyun ezberden bilgiye döndü, eski rekorlar bu
+  /// oyunla karşılaştırılabilir değil. Eski kimliğin rekorları kayıtlarda
+  /// duruyor ama hiçbir ekranda görünmüyor.
+  static const MiniGame metroQuiz = MiniGame(
+    id: 'metro_quiz',
+    name: 'Metro Bilgi',
+    tagline: 'Durakları ve İstanbul’u bil, seriyi bozma.',
     glyph: GameGlyph.sequence,
     color: AppColors.gameSequence,
     isAvailable: true,
@@ -140,7 +145,7 @@ class MiniGames {
     metroMerge,
     railFlight,
     mergeDrop,
-    stationMemory,
+    metroQuiz,
     laneRunner,
     transfer,
     signal,

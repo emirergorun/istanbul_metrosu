@@ -31,6 +31,8 @@ flutter:
   assets:
     # Metro ağı: hatlar, istasyon sırası, durak arası süreler, hat renkleri.
     - assets/data/metro.json
+    # Elle yazılmış İstanbul / metro bilgi soruları (Metro Bilgi oyunu).
+    - assets/data/questions.json
     # Sentezlenmiş arayüz sesleri.
     - assets/audio/
     # OFL lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.

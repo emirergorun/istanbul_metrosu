@@ -6,6 +6,7 @@ import 'app/app.dart';
 import 'core/audio/audio_service.dart';
 import 'core/storage/local_store.dart';
 import 'data/metro/metro_repository.dart';
+import 'data/questions/question_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,12 +36,24 @@ Future<void> main() async {
     return;
   }
 
+  // Bilgi soruları oyunun omurgası değil çeşnisi: dosya yoksa ya da
+  // bozuksa havuz boş gelir, Metro Bilgi üretilen sorularla oynanır.
+  // Bu yüzden metro verisinin aksine hata ekranı göstermez.
+  final questions = await QuestionDataset.load();
+
   final audio = AudioService()
     ..enabled = store.soundEnabled
     ..musicEnabled = store.musicEnabled;
   await audio.init();
 
-  runApp(MetroGameApp(store: store, audio: audio, metro: metro));
+  runApp(
+    MetroGameApp(
+      store: store,
+      audio: audio,
+      metro: metro,
+      questions: questions,
+    ),
+  );
 }
 
 /// Gömülü fontların SIL Open Font License metinlerini kaydeder.

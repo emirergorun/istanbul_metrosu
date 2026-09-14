@@ -1,0 +1,812 @@
+{
+  "version": 1,
+  "note": "TODO(PROD): Her sorunun doğruluğu yayından önce kaynağıyla birlikte gözden geçirilmelidir. Yeni soru eklerken: 4 şık, tekrarsız, 'answer' doğru şıkkın indeksi, 'source' zorunlu.",
+  "questions": [
+    {
+      "id": "marmaray_acilis",
+      "text": "Marmaray hangi yıl hizmete açıldı?",
+      "options": [
+        "2013",
+        "2009",
+        "2016",
+        "2004"
+      ],
+      "answer": 0,
+      "context": "Marmaray",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "tunel_yil",
+      "text": "Karaköy – Beyoğlu arasındaki Tünel hangi yıl açıldı?",
+      "options": [
+        "1875",
+        "1923",
+        "1901",
+        "1947"
+      ],
+      "answer": 0,
+      "context": "Tünel",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "tunel_unvan",
+      "text": "Tünel, dünyanın en eski ikinci yeraltı demiryolu sayılır. Peki birincisi hangi şehirde?",
+      "options": [
+        "Londra",
+        "Paris",
+        "New York",
+        "Viyana"
+      ],
+      "answer": 0,
+      "context": "Tünel",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "ilk_metro_yil",
+      "text": "İstanbul'un ilk modern metro hattı hangi yıl açıldı?",
+      "options": [
+        "1989",
+        "1975",
+        "1994",
+        "2001"
+      ],
+      "answer": 0,
+      "context": "Tarihçe",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "isletmeci",
+      "text": "İstanbul'daki metro hatlarını hangi kuruluş işletir?",
+      "options": [
+        "Metro İstanbul",
+        "TCDD",
+        "İETT",
+        "Şehir Hatları"
+      ],
+      "answer": 0,
+      "context": "İşletme",
+      "source": "İBB / Metro İstanbul"
+    },
+    {
+      "id": "istanbulkart",
+      "text": "Metro turnikelerinde kullanılan temassız ödeme kartının adı nedir?",
+      "options": [
+        "İstanbulkart",
+        "Akbil",
+        "Şehirkart",
+        "Metrokart"
+      ],
+      "answer": 0,
+      "context": "Ödeme",
+      "source": "İBB / Metro İstanbul"
+    },
+    {
+      "id": "surucusuz",
+      "text": "Türkiye'nin ilk sürücüsüz metro hattı hangisidir?",
+      "options": [
+        "M5 Üsküdar – Sultanbeyli",
+        "M2 Yenikapı – Hacıosman",
+        "M3 Bakırköy – Kayaşehir",
+        "M1 Yenikapı – Kirazlı"
+      ],
+      "answer": 0,
+      "context": "M5",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "yenikapi_aktarma",
+      "text": "Yenikapı'da hangi üç hat birbirine aktarma verir?",
+      "options": [
+        "M1, M2 ve Marmaray",
+        "M2, M4 ve M7",
+        "M1, M3 ve M9",
+        "M4, M5 ve Marmaray"
+      ],
+      "answer": 0,
+      "context": "Aktarma",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "marmaray_gecis",
+      "text": "Marmaray Boğaz'ı nasıl geçer?",
+      "options": [
+        "Deniz tabanına indirilen batırma tüple",
+        "Asma köprüyle",
+        "Feribotla",
+        "Kemerli viyadükle"
+      ],
+      "answer": 0,
+      "context": "Marmaray",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "avrasya_tuneli",
+      "text": "Avrasya Tüneli hangi taşıt türü içindir?",
+      "options": [
+        "Karayolu taşıtları",
+        "Metro",
+        "Yük treni",
+        "Tramvay"
+      ],
+      "answer": 0,
+      "context": "Boğaz geçişi",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "halic_koprusu",
+      "text": "Haliç Metro Köprüsü hangi metro hattının üzerindedir?",
+      "options": [
+        "M2",
+        "M4",
+        "M7",
+        "M1A"
+      ],
+      "answer": 0,
+      "context": "Haliç",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "m2_ilk_bolum",
+      "text": "M2 hattının ilk bölümü hangi iki durak arasında açıldı?",
+      "options": [
+        "Taksim – 4.Levent",
+        "Yenikapı – Şişhane",
+        "Levent – Hacıosman",
+        "Şişli – Osmanbey"
+      ],
+      "answer": 0,
+      "context": "M2",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "t1_guzergah",
+      "text": "T1 tramvay hattı hangi iki uç arasında çalışır?",
+      "options": [
+        "Kabataş – Bağcılar",
+        "Eminönü – Alibeyköy",
+        "Kadıköy – Moda",
+        "Topkapı – Mescid-i Selam"
+      ],
+      "answer": 0,
+      "context": "Tramvay",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "f1_funikuler",
+      "text": "F1 füniküler hattı hangi iki noktayı bağlar?",
+      "options": [
+        "Taksim – Kabataş",
+        "Karaköy – Beyoğlu",
+        "Eyüp – Piyerloti",
+        "Maçka – Taşkışla"
+      ],
+      "answer": 0,
+      "context": "Füniküler",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "metrobus_guzergah",
+      "text": "Metrobüs hattının uçları hangileridir?",
+      "options": [
+        "Beylikdüzü – Söğütlüçeşme",
+        "Bakırköy – Kadıköy",
+        "Avcılar – Üsküdar",
+        "Esenyurt – Pendik"
+      ],
+      "answer": 0,
+      "context": "Metrobüs",
+      "source": "İBB / Metro İstanbul"
+    },
+    {
+      "id": "metrobus_yol",
+      "text": "Metrobüs hangi karayolunun orta şeridinde ilerler?",
+      "options": [
+        "D-100",
+        "TEM",
+        "Sahil yolu",
+        "Basın Ekspres"
+      ],
+      "answer": 0,
+      "context": "Metrobüs",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "nostaljik_tramvay",
+      "text": "İstiklal Caddesi'ndeki nostaljik tramvay hangi iki meydan arasında işler?",
+      "options": [
+        "Taksim – Tünel",
+        "Karaköy – Şişhane",
+        "Beşiktaş – Ortaköy",
+        "Eminönü – Sirkeci"
+      ],
+      "answer": 0,
+      "context": "Nostaljik hat",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kadikoy_moda",
+      "text": "Anadolu yakasındaki nostaljik tramvay hangi semtte çalışır?",
+      "options": [
+        "Kadıköy – Moda",
+        "Üsküdar – Kuzguncuk",
+        "Bostancı – Suadiye",
+        "Maltepe – Cevizli"
+      ],
+      "answer": 0,
+      "context": "Nostaljik hat",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "haydarpasa",
+      "text": "Anadolu yakasındaki tarihi tren garı hangisidir?",
+      "options": [
+        "Haydarpaşa",
+        "Sirkeci",
+        "Söğütlüçeşme",
+        "Bostancı"
+      ],
+      "answer": 0,
+      "context": "Gar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "sirkeci",
+      "text": "Avrupa yakasındaki tarihi tren garı hangisidir?",
+      "options": [
+        "Sirkeci",
+        "Halkalı",
+        "Bakırköy",
+        "Yenikapı"
+      ],
+      "answer": 0,
+      "context": "Gar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "m5_renk",
+      "text": "M5 hattının ağ haritasındaki rengi nedir?",
+      "options": [
+        "Mor",
+        "Yeşil",
+        "Turuncu",
+        "Sarı"
+      ],
+      "answer": 0,
+      "context": "Hat renkleri",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "m2_renk",
+      "text": "M2 hattının ağ haritasındaki rengi nedir?",
+      "options": [
+        "Yeşil",
+        "Kırmızı",
+        "Mavi",
+        "Pembe"
+      ],
+      "answer": 0,
+      "context": "Hat renkleri",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "m4_renk",
+      "text": "M4 hattının ağ haritasındaki rengi nedir?",
+      "options": [
+        "Pembe",
+        "Yeşil",
+        "Gri",
+        "Kahverengi"
+      ],
+      "answer": 0,
+      "context": "Hat renkleri",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "m1_renk",
+      "text": "M1 hattının ağ haritasındaki rengi nedir?",
+      "options": [
+        "Kırmızı",
+        "Mor",
+        "Sarı",
+        "Turkuaz"
+      ],
+      "answer": 0,
+      "context": "Hat renkleri",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "iett",
+      "text": "İstanbul'da otobüs işletmesinden sorumlu kurum hangisidir?",
+      "options": [
+        "İETT",
+        "Metro İstanbul",
+        "İSPARK",
+        "İSKİ"
+      ],
+      "answer": 0,
+      "context": "Ulaşım",
+      "source": "İBB / Metro İstanbul"
+    },
+    {
+      "id": "sehir_hatlari",
+      "text": "Boğaz'daki tarihi vapur seferlerini yürüten kuruluş hangisidir?",
+      "options": [
+        "Şehir Hatları",
+        "İDO",
+        "Turyol",
+        "Deniz Otobüsleri A.Ş."
+      ],
+      "answer": 0,
+      "context": "Deniz ulaşımı",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "m4_ucu",
+      "text": "M4 hattının Anadolu yakasındaki batı ucu hangi ilçededir?",
+      "options": [
+        "Kadıköy",
+        "Maltepe",
+        "Ataşehir",
+        "Üsküdar"
+      ],
+      "answer": 0,
+      "context": "M4",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "marmaray_uzunluk",
+      "text": "Marmaray hattı hangi iki uç arasında işler?",
+      "options": [
+        "Halkalı – Gebze",
+        "Sirkeci – Pendik",
+        "Bakırköy – Kartal",
+        "Yenikapı – Söğütlüçeşme"
+      ],
+      "answer": 0,
+      "context": "Marmaray",
+      "source": "metro.istanbul"
+    },
+    {
+      "id": "sabiha_ilce",
+      "text": "Sabiha Gökçen Havalimanı hangi ilçededir?",
+      "options": [
+        "Pendik",
+        "Tuzla",
+        "Kartal",
+        "Sultanbeyli"
+      ],
+      "answer": 0,
+      "context": "Havalimanı",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "istanbul_havalimani_ilce",
+      "text": "İstanbul Havalimanı hangi ilçededir?",
+      "options": [
+        "Arnavutköy",
+        "Başakşehir",
+        "Eyüpsultan",
+        "Silivri"
+      ],
+      "answer": 0,
+      "context": "Havalimanı",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "ataturk_havalimani",
+      "text": "Atatürk Havalimanı tarifeli yolcu uçuşlarına hangi yıl kapandı?",
+      "options": [
+        "2019",
+        "2015",
+        "2021",
+        "2013"
+      ],
+      "answer": 0,
+      "context": "Havalimanı",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "iki_kita",
+      "text": "İstanbul hangi özelliğiyle bilinir?",
+      "options": [
+        "İki kıtaya yayılmış olmasıyla",
+        "Deniz seviyesinin altında olmasıyla",
+        "Ada şehir olmasıyla",
+        "Başkent olmasıyla"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "ilce_sayisi",
+      "text": "İstanbul'un kaç ilçesi vardır?",
+      "options": [
+        "39",
+        "27",
+        "45",
+        "32"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "İBB / Metro İstanbul"
+    },
+    {
+      "id": "bogazici_uzunluk",
+      "text": "İstanbul Boğazı yaklaşık kaç kilometre uzunluğundadır?",
+      "options": [
+        "30 km",
+        "12 km",
+        "55 km",
+        "80 km"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "halic",
+      "text": "Haliç hangi denize açılır?",
+      "options": [
+        "İstanbul Boğazı'na",
+        "Marmara Denizi'ne doğrudan",
+        "Karadeniz'e doğrudan",
+        "Ege Denizi'ne"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "adalar",
+      "text": "Adalar ilçesinin en büyük adası hangisidir?",
+      "options": [
+        "Büyükada",
+        "Heybeliada",
+        "Burgazada",
+        "Kınalıada"
+      ],
+      "answer": 0,
+      "context": "Adalar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "camlica",
+      "text": "Çamlıca Tepesi hangi ilçededir?",
+      "options": [
+        "Üsküdar",
+        "Kadıköy",
+        "Beykoz",
+        "Ümraniye"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kopru_1973",
+      "text": "1973'te açılan ilk Boğaz köprüsünün bugünkü adı nedir?",
+      "options": [
+        "15 Temmuz Şehitler Köprüsü",
+        "Fatih Sultan Mehmet Köprüsü",
+        "Yavuz Sultan Selim Köprüsü",
+        "Galata Köprüsü"
+      ],
+      "answer": 0,
+      "context": "Köprüler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kopru_1988",
+      "text": "Fatih Sultan Mehmet Köprüsü hangi yıl açıldı?",
+      "options": [
+        "1988",
+        "1973",
+        "1996",
+        "2006"
+      ],
+      "answer": 0,
+      "context": "Köprüler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kopru_2016",
+      "text": "Yavuz Sultan Selim Köprüsü hangi yıl açıldı?",
+      "options": [
+        "2016",
+        "2010",
+        "2019",
+        "2013"
+      ],
+      "answer": 0,
+      "context": "Köprüler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "bogaz_kopru_sayisi",
+      "text": "İstanbul Boğazı'nı kaç asma köprü geçer?",
+      "options": [
+        "3",
+        "2",
+        "4",
+        "5"
+      ],
+      "answer": 0,
+      "context": "Köprüler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "prens_adalari_ulasim",
+      "text": "Adalar'da uzun yıllar motorlu taşıt yerine hangi ulaşım aracı kullanıldı?",
+      "options": [
+        "Fayton",
+        "Tramvay",
+        "Dolmuş",
+        "Teleferik"
+      ],
+      "answer": 0,
+      "context": "Adalar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "ayasofya_ilce",
+      "text": "Ayasofya hangi ilçededir?",
+      "options": [
+        "Fatih",
+        "Beyoğlu",
+        "Üsküdar",
+        "Beşiktaş"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "topkapi",
+      "text": "Topkapı Sarayı hangi semtte bulunur?",
+      "options": [
+        "Sarayburnu",
+        "Ortaköy",
+        "Salacak",
+        "Sultangazi"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "dolmabahce",
+      "text": "Dolmabahçe Sarayı hangi ilçededir?",
+      "options": [
+        "Beşiktaş",
+        "Fatih",
+        "Şişli",
+        "Kadıköy"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "galata_kulesi",
+      "text": "Galata Kulesi hangi ilçededir?",
+      "options": [
+        "Beyoğlu",
+        "Fatih",
+        "Beşiktaş",
+        "Zeytinburnu"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kiz_kulesi",
+      "text": "Kız Kulesi hangi yakanın kıyısındadır?",
+      "options": [
+        "Anadolu yakası",
+        "Avrupa yakası",
+        "Adalar",
+        "Haliç"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "kapalicarsi",
+      "text": "Kapalıçarşı hangi ilçededir?",
+      "options": [
+        "Fatih",
+        "Beyoğlu",
+        "Eyüpsultan",
+        "Bakırköy"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "misir_carsisi",
+      "text": "Mısır Çarşısı hangi semtte bulunur?",
+      "options": [
+        "Eminönü",
+        "Karaköy",
+        "Üsküdar",
+        "Beyazıt"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "pierre_loti",
+      "text": "Pierre Loti Tepesi hangi ilçededir?",
+      "options": [
+        "Eyüpsultan",
+        "Beyoğlu",
+        "Sarıyer",
+        "Beykoz"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "rumeli_hisari",
+      "text": "Rumeli Hisarı Boğaz'ın hangi yakasındadır?",
+      "options": [
+        "Avrupa",
+        "Anadolu",
+        "Haliç içinde",
+        "Marmara kıyısında"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "anadolu_hisari",
+      "text": "Anadolu Hisarı hangi ilçededir?",
+      "options": [
+        "Beykoz",
+        "Üsküdar",
+        "Kadıköy",
+        "Çekmeköy"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "istiklal",
+      "text": "İstiklal Caddesi hangi meydanda son bulur?",
+      "options": [
+        "Taksim",
+        "Beyazıt",
+        "Üsküdar",
+        "Beşiktaş"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "moda_ilce",
+      "text": "Moda semti hangi ilçededir?",
+      "options": [
+        "Kadıköy",
+        "Üsküdar",
+        "Maltepe",
+        "Ataşehir"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "nisantasi",
+      "text": "Nişantaşı hangi ilçededir?",
+      "options": [
+        "Şişli",
+        "Beyoğlu",
+        "Beşiktaş",
+        "Fatih"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "bebek_ilce",
+      "text": "Bebek semti hangi ilçededir?",
+      "options": [
+        "Beşiktaş",
+        "Sarıyer",
+        "Beyoğlu",
+        "Şişli"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "maslak_ilce",
+      "text": "Maslak hangi ilçededir?",
+      "options": [
+        "Sarıyer",
+        "Şişli",
+        "Beşiktaş",
+        "Kâğıthane"
+      ],
+      "answer": 0,
+      "context": "Semtler",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "sultanahmet_cami",
+      "text": "Sultanahmet Camii halk arasında hangi adla bilinir?",
+      "options": [
+        "Mavi Cami",
+        "Yeşil Cami",
+        "Beyaz Cami",
+        "Altın Cami"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "bosphorus_akinti",
+      "text": "Boğaz'da yüzey akıntısı genel olarak hangi yönde ilerler?",
+      "options": [
+        "Karadeniz'den Marmara'ya",
+        "Marmara'dan Karadeniz'e",
+        "Haliç'ten Boğaz'a",
+        "Değişmez, durgundur"
+      ],
+      "answer": 0,
+      "context": "Coğrafya",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "yedikule",
+      "text": "Yedikule Hisarı hangi ilçededir?",
+      "options": [
+        "Fatih",
+        "Zeytinburnu",
+        "Bakırköy",
+        "Eyüpsultan"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "valens",
+      "text": "Bozdoğan (Valens) Su Kemeri hangi semtte görülür?",
+      "options": [
+        "Fatih",
+        "Beyoğlu",
+        "Üsküdar",
+        "Beşiktaş"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    },
+    {
+      "id": "yerebatan",
+      "text": "Yerebatan Sarnıcı hangi yapının yakınındadır?",
+      "options": [
+        "Ayasofya",
+        "Galata Kulesi",
+        "Dolmabahçe Sarayı",
+        "Kız Kulesi"
+      ],
+      "answer": 0,
+      "context": "Tarihî yapılar",
+      "source": "genel bilgi"
+    }
+  ]
+}

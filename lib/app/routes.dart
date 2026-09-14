@@ -10,8 +10,8 @@ import '../features/games/metro_merge/application/metro_merge_controller.dart';
 import '../features/games/metro_merge/presentation/metro_merge_screen.dart';
 import '../features/games/rail_flight/application/rail_flight_controller.dart';
 import '../features/games/rail_flight/presentation/rail_flight_screen.dart';
-import '../features/games/station_memory/application/station_memory_controller.dart';
-import '../features/games/station_memory/presentation/station_memory_screen.dart';
+import '../features/games/metro_quiz/application/metro_quiz_controller.dart';
+import '../features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import '../features/games/catalog/game_select_screen.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
@@ -77,8 +77,8 @@ class AppRoutes {
               if (args.gameId == MergeDropController.id) {
                 return MergeDropScreen(journey: args.journey);
               }
-              if (args.gameId == StationMemoryController.id) {
-                return StationMemoryScreen(journey: args.journey);
+              if (args.gameId == MetroQuizController.id) {
+                return MetroQuizScreen(journey: args.journey);
               }
               if (args.gameId == LaneRunnerController.id) {
                 return LaneRunnerScreen(journey: args.journey);

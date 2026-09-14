@@ -170,13 +170,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Verisi çözülemeyen kayıt (metro verisi değişmiş olabilir) baştan elenir;
   /// eskiden bu kayıtlar listeye giriyor ama boş satır olarak çiziliyordu, bu
   /// yüzden başlıktaki sayı ile ekrandaki satır sayısı tutmuyordu.
+  /// Gösterilebilir rekorlar.
+  ///
+  /// İki eleme var:
+  ///
+  /// - **Durağı artık olmayan** rota (veri değişmiş olabilir).
+  /// - **Kataloğda olmayan oyun.** Emekliye ayrılan bir oyunun kaydı
+  ///   (ör. Durak Hafıza) cihazda duruyor; elenmezse `orElse` yüzünden
+  ///   Blok Metro rekoru gibi görünür ve oyuncu hiç kurmadığı bir rekorla
+  ///   karşılaşırdı. `gameId == null` olan eski kayıtlar Blok Metro'ya
+  ///   aittir, onlar kalır.
   List<RouteRecord> _visible(List<RouteRecord> records) {
     final metro = AppScope.of(context).metro;
+    final knownGames = <String>{for (final game in MiniGames.all) game.id};
     return records
         .where(
           (r) =>
               metro.stationById(r.originId) != null &&
-              metro.stationById(r.destinationId) != null,
+              metro.stationById(r.destinationId) != null &&
+              (r.gameId == null || knownGames.contains(r.gameId)),
         )
         .toList()
       ..sort((a, b) => b.score.compareTo(a.score));

@@ -27,7 +27,8 @@ enum GameGlyph {
   /// Üst üste yığılan rozetler — Hat Düşür.
   drop,
 
-  /// Sırası hatırlanacak durak dizisi — Durak Hafıza.
+  /// Ray üzerinde durak dizisi, sonuncusu boş — Metro Bilgi.
+  /// ("Sıradaki durak hangisi?" sorusunun şekli.)
   sequence,
 
   /// Şeritler arası geçiş — Ray Değiştir.
