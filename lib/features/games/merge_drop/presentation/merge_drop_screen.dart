@@ -414,6 +414,13 @@ class _DropPlayArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Fizik dünyası izotropik (1 birim = havuz genişliği); havuzun kaç
+        // birim yüksekliğinde olduğunu yalnızca düzen bilir.
+        final aspect = constraints.maxHeight / constraints.maxWidth;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          controller.setPoolAspect(aspect);
+        });
+
         void aimFromLocal(Offset local) {
           final x = (local.dx / constraints.maxWidth).clamp(0.0, 1.0);
           controller.moveAim(x);
@@ -469,8 +476,16 @@ class _MergeDropPainter extends CustomPainter {
     _drawPreview(canvas, size);
   }
 
+  /// Dünya birimini piksele çeviren **tek** ölçek.
+  ///
+  /// Hem x hem y hem de yarıçap bununla çarpılır. Ayrı ölçekler kullanmak
+  /// (x→width, y→height, yarıçap→shortestSide) daireleri elipse çevirip
+  /// fizikte tam temas eden topların ekranda boşluklu görünmesine yol
+  /// açıyordu.
+  double _scale(Size size) => size.width;
+
   void _drawDangerLine(Canvas canvas, Size size) {
-    final y = mergeDropDangerLine * size.height;
+    final y = controller.dangerY * _scale(size);
     final paint = Paint()
       ..color = AppColors.danger.withValues(alpha: 0.55)
       ..strokeWidth = 2;
@@ -479,7 +494,16 @@ class _MergeDropPainter extends CustomPainter {
 
   void _drawBalls(Canvas canvas, Size size) {
     for (final ball in controller.balls) {
-      _drawBall(canvas, size, ball.x, ball.y, ball.level, alpha: 1);
+      _drawBall(
+        canvas,
+        size,
+        ball.x,
+        ball.y,
+        ball.level,
+        alpha: 1,
+        // Birleşen top şişerek gelir (bkz. DropBall.drawRadius).
+        worldRadius: ball.drawRadius,
+      );
     }
   }
 
@@ -504,9 +528,11 @@ class _MergeDropPainter extends CustomPainter {
     double y,
     int level, {
     required double alpha,
+    double? worldRadius,
   }) {
-    final radius = mergeDropRadiusForLevel(level) * size.shortestSide;
-    final center = Offset(x * size.width, y * size.height);
+    final scale = _scale(size);
+    final radius = (worldRadius ?? mergeDropRadiusForLevel(level)) * scale;
+    final center = Offset(x * scale, y * scale);
     final color = _mergeDropLineColor(level);
     final onColor = LineTheme.readableOn(color);
     canvas.drawCircle(

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 
 const int mergeDropMinLevel = 1;
@@ -36,7 +38,8 @@ class DropBall {
     required this.y,
     this.vx = 0,
     this.vy = 0,
-    this.landed = false,
+    this.settled = false,
+    this.pop = 1,
   });
 
   final int id;
@@ -46,13 +49,18 @@ class DropBall {
   final double vx;
   final double vy;
 
-  /// Top zemine ya da başka bir topa hiç değdi mi?
+  /// Top gerçekten **oturdu** mu: altında bir dayanak (zemin ya da merkezi
+  /// daha aşağıda olan başka bir top) var ve neredeyse duruyor.
   ///
-  /// Bırakılan bir top, havuzun en üstünde (tehlike çizgisinin de üstünde)
-  /// doğar ve düşerek çizgiyi geçer — bu yüzden "tehlike çizgisine değme"
-  /// kontrolü yalnızca **oturmuş** (en az bir kez temas etmiş) toplara
-  /// uygulanmalı; yoksa her bırakışta anında kaybedilir.
-  final bool landed;
+  /// Her karede yeniden hesaplanır; yapışkan bir bayrak değildir.
+  ///
+  /// Bu ayrım kritik: eskiden bu alan "herhangi bir şeye değdi" anlamına
+  /// geliyordu ve çarpışma çözücüsü havada birbirine sürten iki topa bile
+  /// bunu basıyordu. Doğum noktası tehlike çizgisinin üstünde olduğu için,
+  /// arka arkaya bırakılan iki top doğarken birbirine değince oyun yarım
+  /// saniyede bitiyordu. Kaybetme koşulu artık yalnızca gerçekten yığına
+  /// oturmuş toplara bakıyor.
+  final bool settled;
 
   String get label => mergeDropLabelForLevel(level);
   double get radius => mergeDropRadiusForLevel(level);
@@ -72,7 +80,8 @@ class DropBall {
     double? y,
     double? vx,
     double? vy,
-    bool? landed,
+    bool? settled,
+    double? pop,
   }) {
     return DropBall(
       id: id ?? this.id,
@@ -81,8 +90,31 @@ class DropBall {
       y: y ?? this.y,
       vx: vx ?? this.vx,
       vy: vy ?? this.vy,
-      landed: landed ?? this.landed,
+      settled: settled ?? this.settled,
+      pop: pop ?? this.pop,
     );
+  }
+
+  /// Hız büyüklüğü — oturma kararında kullanılır.
+  double get speed => sqrt(vx * vx + vy * vy);
+
+  /// Birleşme "yutma" animasyonunun ilerlemesi: 0 = yeni doğdu, 1 = bitti.
+  ///
+  /// Yalnızca **çizim** için; fizik her zaman tam [radius] ile çalışır.
+  /// agar.io'da bir hücre bir diğerini yuttuğunda anında yer değiştirmez,
+  /// gözle görülür biçimde şişer — bu alan o hissi verir. Fizik yarıçapını
+  /// da büyütmek yığını her birleşmede iteklerdi.
+  final double pop;
+
+  /// Çizimde kullanılacak yarıçap: hafif bir aşma ile şişer, sonra oturur.
+  double get drawRadius {
+    if (pop >= 1) return radius;
+    final t = pop.clamp(0.0, 1.0);
+    // 0.62'den başlayıp 1.08'e kadar aşar, sonra 1'e iner.
+    final eased = t < 0.6
+        ? 0.62 + (1.08 - 0.62) * (t / 0.6)
+        : 1.08 - 0.08 * ((t - 0.6) / 0.4);
+    return radius * eased;
   }
 }
 

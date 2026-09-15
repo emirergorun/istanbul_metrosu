@@ -20,8 +20,41 @@ class MergeDropController extends JourneyGameController {
 
   /// Rekor anahtarında kullanılır; değiştirilmemeli.
   static const String id = 'merge_drop';
+
+  /// Dünya **izotropiktir**: 1 birim = havuzun genişliği, her iki eksende de.
+  ///
+  /// Bu şart: fizik mesafeyi `sqrt(dx²+dy²)` ile ölçüyor, yani x ve y aynı
+  /// birimde olmak zorunda. Eskiden çizim katmanı x'i genişlikle, y'yi
+  /// yükseklikle, yarıçapı da kısa kenarla çarpıyordu; havuz dikey olduğu
+  /// için fizikte tam temas eden iki top ekranda **hep boşluklu**
+  /// görünüyordu (342×500'lük bir havuzda boşluk ~yarım top çapı).
   static const double worldWidth = 1;
-  static const double worldHeight = 1;
+
+  /// Havuzun dünya birimi cinsinden yüksekliği = ekrandaki en/boy oranı.
+  /// Düzen ölçülene kadar kare varsayılır.
+  double _worldHeight = 1;
+  double get worldHeight => _worldHeight;
+
+  /// Tehlike çizgisinin dünya birimi cinsinden y'si.
+  double get dangerY => mergeDropDangerLine * _worldHeight;
+
+  /// Çizim katmanı havuzun en/boy oranını (yükseklik / genişlik) bildirir.
+  ///
+  /// Topların konumu oranla birlikte ölçeklenir, yoksa ekran döndüğünde ya
+  /// da yeniden boyutlandığında yığın havuzun dışında kalırdı.
+  void setPoolAspect(double aspect) {
+    final next = aspect.clamp(0.6, 3.0);
+    if ((next - _worldHeight).abs() < 1e-6) return;
+    final scale = next / _worldHeight;
+    _worldHeight = next;
+    _balls = <DropBall>[
+      for (final ball in _balls)
+        ball.copyWith(
+          y: (ball.y * scale).clamp(ball.radius, next - ball.radius),
+        ),
+    ];
+    notifyListeners();
+  }
 
   /// Serbest düşüş ivmesi. Kütleden bağımsızdır (Galileo) — büyük top küçük
   /// topla aynı hızda düşer; "ağırlık" hissi kütleye göre çarpışma
@@ -74,11 +107,29 @@ class MergeDropController extends JourneyGameController {
   /// mikroskobik ölçekte sürekli düzeltilip yeniden çakışabilir.
   static const double _positionSlop = 0.0015;
 
-  /// Tehlike çizgisine değen bir top kaybettirmeden önce ne kadar orada
-  /// kalmalı. Yalnızca oturmuş (`landed`) toplar için sayılır, bu yüzden
-  /// çok kısa tutulabilir — asıl amaç anlık bir sekmeyi haksız kayıp
-  /// saymamak, yeni bırakılan topun düşmesini beklemek değil.
-  static const double _overflowGraceSeconds = 0.22;
+  /// Tehlike çizgisinde **oturmuş** bir top kaybettirmeden önce ne kadar
+  /// orada kalmalı. Yalnızca gerçekten oturmuş toplar sayıldığı için kısa
+  /// tutulabilir; amaç anlık bir sekmeyi haksız kayıp saymamak.
+  static const double _overflowGraceSeconds = 0.35;
+
+  /// Bir topun "oturdu" sayılması için hızının altında kalması gereken
+  /// değer. Düşmekte olan bir top bunun çok üstündedir.
+  static const double _settleSpeed = 0.06;
+
+  /// Temas toleransı: iki top bu mesafeye kadar yakınsa "değiyor" sayılır
+  /// (çözücü zaten `_positionSlop` kadar boşluk bırakıyor).
+  static const double _contactEpsilon = 0.004;
+
+  /// Birleşme şişme animasyonunun süresi (saniye).
+  static const double _mergePopSeconds = 0.18;
+
+  /// Doğum bölgesi boşalmadan yeni top bırakılamaz.
+  ///
+  /// Bu olmadan arka arkaya bırakılan toplar doğum noktasında üst üste
+  /// biniyor, havada zincirleme birleşiyor ve oyun bir saniyede
+  /// seviye 4'e fırlıyordu. Gerçek "meyve düşürme" oyunlarında da boyun
+  /// bölgesi boşalmadan yeni parça gelmez.
+  static const double _spawnClearance = 0.02;
 
   final Random _random;
 
@@ -97,7 +148,21 @@ class MergeDropController extends JourneyGameController {
   int get merges => _merges;
   int get maxLevel => _maxLevel;
   String get maxLabel => mergeDropLabelForLevel(_maxLevel);
-  bool get canDrop => status == GameStatus.playing && _dropCooldown <= 0;
+  bool get canDrop =>
+      status == GameStatus.playing && _dropCooldown <= 0 && _isSpawnClear();
+
+  /// Doğum noktası boş mu? Önceki top hâlâ boyundaysa yeni top bırakılmaz.
+  bool _isSpawnClear() {
+    final radius = mergeDropRadiusForLevel(_currentLevel);
+    final spawnY = radius + 0.015;
+    for (final ball in _balls) {
+      final dx = ball.x - _aimX;
+      final dy = ball.y - spawnY;
+      final minDistance = ball.radius + radius + _spawnClearance;
+      if (dx * dx + dy * dy < minDistance * minDistance) return false;
+    }
+    return true;
+  }
   List<DropBall> get balls => List<DropBall>.unmodifiable(_balls);
 
   @visibleForTesting
@@ -165,6 +230,9 @@ class MergeDropController extends JourneyGameController {
       }
     }
 
+    _advancePop(dt);
+    _updateSettled();
+
     if (_isOverflowing()) {
       _overflowSeconds += dt;
       if (_overflowSeconds > _overflowGraceSeconds) endGame();
@@ -192,15 +260,13 @@ class MergeDropController extends JourneyGameController {
         vx = -vx.abs() * _wallRestitution;
       }
 
-      var landed = ball.landed;
       if (y + radius > worldHeight) {
         y = worldHeight - radius;
         if (vy > 0) vy = 0;
         if (vx.abs() < 1e-4) vx = 0;
-        landed = true;
       }
 
-      updated.add(ball.copyWith(x: x, y: y, vx: vx, vy: vy, landed: landed));
+      updated.add(ball.copyWith(x: x, y: y, vx: vx, vy: vy));
     }
     _balls = updated;
   }
@@ -214,19 +280,31 @@ class MergeDropController extends JourneyGameController {
         final distance = _distance(a, b);
         if (distance > a.radius + b.radius) continue;
 
+        // Kütle merkezinde doğ ve momentumu koru.
+        //
+        // Eskiden konum düz ortalama, `vx` sıfır, `vy` keyfî bir kesirdi:
+        // farklı boyda iki top birleşince yeni top yanlış yere düşüyor ve
+        // yatay hızını tamamen yitiriyordu — yığın her birleşmede
+        // "zıplıyormuş" gibi görünüyordu. Kütle ağırlıklı ortalama hem
+        // konum hem hız için doğru olanı verir.
+        final totalMass = a.mass + b.mass;
+        final mergedRadius = mergeDropRadiusForLevel(a.level + 1);
         final merged = DropBall(
           id: _nextId++,
           level: a.level + 1,
-          x: ((a.x + b.x) / 2).clamp(
-            mergeDropRadiusForLevel(a.level + 1),
-            worldWidth - mergeDropRadiusForLevel(a.level + 1),
+          x: ((a.x * a.mass + b.x * b.mass) / totalMass).clamp(
+            mergedRadius,
+            worldWidth - mergedRadius,
           ),
-          y: ((a.y + b.y) / 2).clamp(
-            mergeDropRadiusForLevel(a.level + 1),
-            worldHeight - mergeDropRadiusForLevel(a.level + 1),
+          y: ((a.y * a.mass + b.y * b.mass) / totalMass).clamp(
+            mergedRadius,
+            worldHeight - mergedRadius,
           ),
-          vy: min(a.vy, b.vy) * 0.25,
-          landed: true,
+          vx: (a.vx * a.mass + b.vx * b.mass) / totalMass,
+          vy: (a.vy * a.mass + b.vy * b.mass) / totalMass,
+          // agar.io hissi: yeni top küçük doğup gözle görülür şekilde şişer.
+          // Yalnızca çizim; fizik ilk kareden itibaren tam yarıçapla çalışır.
+          pop: 0,
         );
         _balls = <DropBall>[
           for (var k = 0; k < _balls.length; k++)
@@ -291,12 +369,10 @@ class MergeDropController extends JourneyGameController {
         var newA = a.copyWith(
           x: (a.x - nx * correctionA).clamp(a.radius, worldWidth - a.radius),
           y: (a.y - ny * correctionA).clamp(a.radius, worldHeight - a.radius),
-          landed: true,
         );
         var newB = b.copyWith(
           x: (b.x + nx * correctionB).clamp(b.radius, worldWidth - b.radius),
           y: (b.y + ny * correctionB).clamp(b.radius, worldHeight - b.radius),
-          landed: true,
         );
 
         final relVx = newB.vx - newA.vx;
@@ -345,12 +421,60 @@ class MergeDropController extends JourneyGameController {
     return sqrt(dx * dx + dy * dy);
   }
 
-  /// Yalnızca oturmuş toplar sayılır — yeni bırakılan top zaten tehlike
-  /// çizgisinin üstünde doğuyor, o henüz hiçbir şeye değmeden anında
-  /// kaybettirmemesi gerekiyor.
+  /// Birleşme şişme animasyonunu ilerletir (yalnızca çizim etkilenir).
+  void _advancePop(double dt) {
+    if (!_balls.any((ball) => ball.pop < 1)) return;
+    _balls = <DropBall>[
+      for (final ball in _balls)
+        ball.pop >= 1
+            ? ball
+            : ball.copyWith(
+                pop: (ball.pop + dt / _mergePopSeconds).clamp(0.0, 1.0),
+              ),
+    ];
+  }
+
+  /// Her topun "oturdu mu" durumunu baştan hesaplar.
+  ///
+  /// Oturmuş = neredeyse duruyor **ve** altında bir dayanak var (zemin ya da
+  /// merkezi daha aşağıda, temas hâlinde bir top). Havada düşmekte olan ya
+  /// da bir başka topa sürtüp geçen top oturmuş sayılmaz — kaybetme koşulu
+  /// buna baktığı için bu ayrım oyunun oynanabilirliğini belirliyor.
+  void _updateSettled() {
+    final updated = <DropBall>[];
+    for (final ball in _balls) {
+      final slow = ball.speed < _settleSpeed;
+      if (!slow) {
+        updated.add(ball.copyWith(settled: false));
+        continue;
+      }
+
+      final onFloor = ball.y + ball.radius >= worldHeight - 1e-3;
+      var supported = onFloor;
+      if (!supported) {
+        for (final other in _balls) {
+          if (identical(other, ball) || other.id == ball.id) continue;
+          // Dayanak yalnızca merkezi bu topun merkezinden aşağıda olan ve
+          // temas hâlindeki toplar olabilir.
+          if (other.y <= ball.y) continue;
+          final dx = other.x - ball.x;
+          final dy = other.y - ball.y;
+          final contact = ball.radius + other.radius + _contactEpsilon;
+          if (dx * dx + dy * dy <= contact * contact) {
+            supported = true;
+            break;
+          }
+        }
+      }
+      updated.add(ball.copyWith(settled: supported));
+    }
+    _balls = updated;
+  }
+
+  /// Yalnızca gerçekten oturmuş toplar sayılır.
   bool _isOverflowing() {
     return _balls.any(
-      (ball) => ball.landed && ball.y - ball.radius < mergeDropDangerLine,
+      (ball) => ball.settled && ball.y - ball.radius < dangerY,
     );
   }
 }
