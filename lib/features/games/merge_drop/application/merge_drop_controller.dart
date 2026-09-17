@@ -84,7 +84,13 @@ class MergeDropController extends JourneyGameController {
 
   /// Zeminde ve top-top temaslarında yanal hız her alt-adımda bu oranda
   /// azalır — sürtünme olmadan yığınlar yavaşça yanlara doğru "sürünür".
-  static const double _friction = 0.82;
+  ///
+  /// Eskiden 0.82'ydi ve top-top temasında çok güçlü hissediliyordu: büyük
+  /// ya da küçük bir topun köşesine düşen bir top, aşağı çekilen teğet
+  /// bileşeni her alt-adımda ezildiği için yuvarlanacağına neredeyse
+  /// sürünüyordu. Zemin sürtünmesi (yığının yanlara doğru akıp gitmemesi
+  /// için) hâlâ aynı sabiti kullanıyor ama artık çok daha hafif.
+  static const double _friction = 0.94;
 
   /// Top-top çarpışmalarında sekme payı. Sıfırsa toplar birbirine değince
   /// tüm yaklaşma hızını anında yutar ve "yapışmış" gibi durur; gerçek
@@ -226,7 +232,16 @@ class MergeDropController extends JourneyGameController {
       _integrate(subDt);
       for (var i = 0; i < _solverIterations; i++) {
         if (_mergeFirstOverlap()) continue;
-        _resolveCollisions();
+        // Sürtünme yalnızca alt-adım başına **bir kez** uygulanmalı (bkz.
+        // `_friction` yorumu). Gauss–Seidel gevşemesi çakışmayı gidermek
+        // için aynı alt-adımda `_resolveCollisions`'ı 4 kez çağırıyor;
+        // sürtünme her geçişte yeniden uygulanırsa (4 alt-adım × 4 geçiş =
+        // karede 16 kez) gerçekten kayan bir top bile o karede hızının
+        // ~%96'sını kaybediyor — büyük/küçük bir topun köşesine düşen top
+        // yuvarlanacağına neredeyse durup sürünüyordu. İlk geçiş dışında
+        // yalnızca konum/itki çözümü tekrarlanır, sürtünme yeniden
+        // uygulanmaz.
+        _resolveCollisions(applyFriction: i == 0);
       }
     }
 
@@ -339,7 +354,11 @@ class MergeDropController extends JourneyGameController {
   ///
   /// Alt-adım başına birden çok kez çağrılır (Gauss–Seidel gevşemesi):
   /// çok sayıda top üst üsteyken tek geçiş çakışmayı tam gideremez.
-  void _resolveCollisions() {
+  ///
+  /// [applyFriction] yalnızca alt-adımın **ilk** geçişinde `true` olmalı;
+  /// sonraki geçişler konum/itki çözümünü tekrarlar ama sürtünmeyi yeniden
+  /// uygulamaz (bkz. çağıran yerdeki not).
+  void _resolveCollisions({required bool applyFriction}) {
     final balls = List<DropBall>.of(_balls);
     for (var i = 0; i < balls.length; i++) {
       for (var j = i + 1; j < balls.length; j++) {
@@ -359,6 +378,7 @@ class MergeDropController extends JourneyGameController {
         final invMassA = 1 / a.mass;
         final invMassB = 1 / b.mass;
         final invMassSum = invMassA + invMassB;
+        final totalMass = a.mass + b.mass;
 
         // Kayan nokta gürültüsü kadar çakışmayı düzeltmeye çalışma —
         // aksi hâlde toplar hiç tam durmayıp mikroskobik ölçekte titreşir.
@@ -395,12 +415,33 @@ class MergeDropController extends JourneyGameController {
           );
         }
 
+        // Sürtünme yalnızca ikilinin **birbirine göre kayma** farkına
+        // uygulanmalı, mutlak teğet hıza değil.
+        //
+        // Eskiden `tangentA = (vA·t) * friction` her iki topun teğet hızını
+        // da ayrı ayrı küçültüyordu. Yan yana duran iki top için teğet yön
+        // neredeyse **dikey**tir; yani iki top aralarında hiç kaymadan
+        // birlikte serbest düşerken bile bu kod ortak düşme hızlarını her
+        // çözücü geçişinde (alt-adım başına 4, karede 4 alt-adım = 16'ya
+        // kadar) %18 kırpıyordu. Sonuç: birbirine değen toplar "yapışıp"
+        // sürüne sürüne düşüyordu. Artık yalnızca ikilinin ortak (kütle
+        // ağırlıklı) teğet hızından **sapan** kısım sönümleniyor; ikisi
+        // aynı hızla düşüyorsa sapma sıfırdır ve sürtünme hiçbir şey
+        // yapmaz.
         final tx = -ny;
         final ty = nx;
+        final tangentA0 = newA.vx * tx + newA.vy * ty;
+        final tangentB0 = newB.vx * tx + newB.vy * ty;
         final normalA = newA.vx * nx + newA.vy * ny;
-        final tangentA = (newA.vx * tx + newA.vy * ty) * _friction;
         final normalB = newB.vx * nx + newB.vy * ny;
-        final tangentB = (newB.vx * tx + newB.vy * ty) * _friction;
+        double tangentA = tangentA0;
+        double tangentB = tangentB0;
+        if (applyFriction) {
+          final sharedTangent =
+              (tangentA0 * a.mass + tangentB0 * b.mass) / totalMass;
+          tangentA = sharedTangent + (tangentA0 - sharedTangent) * _friction;
+          tangentB = sharedTangent + (tangentB0 - sharedTangent) * _friction;
+        }
 
         balls[i] = newA.copyWith(
           vx: normalA * nx + tangentA * tx,

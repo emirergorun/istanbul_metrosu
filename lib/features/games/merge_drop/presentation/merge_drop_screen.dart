@@ -375,6 +375,7 @@ class _HudChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final highlight = Color.lerp(accent, Colors.white, 0.55)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -382,27 +383,62 @@ class _HudChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: accent.withValues(alpha: 0.6)),
       ),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
+          // Sıradaki topla aynı görünüm: değişen rengi doğrudan gösterir.
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                center: const Alignment(-0.4, -0.4),
+                colors: <Color>[highlight, accent],
+              ),
             ),
+          ),
+          const SizedBox(width: 6),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                label.toUpperCase(),
+                style: AppText.micro.copyWith(color: accent),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                style: AppText.captionStrong.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: accent,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
+
+/// Sahne görselinin ([assets/images/merge_drop_scene.png]) gerçek piksel
+/// en/boy oranı. Görsel **bozulmadan/kırpılmadan** tam gösterilmesi için
+/// düzen bu oranı korur (bkz. [_DropPlayArea]).
+const double _sceneAspectRatio = 1055 / 1491;
+
+/// Kutunun (topların biriktiği alan) sahne görseli içindeki göreli
+/// sınırları — sarı çerçevenin hemen içi, 0..1 aralığında.
+///
+/// Görsel manuel ölçülerek bulundu; görsel değişirse bu dört sayı da
+/// yeniden ölçülmeli. Fizik dünyası bu dikdörtgene, tam üstüne binecek
+/// şekilde yerleştirilir — "topların gösterilen alanın içine birikmesi"
+/// bu hizalamayla sağlanır.
+const double _boxLeft = 0.075;
+const double _boxTop = 0.335;
+const double _boxRight = 0.925;
+const double _boxBottom = 0.955;
 
 class _DropPlayArea extends StatelessWidget {
   const _DropPlayArea({required this.controller, required this.onDrop});
@@ -412,50 +448,97 @@ class _DropPlayArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Fizik dünyası izotropik (1 birim = havuz genişliği); havuzun kaç
-        // birim yüksekliğinde olduğunu yalnızca düzen bilir.
-        final aspect = constraints.maxHeight / constraints.maxWidth;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          controller.setPoolAspect(aspect);
-        });
+    return Center(
+      child: AspectRatio(
+        aspectRatio: _sceneAspectRatio,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final sceneWidth = constraints.maxWidth;
+            final sceneHeight = constraints.maxHeight;
+            final boxLeft = sceneWidth * _boxLeft;
+            final boxTop = sceneHeight * _boxTop;
+            final boxWidth = sceneWidth * (_boxRight - _boxLeft);
+            final boxHeight = sceneHeight * (_boxBottom - _boxTop);
 
-        void aimFromLocal(Offset local) {
-          final x = (local.dx / constraints.maxWidth).clamp(0.0, 1.0);
-          controller.moveAim(x);
-        }
+            // Fizik dünyası izotropik (1 birim = kutu genişliği); kutunun
+            // kaç birim yüksekliğinde olduğunu yalnızca düzen bilir.
+            final aspect = boxHeight / boxWidth;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              controller.setPoolAspect(aspect);
+            });
 
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanUpdate: (details) => aimFromLocal(details.localPosition),
-          onTapDown: (details) {
-            aimFromLocal(details.localPosition);
-            onDrop();
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            child: CustomPaint(
-              painter: _MergeDropPainter(controller),
-              child: SizedBox.expand(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.md),
-                    child: Text(
-                      'Sürükle, dokun ve aynı hatları birleştir',
-                      style: AppText.caption.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+            void aimFromLocal(Offset localInBox) {
+              final x = (localInBox.dx / boxWidth).clamp(0.0, 1.0);
+              controller.moveAim(x);
+            }
+
+            return Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Image.asset(
+                  'assets/images/merge_drop_scene.png',
+                  fit: BoxFit.fill,
+                ),
+                Positioned(
+                  left: boxLeft,
+                  top: boxTop,
+                  width: boxWidth,
+                  height: boxHeight,
+                  child: ClipRect(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onPanUpdate: (details) =>
+                          aimFromLocal(details.localPosition),
+                      onTapDown: (details) {
+                        aimFromLocal(details.localPosition);
+                        onDrop();
+                      },
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          // Sırada gelen topun rengi kutunun içine hafifçe
+                          // yansır: hem görsel derinlik katar hem de
+                          // "sırada ne var" ipucu verir.
+                          _AmbientTint(
+                            color: _mergeDropLineColor(
+                              controller.currentLevel,
+                            ),
+                          ),
+                          CustomPaint(painter: _MergeDropPainter(controller)),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-        );
-      },
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Sıradaki topun rengiyle kutunun üst kısmına yumuşakça geçiş yapan çok
+/// soluk bir parıltı biner — zemin artık sahne görselinden geldiği için
+/// bu katman yalnızca renk ipucu, arka plan değil.
+class _AmbientTint extends StatelessWidget {
+  const _AmbientTint({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0, -0.55),
+          radius: 1.15,
+          colors: <Color>[color.withValues(alpha: 0.16), color.withValues(alpha: 0)],
+        ),
+      ),
     );
   }
 }
@@ -467,11 +550,10 @@ class _MergeDropPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = AppColors.boardBackground,
-    );
+    // Zemin artık sahne görselinden geliyor (bkz. _DropPlayArea); bu katman
+    // şeffaf bırakılıyor ki görsel altından görünsün.
     _drawDangerLine(canvas, size);
+    _drawAimGuide(canvas, size);
     _drawBalls(canvas, size);
     _drawPreview(canvas, size);
   }
@@ -484,15 +566,92 @@ class _MergeDropPainter extends CustomPainter {
   /// açıyordu.
   double _scale(Size size) => size.width;
 
+  /// Tehlike çizgisini ince bir çizgi yerine peron kenarı gibi sarı-siyah
+  /// diyagonal bir tehlike şeridi olarak çizer: hem "burası kutunun sınırı"
+  /// mesajını çok daha net verir hem de metro temasına oturur.
   void _drawDangerLine(Canvas canvas, Size size) {
-    final y = controller.dangerY * _scale(size);
+    final scale = _scale(size);
+    final y = controller.dangerY * scale;
+    const thickness = 6.0;
+    final band = Rect.fromLTWH(0, y - thickness / 2, size.width, thickness);
+
+    canvas.save();
+    canvas.clipRect(band);
+    canvas.drawRect(band, Paint()..color = const Color(0xFF16181C));
+
+    const stripeWidth = 9.0;
+    const stripeGap = 9.0;
+    final yellow = Paint()..color = AppColors.warning;
+    var sx = -band.height;
+    while (sx < band.width + band.height) {
+      final path = Path()
+        ..moveTo(sx, band.top)
+        ..lineTo(sx + stripeWidth, band.top)
+        ..lineTo(sx + stripeWidth - band.height, band.bottom)
+        ..lineTo(sx - band.height, band.bottom)
+        ..close();
+      canvas.drawPath(path, yellow);
+      sx += stripeWidth + stripeGap;
+    }
+    canvas.restore();
+  }
+
+  /// Nişan alınan sütunu zeminden ayağa kadar ince, soluk bir çizgiyle
+  /// gösterir — Suika/Fruit Merge'deki düşüş rehberinin karşılığı. Topun
+  /// aşağıda **nereye birikeceğini** önceden okumayı kolaylaştırır.
+  void _drawAimGuide(Canvas canvas, Size size) {
+    if (!controller.canDrop) return;
+    final scale = _scale(size);
+    final radius = mergeDropRadiusForLevel(controller.currentLevel);
+    final startY = (radius + 0.015 + radius * 0.9) * scale;
+    final endY = controller.worldHeight * scale;
+    if (endY <= startY) return;
+    final x = controller.aimX * scale;
     final paint = Paint()
-      ..color = AppColors.danger.withValues(alpha: 0.55)
+      ..color = _mergeDropLineColor(
+        controller.currentLevel,
+      ).withValues(alpha: 0.24)
       ..strokeWidth = 2;
-    canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    _drawDashedLine(
+      canvas,
+      Offset(x, startY),
+      Offset(x, endY),
+      paint,
+      dash: 5,
+      gap: 7,
+    );
+  }
+
+  void _drawDashedLine(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    Paint paint, {
+    double dash = 8,
+    double gap = 6,
+  }) {
+    final total = (to - from).distance;
+    if (total <= 0) return;
+    final direction = (to - from) / total;
+    var travelled = 0.0;
+    while (travelled < total) {
+      final segmentEnd = math.min(travelled + dash, total);
+      canvas.drawLine(
+        from + direction * travelled,
+        from + direction * segmentEnd,
+        paint,
+      );
+      travelled += dash + gap;
+    }
   }
 
   void _drawBalls(Canvas canvas, Size size) {
+    final scale = _scale(size);
+    // Önce tüm gölgeler, sonra tüm toplar: bir topun gölgesi komşusunun
+    // üzerine düşse bile topun kendisi her zaman gölgenin üstünde kalır.
+    for (final ball in controller.balls) {
+      _drawBallShadow(canvas, scale, ball.x, ball.y, ball.drawRadius);
+    }
     for (final ball in controller.balls) {
       _drawBall(
         canvas,
@@ -507,6 +666,25 @@ class _MergeDropPainter extends CustomPainter {
     }
   }
 
+  void _drawBallShadow(
+    Canvas canvas,
+    double scale,
+    double x,
+    double y,
+    double worldRadius,
+  ) {
+    final radius = worldRadius * scale;
+    final center = Offset(x * scale, y * scale + radius * 0.32);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: center,
+        width: radius * 1.7,
+        height: radius * 0.75,
+      ),
+      Paint()..color = Colors.black.withValues(alpha: 0.16),
+    );
+  }
+
   void _drawPreview(Canvas canvas, Size size) {
     final radius = mergeDropRadiusForLevel(controller.currentLevel);
     final x = controller.aimX;
@@ -517,10 +695,16 @@ class _MergeDropPainter extends CustomPainter {
       x,
       y,
       controller.currentLevel,
-      alpha: controller.canDrop ? 0.72 : 0.32,
+      alpha: controller.canDrop ? 0.85 : 0.35,
     );
   }
 
+  /// Topu düz bir daire değil, ışığı üst-sol köşeden alan parlak bir küre
+  /// gibi çizer (radyal gradyan + küçük highlight noktası), üstüne sevimli
+  /// bir tren yüzü ve alt kenarına hat rozetini taşıyan küçük bir levha
+  /// biner — Suika/Fruit Merge'deki yüzlü meyve görünümünün metro
+  /// karşılığı. Düz dolgu + ortalanmış büyük metin eskiden yığını "oyuncak
+  /// bloklar" gibi düz gösteriyordu.
   void _drawBall(
     Canvas canvas,
     Size size,
@@ -533,37 +717,163 @@ class _MergeDropPainter extends CustomPainter {
     final scale = _scale(size);
     final radius = (worldRadius ?? mergeDropRadiusForLevel(level)) * scale;
     final center = Offset(x * scale, y * scale);
-    final color = _mergeDropLineColor(level);
-    final onColor = LineTheme.readableOn(color);
+    final base = _mergeDropLineColor(level);
+    final highlight = Color.lerp(base, Colors.white, 0.5)!;
+    final shade = Color.lerp(base, Colors.black, 0.32)!;
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final gradient = RadialGradient(
+      center: const Alignment(-0.35, -0.42),
+      radius: 0.95,
+      colors: <Color>[
+        highlight.withValues(alpha: alpha),
+        base.withValues(alpha: alpha),
+        shade.withValues(alpha: alpha),
+      ],
+      stops: const <double>[0.0, 0.55, 1.0],
+    );
     canvas.drawCircle(
       center,
       radius,
-      Paint()..color = color.withValues(alpha: alpha),
+      Paint()..shader = gradient.createShader(rect),
     );
     canvas.drawCircle(
       center,
       radius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = Colors.white.withValues(alpha: 0.75 * alpha),
+        ..strokeWidth = 1.4
+        ..color = shade.withValues(alpha: 0.55 * alpha),
+    );
+    canvas.drawCircle(
+      center.translate(-radius * 0.32, -radius * 0.38),
+      radius * 0.22,
+      Paint()..color = Colors.white.withValues(alpha: 0.35 * alpha),
     );
 
+    _drawTrainFace(canvas, center, radius, shade, alpha);
+    _drawLevelPlate(canvas, center, radius, level, base, shade, alpha);
+  }
+
+  /// İki göz + gülümseme + allık: her top küçük, sevimli bir tren yüzüne
+  /// dönüşür. Hat rengiyle bağımsız, her seviyede aynı yüz çizilir —
+  /// kimlik zaten renk ve alttaki rozetten geliyor.
+  void _drawTrainFace(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Color shade,
+    double alpha,
+  ) {
+    final eyeDx = radius * 0.34;
+    final eyeCenterY = center.dy - radius * 0.08;
+    final eyeRadius = radius * 0.17;
+    final pupilRadius = eyeRadius * 0.52;
+
+    for (final dx in <double>[-eyeDx, eyeDx]) {
+      final eyeCenter = Offset(center.dx + dx, eyeCenterY);
+      canvas.drawCircle(
+        eyeCenter,
+        eyeRadius,
+        Paint()..color = Colors.white.withValues(alpha: 0.94 * alpha),
+      );
+      final pupilCenter = eyeCenter.translate(0, pupilRadius * 0.2);
+      canvas.drawCircle(
+        pupilCenter,
+        pupilRadius,
+        Paint()..color = shade.withValues(alpha: alpha),
+      );
+      canvas.drawCircle(
+        pupilCenter.translate(-pupilRadius * 0.35, -pupilRadius * 0.35),
+        pupilRadius * 0.32,
+        Paint()..color = Colors.white.withValues(alpha: 0.9 * alpha),
+      );
+    }
+
+    final smileRect = Rect.fromCenter(
+      center: center.translate(0, radius * 0.14),
+      width: radius * 0.62,
+      height: radius * 0.46,
+    );
+    canvas.drawArc(
+      smileRect,
+      0.35,
+      math.pi - 0.7,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(1.2, radius * 0.09)
+        ..strokeCap = StrokeCap.round
+        ..color = shade.withValues(alpha: 0.75 * alpha),
+    );
+
+    final blush = Paint()
+      ..color = const Color(0xFFFF9EB0).withValues(alpha: 0.4 * alpha);
+    for (final dx in <double>[-radius * 0.56, radius * 0.56]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: center.translate(dx, radius * 0.1),
+          width: radius * 0.32,
+          height: radius * 0.18,
+        ),
+        blush,
+      );
+    }
+  }
+
+  /// Hat rozetini artık topun ortasında değil, tren camının altındaki
+  /// güzergâh levhası gibi küçük bir haptan taşır — yüz merkezi meşgul
+  /// etmeden hangi seviyede olduğumuzu okumayı sürdürür.
+  void _drawLevelPlate(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    int level,
+    Color base,
+    Color shade,
+    double alpha,
+  ) {
+    final plateCenter = center.translate(0, radius * 0.62);
     final textPainter = TextPainter(
       text: TextSpan(
         text: mergeDropLabelForLevel(level),
         style: TextStyle(
           fontFamily: AppFonts.body,
-          fontSize: radius * 0.58,
+          fontSize: radius * 0.4,
           fontWeight: FontWeight.w900,
-          color: onColor.withValues(alpha: alpha),
+          color: base.withValues(alpha: alpha),
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
+
+    // Levha genişliği metne göre büyür: "M1".."M9" iki karakterken
+    // "M10"/"M11" üç karakter — sabit genişlik olsaydı çift haneli
+    // etiketler levhadan taşardı. Alt sınır eski görünümü korur.
+    final plateWidth = math.max(radius * 1.05, textPainter.width + radius * 0.36);
+    final plateRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: plateCenter,
+        width: plateWidth,
+        height: radius * 0.46,
+      ),
+      Radius.circular(radius * 0.23),
+    );
+    canvas.drawRRect(
+      plateRect,
+      Paint()..color = Colors.white.withValues(alpha: 0.92 * alpha),
+    );
+    canvas.drawRRect(
+      plateRect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = shade.withValues(alpha: 0.45 * alpha),
+    );
+
     textPainter.paint(
       canvas,
-      center.translate(-textPainter.width / 2, -textPainter.height / 2),
+      plateCenter.translate(-textPainter.width / 2, -textPainter.height / 2),
     );
   }
 
@@ -637,6 +947,10 @@ Color _mergeDropLineColor(int level) {
     Color(0xFF6A2C91),
     Color(0xFFB58500),
     Color(0xFFF05A8A),
+    Color(0xFF00B2A9),
+    Color(0xFF8BC34A),
+    Color(0xFFFF7043),
+    Color(0xFF3F51B5),
   ];
   return colors[(level - 1).clamp(0, colors.length - 1)];
 }

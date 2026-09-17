@@ -3,11 +3,13 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 const int mergeDropMinLevel = 1;
-const int mergeDropMaxLevel = 7;
+const int mergeDropMaxLevel = 11;
 
 /// Tehlike çizgisi tepeye biraz daha yakın: havuzun kullanılabilir boyu
-/// azaldı, oyun daha çabuk biter.
-const double mergeDropDangerLine = 0.15;
+/// azaldı, oyun daha çabuk biter. 11 seviyeye çıkarken bilerek biraz daha
+/// sıkılaştırıldı (0.15 → 0.18): daha uzun bir zirveye tırmanırken tahtanın
+/// hep aynı ölçüde toleranslı kalması oyunu kolaylaştırırdı.
+const double mergeDropDangerLine = 0.18;
 
 const List<String> mergeDropLabels = <String>[
   'M1',
@@ -17,8 +19,14 @@ const List<String> mergeDropLabels = <String>[
   'M5',
   'M6',
   'M7',
+  'M8',
+  'M9',
+  'M10',
+  'M11',
 ];
 
+/// Geometrik oranla büyüyen yarıçap dizisi (~×1.16 her seviyede) — M1-M7
+/// arası önceki değerlerle birebir aynı, M8-M11 aynı oranla devam eder.
 const List<double> mergeDropRadii = <double>[
   0.045,
   0.055,
@@ -27,6 +35,10 @@ const List<double> mergeDropRadii = <double>[
   0.094,
   0.110,
   0.128,
+  0.148,
+  0.172,
+  0.200,
+  0.232,
 ];
 
 @immutable

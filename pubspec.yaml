@@ -43,6 +43,8 @@ flutter:
     - assets/data/questions.json
     # Sentezlenmiş arayüz sesleri.
     - assets/audio/
+    # Hat Düşür arka plan sahnesi (tren içi + kutu).
+    - assets/images/merge_drop_scene.png
     # Font lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.
     - assets/fonts/OFL-Bungee.txt
     - assets/fonts/OFL-PlusJakartaSans.txt

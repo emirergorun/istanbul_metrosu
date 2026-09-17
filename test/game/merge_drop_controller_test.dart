@@ -61,7 +61,7 @@ void main() {
       controller.debugStep(0.01);
 
       expect(controller.balls, hasLength(1));
-      expect(controller.balls.single.level, mergeDropMaxLevel);
+      expect(controller.balls.single.level, 7);
       expect(controller.balls.single.label, 'M7');
       expect(controller.maxLabel, 'M7');
     });
@@ -95,12 +95,12 @@ void main() {
       expect(controller.balls.single.vy, 0);
     });
 
-    test('M7 en büyük seviye olduğu için birleşmez', () {
+    test('en büyük seviye olduğu için birleşmez', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
-      controller.debugSetBalls(const <DropBall>[
-        DropBall(id: 1, level: 7, x: 0.5, y: 0.7),
-        DropBall(id: 2, level: 7, x: 0.52, y: 0.7),
+      controller.debugSetBalls(<DropBall>[
+        DropBall(id: 1, level: mergeDropMaxLevel, x: 0.5, y: 0.7),
+        DropBall(id: 2, level: mergeDropMaxLevel, x: 0.52, y: 0.7),
       ]);
 
       controller.debugStep(0.01);
