@@ -73,16 +73,27 @@ class LocalStore extends ChangeNotifier {
       _prefs?.getInt('$_bestScorePrefix${routeKey(originId, destinationId)}') ??
       0;
 
+  /// Rekorunu oyun adı taşımayan eski rota anahtarında tutan oyun.
+  ///
+  /// Blok Metro, oyun bazlı rekorlar gelmeden önce yazıldı ve hâlâ
+  /// [submitRouteScore] ile kaydediyor. Okurken buraya yönlendirilmezse oyun
+  /// seçim ekranı Blok Metro'da rekor olsa bile her rotada "ilk kez" diyordu.
+  static const String legacyRouteGameId = 'blocks';
+
   int bestScoreForGameRoute({
     required String gameId,
     required String originId,
     required String destinationId,
-  }) =>
-      _prefs?.getInt(
-        '$_bestGameScorePrefix$gameId$_gameRouteSeparator'
-        '${routeKey(originId, destinationId)}',
-      ) ??
-      0;
+  }) {
+    if (gameId == legacyRouteGameId) {
+      return bestScoreForRoute(originId, destinationId);
+    }
+    return _prefs?.getInt(
+          '$_bestGameScorePrefix$gameId$_gameRouteSeparator'
+          '${routeKey(originId, destinationId)}',
+        ) ??
+        0;
+  }
 
   int get overallBest => _prefs?.getInt(_overallBestKey) ?? 0;
 
@@ -215,6 +226,31 @@ class LocalStore extends ChangeNotifier {
   ///
   /// Ham anahtar yerine çözülmüş kayıt döner: arayüzün anahtar biçimini
   /// bilmesi gerekmez.
+  /// Rotadaki en yüksek rekor ve hangi oyunda kurulduğu; yön fark etmez.
+  ///
+  /// Oyun henüz seçilmemiş ekranlar (rota planlayıcı, açılıştaki son rota)
+  /// rekoru oyun adıyla birlikte gösterir; farklı oyunların puanları
+  /// birbiriyle karşılaştırılamaz. Rekor yoksa `null`.
+  ///
+  /// Dönen kaydın [RouteRecord.gameId] değeri hiçbir zaman `null` değildir:
+  /// eski rota anahtarındaki kayıt [legacyRouteGameId] olarak döner.
+  RouteRecord? bestRecordForRoute(String originId, String destinationId) {
+    final key = routeKey(originId, destinationId);
+    RouteRecord? best;
+    for (final record in allRecords()) {
+      if (routeKey(record.originId, record.destinationId) != key) continue;
+      if (record.score <= 0) continue;
+      if (best == null || record.score > best.score) best = record;
+    }
+    if (best == null) return null;
+    return RouteRecord(
+      gameId: best.gameId ?? legacyRouteGameId,
+      originId: best.originId,
+      destinationId: best.destinationId,
+      score: best.score,
+    );
+  }
+
   List<RouteRecord> allRecords() {
     final prefs = _prefs;
     if (prefs == null) return const <RouteRecord>[];

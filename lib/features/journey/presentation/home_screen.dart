@@ -4,8 +4,10 @@ import '../../../app/app_scope.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/storage/local_store.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../games/catalog/mini_game.dart';
 import '../models/journey.dart';
 import '../models/station.dart';
 import '../services/route_service.dart';
@@ -180,9 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           origin: _origin,
                           destination: _destination,
                           route: route,
-                          bestScore: journey == null
-                              ? 0
-                              : scope.store.bestScoreForRoute(
+                          bestRecord: journey == null
+                              ? null
+                              : scope.store.bestRecordForRoute(
                                   journey.origin.id,
                                   journey.destination.id,
                                 ),
@@ -275,7 +277,7 @@ class _PlannerCard extends StatelessWidget {
     required this.origin,
     required this.destination,
     required this.route,
-    required this.bestScore,
+    required this.bestRecord,
     required this.onPickOrigin,
     required this.onPickDestination,
     required this.onSwap,
@@ -287,7 +289,7 @@ class _PlannerCard extends StatelessWidget {
   final Station? origin;
   final Station? destination;
   final RouteResult? route;
-  final int bestScore;
+  final RouteRecord? bestRecord;
   final VoidCallback onPickOrigin;
   final VoidCallback onPickDestination;
   final VoidCallback? onSwap;
@@ -323,7 +325,7 @@ class _PlannerCard extends StatelessWidget {
                 _JourneySummary(
                   route: route,
                   hasSelection: origin != null && destination != null,
-                  bestScore: bestScore,
+                  bestRecord: bestRecord,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(
@@ -374,10 +376,7 @@ class _CardHeader extends StatelessWidget {
               line.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppText.bodyStrong.copyWith(
-                fontFamily: AppFonts.display,
-                color: Colors.white,
-              ),
+              style: AppText.bodyStrong.copyWith(color: Colors.white),
             ),
           ),
         ],
@@ -566,12 +565,14 @@ class _JourneySummary extends StatelessWidget {
   const _JourneySummary({
     required this.route,
     required this.hasSelection,
-    required this.bestScore,
+    required this.bestRecord,
   });
 
   final RouteResult? route;
   final bool hasSelection;
-  final int bestScore;
+
+  /// Rotadaki en yüksek rekor ve kurulduğu oyun; `null` ise ilk yolculuk.
+  final RouteRecord? bestRecord;
 
   @override
   Widget build(BuildContext context) {
@@ -604,11 +605,17 @@ class _JourneySummary extends StatelessWidget {
             ),
             Container(width: 1, height: 32, color: AppColors.outline),
             Expanded(
+              // Oyun henüz seçilmedi: rekor, kurulduğu oyunun adıyla. Farklı
+              // oyunların puanı karşılaştırılamaz; her oyunun kendi rekoru
+              // oyun seçim kartında.
               child: _Metric(
-                label: bestScore > 0 ? 'ROTA REKORUN' : 'BU ROTADA',
-                value: bestScore > 0
-                    ? Formatters.score(bestScore)
+                label: bestRecord != null ? 'ROTA REKORUN' : 'BU ROTADA',
+                value: bestRecord != null
+                    ? Formatters.score(bestRecord!.score)
                     : 'İlk yolculuk',
+                caption: bestRecord == null
+                    ? null
+                    : MiniGames.byId(bestRecord!.gameId!)?.name,
               ),
             ),
           ],
@@ -624,8 +631,7 @@ class _JourneySummary extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                '${journey.stopCount} durak'
-                '${bestScore > 0 ? '  ·  En iyi ${Formatters.score(bestScore)}' : ''}',
+                '${journey.stopCount} durak',
                 style: AppText.caption.copyWith(color: AppColors.textSecondary),
               ),
             ),
@@ -637,10 +643,13 @@ class _JourneySummary extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+  const _Metric({required this.label, required this.value, this.caption});
 
   final String label;
   final String value;
+
+  /// Değerin altındaki küçük açıklama (ör. rekorun kurulduğu oyun).
+  final String? caption;
 
   @override
   Widget build(BuildContext context) {
@@ -661,6 +670,14 @@ class _Metric extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: AppText.lead.copyWith(fontFeatures: kTabularFigures),
         ),
+        if (caption != null)
+          Text(
+            caption!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppText.caption.copyWith(color: AppColors.textSecondary),
+          ),
       ],
     );
   }

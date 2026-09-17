@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../app/app_scope.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme.dart';
+import '../../../core/storage/local_store.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../games/blocks/application/game_snapshot.dart';
 import '../../games/blocks/domain/game_state.dart';
+import '../../games/catalog/mini_game.dart';
 import '../../journey/models/journey.dart';
 import '../../journey/models/station.dart';
 import '../../journey/presentation/widgets/onboarding_sheet.dart';
@@ -91,7 +93,7 @@ class _TitleScreenState extends State<TitleScreen>
   }
 
   Future<void> _resumeSaved(GameSession session) async {
-    await AppRoutes.openGame(context, session.journey, resumeFrom: session);
+    await AppRoutes.resumeGame(context, session);
     if (mounted) setState(() {});
   }
 
@@ -148,11 +150,15 @@ class _TitleScreenState extends State<TitleScreen>
     if (mounted) setState(() {});
   }
 
+  /// Son rotayla oyun seçimine gider.
+  ///
+  /// Doğrudan Blok Metro açılıyordu; kart artık rotanın rekorunu hangi
+  /// oyunda kurulduğuyla gösterdiği için oyuncu oyunu kendisi seçer.
   Future<void> _replay(Journey journey) async {
     final store = AppScope.of(context).store;
     await store.rememberRoute(journey.origin.id, journey.destination.id);
     if (!mounted) return;
-    await AppRoutes.openGame(context, journey);
+    await AppRoutes.openGameSelect(context, journey);
     if (mounted) setState(() {});
   }
 
@@ -257,7 +263,7 @@ class _TitleScreenState extends State<TitleScreen>
                       ] else if (last != null) ...<Widget>[
                         _ResumeButton(
                           journey: last,
-                          record: scope.store.bestScoreForRoute(
+                          record: scope.store.bestRecordForRoute(
                             last.origin.id,
                             last.destination.id,
                           ),
@@ -498,6 +504,14 @@ class _SavedGameCard extends StatelessWidget {
   }
 }
 
+/// "Blok Metro rekorun 143" — rekor, kurulduğu oyunun adıyla gösterilir.
+String _recordText(RouteRecord? record) {
+  if (record == null) return 'ilk yolculuk';
+  final game = MiniGames.byId(record.gameId ?? LocalStore.legacyRouteGameId);
+  final score = Formatters.score(record.score);
+  return game == null ? 'rekorun $score' : '${game.name} rekorun $score';
+}
+
 class _ResumeButton extends StatelessWidget {
   const _ResumeButton({
     required this.journey,
@@ -507,7 +521,9 @@ class _ResumeButton extends StatelessWidget {
   });
 
   final Journey journey;
-  final int record;
+
+  /// Rotanın rekoru ve kurulduğu oyun; `null` ise rotada ilk yolculuk.
+  final RouteRecord? record;
   final LineTheme lineTheme;
   final VoidCallback onTap;
 
@@ -540,9 +556,10 @@ class _ResumeButton extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      record > 0
-                          ? '~${journey.estimatedMinutes} dk · rekorun ${Formatters.score(record)}'
-                          : '~${journey.estimatedMinutes} dk · ilk yolculuk',
+                      '${Formatters.approxMinutes(journey.estimatedMinutes)} · '
+                      '${_recordText(record)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppText.caption.copyWith(
                         color: AppColors.onAction.withValues(alpha: 0.7),
                       ),

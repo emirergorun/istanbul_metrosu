@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/utils/formatters.dart';
 import 'difficulty_profile.dart';
 import 'station.dart';
 
@@ -30,7 +31,7 @@ class Journey {
   final String lineId;
 
   /// Kullanıcıya gösterilen yuvarlanmış dakika.
-  int get estimatedMinutes => (estimatedSeconds / 60).round();
+  int get estimatedMinutes => Formatters.roundMinutes(estimatedSeconds);
 
   @override
   String toString() =>

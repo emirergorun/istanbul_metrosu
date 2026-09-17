@@ -553,7 +553,7 @@ class _MergeDropPainter extends CustomPainter {
       text: TextSpan(
         text: mergeDropLabelForLevel(level),
         style: TextStyle(
-          fontFamily: AppFonts.display,
+          fontFamily: AppFonts.body,
           fontSize: radius * 0.58,
           fontWeight: FontWeight.w900,
           color: onColor.withValues(alpha: alpha),

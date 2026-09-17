@@ -89,7 +89,7 @@ class MetroDataErrorApp extends StatelessWidget {
                 Text(
                   'Metro verisi yüklenemedi',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: AppText.heading,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(

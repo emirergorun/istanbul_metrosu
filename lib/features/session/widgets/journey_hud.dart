@@ -80,10 +80,9 @@ class JourneyHud extends StatelessWidget {
                         Formatters.score(run.score),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.display.copyWith(
-                          height: 1.1,
-                          fontFeatures: kTabularFigures,
-                        ),
+                        // Skor sık değişir: iri başlık fontu değil,
+                        // sabit genişlikli rakamlarla Plus Jakarta Sans.
+                        style: AppText.stat.copyWith(fontSize: 28, height: 1.1),
                       ),
                     ],
                   ),

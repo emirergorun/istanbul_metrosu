@@ -83,9 +83,7 @@ class JourneyProgressBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  // Durak adı tabela dilinde: Raleway. Punto ölçekten gelir.
                   style: AppText.captionStrong.copyWith(
-                    fontFamily: AppFonts.display,
                     color: AppColors.textPrimary,
                   ),
                 ),

@@ -77,6 +77,22 @@ class BoardFlash {
   int get lineCount => rows.length + columns.length;
 }
 
+/// Geri alma geçişi: tahtanın geri almadan **önceki** hâli.
+///
+/// Geri alma tahtayı tek karede eski hâline döndürüyordu; konan parça bir
+/// anda kayboluyor, temizlenen satırlar bir anda geri geliyordu. Önceki hâl
+/// bilinirse iki tahta arasındaki fark yumuşakça çizilir.
+@immutable
+class BoardUndo {
+  const BoardUndo({required this.before, this.reduceMotion = false});
+
+  /// Geri almadan hemen önceki tahta (geri alınan hamle uygulanmış).
+  final Board before;
+
+  /// "Hareketi azalt" açık: ölçek ve kayma yok, yalnızca solma.
+  final bool reduceMotion;
+}
+
 /// 8x8 oyun tahtası.
 ///
 /// Performans: tek [CustomPaint]. Sürükleme ön izlemesi ve temizleme
@@ -89,6 +105,8 @@ class BoardView extends StatelessWidget {
     required this.preview,
     required this.flash,
     required this.flashAnimation,
+    this.undo,
+    this.undoAnimation,
   });
 
   final Board board;
@@ -96,6 +114,10 @@ class BoardView extends StatelessWidget {
   final ValueListenable<BoardPreview?> preview;
   final ValueListenable<BoardFlash?> flash;
   final Animation<double> flashAnimation;
+
+  /// Geri alma geçişi ve süresi. İkisi birlikte verilmeli.
+  final ValueListenable<BoardUndo?>? undo;
+  final Animation<double>? undoAnimation;
 
   double get width => board.cols * cellSize;
   double get height => board.rows * cellSize;
@@ -111,10 +133,14 @@ class BoardView extends StatelessWidget {
           preview: preview,
           flash: flash,
           flashAnimation: flashAnimation,
+          undo: undo,
+          undoAnimation: undoAnimation,
           repaint: Listenable.merge(<Listenable>[
             preview,
             flash,
             flashAnimation,
+            ?undo,
+            ?undoAnimation,
           ]),
         ),
       ),
@@ -129,6 +155,8 @@ class _BoardPainter extends CustomPainter {
     required this.preview,
     required this.flash,
     required this.flashAnimation,
+    required this.undo,
+    required this.undoAnimation,
     required Listenable repaint,
   }) : super(repaint: repaint);
 
@@ -137,10 +165,22 @@ class _BoardPainter extends CustomPainter {
   final ValueListenable<BoardPreview?> preview;
   final ValueListenable<BoardFlash?> flash;
   final Animation<double> flashAnimation;
+  final ValueListenable<BoardUndo?>? undo;
+  final Animation<double>? undoAnimation;
+
+  /// Geri alma geçişi sürüyorsa önceki tahta ve ilerleme (0..1).
+  ({BoardUndo fx, double t})? get _activeUndo {
+    final fx = undo?.value;
+    final t = undoAnimation?.value ?? 1;
+    if (fx == null || t >= 1) return null;
+    return (fx: fx, t: t.clamp(0.0, 1.0));
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintCells(canvas);
+    final activeUndo = _activeUndo;
+    _paintCells(canvas, activeUndo?.fx.before);
+    if (activeUndo != null) _paintUndo(canvas, activeUndo.fx, activeUndo.t);
     _paintPreview(canvas);
     _paintFlash(canvas);
   }
@@ -160,7 +200,9 @@ class _BoardPainter extends CustomPainter {
     Radius.circular(cellSize * 0.20),
   );
 
-  void _paintCells(Canvas canvas) {
+  /// [undoBefore] verilirse geri almayla **geri gelen** hücreler boş çizilir;
+  /// onları [_paintUndo] belirerek çizer.
+  void _paintCells(Canvas canvas, [Board? undoBefore]) {
     final emptyPaint = Paint()..color = AppColors.emptyCell;
     // Izgara boş hücrenin dolgusuyla değil bu ince çizgiyle çiziliyor;
     // gerekçesi `AppColors.cellGrid` üzerinde. Çizgi hücre sınırının tam
@@ -174,8 +216,10 @@ class _BoardPainter extends CustomPainter {
       for (var c = 0; c < board.cols; c++) {
         final value = board.valueAt(r, c);
         final rrect = _cellRRect(r, c);
+        final returning =
+            undoBefore != null && undoBefore.isEmptyAt(r, c) && value != 0;
 
-        if (value == kEmptyCell) {
+        if (value == kEmptyCell || returning) {
           canvas.drawRRect(rrect, emptyPaint);
           canvas.drawRRect(rrect.deflate(0.5), gridPaint);
           continue;
@@ -295,6 +339,84 @@ class _BoardPainter extends CustomPainter {
         paint,
       );
     }
+  }
+
+  // --- Geri alma ---
+  //
+  // Geri alınan parça hücrelerinden kalkar: hafif küçülüp tepsiye doğru
+  // (aşağı) kayarak söner. Hamlenin temizlediği satırlar aynı anda yerlerine
+  // döner: küçük başlayıp hafif taşarak oturur, soldan sağa kısa bir sırayla.
+  // İki hareket birlikte ~300 ms; tahta hiçbir karede sıçramaz.
+
+  void _paintUndo(Canvas canvas, BoardUndo fx, double t) {
+    final before = fx.before;
+    for (var r = 0; r < board.rows; r++) {
+      for (var c = 0; c < board.cols; c++) {
+        final was = before.valueAt(r, c);
+        final now = board.valueAt(r, c);
+        if (was != kEmptyCell && now == kEmptyCell) {
+          _paintLeavingBlock(canvas, r, c, was, t, fx.reduceMotion);
+        } else if (was == kEmptyCell && now != kEmptyCell) {
+          _paintReturningBlock(canvas, r, c, now, t, fx.reduceMotion);
+        }
+      }
+    }
+  }
+
+  void _paintLeavingBlock(
+    Canvas canvas,
+    int row,
+    int col,
+    int value,
+    double t,
+    bool reduceMotion,
+  ) {
+    final k = Curves.easeInCubic.transform((t / 0.75).clamp(0.0, 1.0));
+    if (k >= 1) return;
+    final scale = reduceMotion ? 1.0 : 1 - 0.35 * k;
+    final drop = reduceMotion ? 0.0 : cellSize * 0.6 * k;
+    final rect = _cellRect(row, col);
+    final scaled = Rect.fromCenter(
+      center: rect.center.translate(0, drop),
+      width: rect.width * scale,
+      height: rect.height * scale,
+    );
+    _paintBlock(
+      canvas,
+      RRect.fromRectAndRadius(scaled, Radius.circular(cellSize * 0.20 * scale)),
+      value,
+      opacity: 1 - k,
+    );
+  }
+
+  void _paintReturningBlock(
+    Canvas canvas,
+    int row,
+    int col,
+    int value,
+    double t,
+    bool reduceMotion,
+  ) {
+    // Soldan sağa kısa sıra: geri gelen satır "dolarak" oturur.
+    final delay = reduceMotion ? 0.0 : col / board.cols * 0.25;
+    final u = ((t - delay) / 0.75).clamp(0.0, 1.0);
+    if (u <= 0) return;
+    final scale = reduceMotion
+        ? 1.0
+        : 0.55 + 0.45 * Curves.easeOutBack.transform(u);
+    final rect = _cellRect(row, col);
+    final scaled = Rect.fromCenter(
+      center: rect.center,
+      width: rect.width * scale,
+      height: rect.height * scale,
+    );
+    _paintBlock(
+      canvas,
+      RRect.fromRectAndRadius(scaled, Radius.circular(cellSize * 0.20 * scale)),
+      value,
+      whiten: 0.35 * (1 - u),
+      opacity: Curves.easeOut.transform(u),
+    );
   }
 
   // --- Patlama ---
@@ -605,7 +727,7 @@ class _BoardPainter extends CustomPainter {
       text: TextSpan(
         text: '+${flash.points}',
         style: TextStyle(
-          fontFamily: AppFonts.display,
+          fontFamily: AppFonts.body,
           fontWeight: FontWeight.w800,
           fontSize: cellSize * (0.62 + 0.10 * extra),
           height: 1,
@@ -628,7 +750,7 @@ class _BoardPainter extends CustomPainter {
         text: TextSpan(
           text: 'COMBO x${flash.combo}',
           style: TextStyle(
-            fontFamily: AppFonts.display,
+            fontFamily: AppFonts.body,
             fontWeight: FontWeight.w800,
             fontSize: cellSize * 0.30,
             letterSpacing: cellSize * 0.02,

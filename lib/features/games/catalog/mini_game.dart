@@ -140,6 +140,14 @@ class MiniGames {
     color: AppColors.textMuted,
   );
 
+  /// Kimliği verilen oyun; katalogda yoksa `null`.
+  static MiniGame? byId(String id) {
+    for (final game in all) {
+      if (game.id == id) return game;
+    }
+    return null;
+  }
+
   static const List<MiniGame> all = <MiniGame>[
     blocks,
     metroMerge,

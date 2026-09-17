@@ -118,11 +118,13 @@ değişmez.
 
 Arayüz, İstanbul metrosunun kendi dijital arayüzüne yaslanır:
 
-- **Tipografi:** başlıklarda **Raleway**, gövde ve butonlarda **Open Sans** —
-  metro.istanbul ile aynı aile. İkisi de SIL Open Font License 1.1 altındadır;
-  statik ağırlıklar `google/fonts` değişken fontlarından üretilip latin +
-  latin-ext karakter kümesine daraltıldı (`assets/fonts/`). Lisans metinleri
-  uygulamanın "Lisanslar" ekranına kaydedilir.
+- **Tipografi:** kısa, büyük başlıklarda **Bungee**, diğer her yerde
+  **Plus Jakarta Sans** (Regular / Medium / Bold / ExtraBold). İkisi de SIL
+  Open Font License 1.1 altındadır. Bungee'in özgün dosyası küçük
+  `i`'yi noktasız çizdiği için `cmap` içinde `i` → `İ` eşlendi; Plus Jakarta
+  Sans'ın sabit ağırlıkları google/fonts'taki değişken dosyadan üretildi.
+  Lisans metinleri uygulamanın "Lisanslar" ekranına kaydedilir. Kullanım
+  kuralları `lib/app/theme.dart` → `AppFonts`.
 - **Yolculuk planlayıcı:** ana ekran, resmi sitedeki "nasıl giderim"
   kutusunun düzenini izler — lacivert başlık şeridi, **A/B** işaretli
   *Çıkış Noktası* / *Gidilecek Yer* alanları, tam genişlik aksiyon butonu ve

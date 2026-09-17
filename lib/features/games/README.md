@@ -77,7 +77,8 @@ bağımsızdır ve doğrudan kullanılabilir:
 `core/audio/audio_service.dart` tek yerdir; her oyun aynı `GameSound`
 değerlerini kullanır:
 
-- `GameSound.arrival` — **metro kapı sesi**, durağa varınca bir kez
+- `GameSound.arrival` — **metro kapı sesi**, durağa varınca bir kez. Çalarken
+  kısa efektler susar; varış karesinde başka ses çalmanın sakıncası yok.
 - `GameSound.station` — ara durak geçilince
 - `place` · `clear` · `combo` · `invalid` — oyunun kendi geri bildirimi
 - Arka plan müziği `resumeMusic()` / `pauseMusic()` / `stopMusic()` ile

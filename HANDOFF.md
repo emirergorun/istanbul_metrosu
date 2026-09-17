@@ -60,17 +60,40 @@ Performans sorunu yok — 8x8 grid kopyası önemsiz.
 ### Tipografi ve marka dili
 
 Yazı tipleri `assets/fonts/` içinde gömülüdür ve `AppFonts` üzerinden
-kullanılır (`Raleway` başlık, `Open Sans` gövde). Statik ağırlıklar şu
-şekilde üretildi:
+kullanılır: tek satıra sığan büyük başlıklarda (≥ 20 pt) `Bungee`,
+diğer her yerde `Plus Jakarta Sans` (400 / 500 / 700 / 800). İki satıra
+taşabilen başlıklar (onay pencereleri, hata ekranı) `AppText.heading` ile
+Plus Jakarta Sans ExtraBold'dadır.
 
-```bash
-python3 -m fontTools.varLib.instancer "Raleway[wght].ttf" wght=700 -o out.ttf
-python3 -m fontTools.subset out.ttf --unicodes="U+0000-024F,U+2000-206F,U+20A0-20BF" --layout-features='*' --output-file=Raleway-700.ttf
-```
+- **Bungee** (SIL OFL 1.1) tek ağırlıklıdır; stillerde `w400` kalmalı,
+  daha kalını Flutter'ın sahte kalınlaştırmasıyla harfleri bozar. Özgün dosya
+  küçük `i`'yi noktasız çizip Türkçe `locl` kuralı taşımadığı için `cmap`
+  içinde `i` → `Idotaccent` eşlendi:
 
-Yeni ağırlık gerekirse aynı adımlar tekrarlanıp `pubspec.yaml` içindeki
-`fonts:` bloğuna eklenir. OFL metinleri asset olarak paketlenir ve
-`main.dart` içinde `LicenseRegistry`'ye kaydedilir — silinmemeli.
+  ```python
+  from fontTools.ttLib import TTFont
+  t = TTFont("Bungee-Regular.ttf")
+  for table in t["cmap"].tables:
+      if table.isUnicode() and 0x69 in table.cmap:
+          table.cmap[0x69] = "Idotaccent"
+  t.save("Bungee-Regular.ttf")
+  ```
+
+  Font google/fonts'tan yeniden indirilirse bu adım tekrarlanmalı.
+- **Plus Jakarta Sans** (SIL OFL 1.1) google/fonts'ta yalnızca değişken
+  dosya olarak var; sabit ağırlıklar şöyle üretildi:
+
+  ```python
+  from fontTools.ttLib import TTFont
+  from fontTools.varLib.instancer import instantiateVariableFont
+  for w, n in {400: "Regular", 500: "Medium", 700: "Bold", 800: "ExtraBold"}.items():
+      f = instantiateVariableFont(TTFont("PlusJakartaSans[wght].ttf"), {"wght": w})
+      f["OS/2"].usWeightClass = w
+      f.save(f"PlusJakartaSans-{n}.ttf")
+  ```
+
+Lisans metinleri asset olarak paketlenir ve `main.dart` içinde
+`LicenseRegistry`'ye kaydedilir — silinmemeli.
 
 Ana ekran düzeni metro.istanbul'daki yolculuk planlayıcısını referans alır
 (A/B alanları, lacivert başlık şeridi, kırmızı alt şerit). Resmi logo veya

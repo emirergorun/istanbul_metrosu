@@ -11,6 +11,8 @@ enum GameSound {
   station('station'),
 
   /// Varış (metro kapısı) — 4 saniyelik tören sesi, kısa bir tık değil.
+  ///
+  /// Çalarken kısa efektler susar; bkz. [AudioService.play].
   arrival('arrival', longForm: true),
 
   invalid('invalid');
@@ -105,6 +107,8 @@ class AudioService {
     }
 
     for (final sound in GameSound.values) {
+      // Uzun sesler her çalışta taze bir player'la açılır; bkz. [play].
+      if (sound.longForm) continue;
       try {
         final player = AudioPlayer(playerId: sound.name)
           ..setReleaseMode(ReleaseMode.stop)
@@ -124,12 +128,69 @@ class AudioService {
 
   void play(GameSound sound) {
     if (!enabled || !_ready) return;
+    if (sound.longForm) {
+      unawaited(_playLongForm(sound));
+      return;
+    }
+    // Kapı sesi çalarken kısa efektler susar.
+    if (_longFormPlaying) return;
     final player = _players[sound];
     if (player == null) return;
-    // Aynı ses üst üste gelirse baştan başlat.
-    player.stop().then((_) => player.resume()).catchError((Object error) {
+    // Aynı ses üst üste gelirse baştan başlat. `stop` bitene kadar kapı sesi
+    // başlamış olabilir; o zaman efekt hiç başlamaz.
+    player
+        .stop()
+        .then((_) {
+          if (_longFormPlaying) return Future<void>.value();
+          return player.resume();
+        })
+        .catchError((Object error) {
+          debugPrint('Ses çalınamadı (${sound.name}): $error');
+        });
+  }
+
+  /// Tören sesi (kapı) çalıyor mu?
+  bool _longFormPlaying = false;
+
+  /// Kapı sesini tek başına, taze bir player'la çalar.
+  ///
+  /// Varış anı oyunun en kalabalık karesi: aynı karede son durak bonusu,
+  /// durakta boşalan satırın sesi ve müziğin durması da tetikleniyor. Kısa
+  /// efektler bitince audioplayers ses oturumunu "çalan kimse kalmadı" diye
+  /// kapatabiliyor; kapı sesi o yarışın ortasında kalırsa duyulmuyordu.
+  /// Bu yüzden:
+  ///
+  /// 1. Çalan kısa efektler hemen susturulur, kapı sesi bitene kadar yenisi
+  ///    başlamaz.
+  /// 2. Açılışta bir kez yüklenip dakikalarca bekleyen player yerine her
+  ///    varışta taze bir player kullanılır; uzun bir oyunda arka plana alma
+  ///    ya da ses kesintisi sonrası bozulmuş bir kaynak sessizce çalmıyordu.
+  Future<void> _playLongForm(GameSound sound) async {
+    _longFormPlaying = true;
+    for (final player in _players.values) {
+      unawaited(player.stop().catchError((Object _) {}));
+    }
+
+    final player = AudioPlayer();
+    // Bir şey ters giderse efektler sonsuza kadar susmasın.
+    final safety = Timer(
+      const Duration(seconds: 6),
+      () => _longFormPlaying = false,
+    );
+    void finish() {
+      safety.cancel();
+      _longFormPlaying = false;
+      unawaited(player.dispose());
+    }
+
+    try {
+      await player.setReleaseMode(ReleaseMode.release);
+      unawaited(player.onPlayerComplete.first.then((_) => finish()));
+      await player.play(AssetSource(sound.asset), mode: PlayerMode.mediaPlayer);
+    } catch (error) {
       debugPrint('Ses çalınamadı (${sound.name}): $error');
-    });
+      finish();
+    }
   }
 
   // --- Arka plan müziği ---

@@ -20,11 +20,20 @@ class Formatters {
 
   /// Kalan saniyeyi kullanıcı diline çevirir.
   /// 90 -> `~2 dk`, 45 -> `<1 dk`, 0 -> `Varış`
+  ///
+  /// Dakika, rota ekranındaki tahmini süreyle ([Journey.estimatedMinutes])
+  /// **aynı şekilde yuvarlanır**. Burada `ceil` kullanılıyordu: 868 saniyelik
+  /// yolculuk rota ekranında "~14 dk", oyunun ilk saniyesinde "~15 dk kaldı"
+  /// görünüyordu.
   static String remaining(int seconds) {
     if (seconds <= 0) return 'Varış';
     if (seconds < 60) return '<1 dk';
-    return '~${(seconds / 60).ceil()} dk';
+    return approxMinutes(roundMinutes(seconds));
   }
+
+  /// Saniyeyi gösterim için dakikaya yuvarlar. Süre gösteren her yer bunu
+  /// kullanır ki aynı yolculuk iki ekranda farklı görünmesin.
+  static int roundMinutes(int seconds) => (seconds / 60).round();
 
   /// `mm:ss` — sadece debug/HUD detayında kullanılır.
   static String clock(int seconds) {

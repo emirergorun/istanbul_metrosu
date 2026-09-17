@@ -65,17 +65,17 @@ Future<void> main() async {
   );
 }
 
-/// Gömülü fontların SIL Open Font License metinlerini kaydeder.
+/// Gömülü fontların lisans metinlerini kaydeder.
 ///
-/// OFL, yazı tipleriyle birlikte lisansın da dağıtılmasını şart koşar;
-/// bu sayede metinler uygulamanın "Lisanslar" ekranında görünür.
+/// OFL, yazı tipiyle birlikte lisansının da dağıtılmasını şart koşar; bu
+/// sayede metinler uygulamanın "Lisanslar" ekranında görünür.
 void _registerFontLicenses() {
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(const <String>[
-      'Raleway',
-    ], await rootBundle.loadString('assets/fonts/OFL-Raleway.txt'));
+      'Bungee',
+    ], await rootBundle.loadString('assets/fonts/OFL-Bungee.txt'));
     yield LicenseEntryWithLineBreaks(const <String>[
-      'Open Sans',
-    ], await rootBundle.loadString('assets/fonts/OFL-OpenSans.txt'));
+      'Plus Jakarta Sans',
+    ], await rootBundle.loadString('assets/fonts/OFL-PlusJakartaSans.txt'));
   });
 }

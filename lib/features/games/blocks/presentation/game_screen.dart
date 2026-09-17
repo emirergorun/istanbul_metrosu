@@ -48,6 +48,13 @@ class _GameScreenState extends State<GameScreen>
     null,
   );
   final ValueNotifier<BoardFlash?> _flash = ValueNotifier<BoardFlash?>(null);
+  final ValueNotifier<BoardUndo?> _undoFx = ValueNotifier<BoardUndo?>(null);
+
+  /// Geri alma geçişi; tahtanın bir anda eski hâline sıçramasını önler.
+  late final AnimationController _undoController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 320),
+  );
 
   late final AnimationController _flashController = AnimationController(
     vsync: this,
@@ -231,6 +238,8 @@ class _GameScreenState extends State<GameScreen>
     _stationBonusTimer?.cancel();
     _stationBonus.dispose();
     _flashController.dispose();
+    _undoController.dispose();
+    _undoFx.dispose();
     _shakeController.dispose();
     _impactController.dispose();
     _targetBanner.dispose();
@@ -344,6 +353,26 @@ class _GameScreenState extends State<GameScreen>
 
   // --- Aksiyonlar ---
 
+  /// Son hamleyi geri alır ve tahtayı eski hâline **geçişle** döndürür.
+  void _undo() {
+    final controller = _controller;
+    if (controller == null) return;
+    final before = controller.board;
+    if (!controller.undo()) return;
+
+    // Geri alınan hamle bir satır temizlediyse patlaması hâlâ çiziliyor
+    // olabilir; geri gelen satırın üstünde patlama sürmemeli.
+    _flashController.stop();
+    _flash.value = null;
+    _preview.value = null;
+
+    _undoFx.value = BoardUndo(
+      before: before,
+      reduceMotion: MediaQuery.disableAnimationsOf(context),
+    );
+    _undoController.forward(from: 0);
+  }
+
   void _exitToHome() {
     _controller?.abandon();
     Navigator.of(context).pop();
@@ -405,27 +434,32 @@ class _GameScreenState extends State<GameScreen>
                     // Kalan hak artık ipucu metninde değil düğmenin üstünde
                     // yazıyor: kaç hakkın kaldığını görmek için basılı
                     // tutmak gerekmiyor.
-                    if (session.undoLeft > 0) ...<Widget>[
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: HudButton(
+                    //
+                    // Satır **her zaman** yerinde durur: hak bitince düğme
+                    // soluk "0" gösterir, durak bonusu da aynı satırın
+                    // solunda belirir. Önce hak bitince satır kalkıyor, bonus
+                    // bildirimi de araya yeni satır ekliyordu; oyun alanı
+                    // büyüyüp tahta aşağı kayıyordu.
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: _StationBonusPulse(
+                            animation: _stationBonus,
+                            accent: accent,
+                            amount: controller.lastStationBonus,
+                          ),
+                        ),
+                        HudButton(
                           icon: Icons.undo_rounded,
                           tooltip: 'Geri al',
                           label: '${session.undoLeft}',
                           // Titreşimi `HudButton` veriyor; burada bir kez
                           // daha çağrılırsa geri alma iki kez titriyor.
-                          onPressed: controller.canUndo
-                              ? controller.undo
-                              : null,
+                          onPressed: controller.canUndo ? _undo : null,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                    ],
-                    _StationBonusPulse(
-                      animation: _stationBonus,
-                      accent: accent,
-                      amount: controller.lastStationBonus,
+                      ],
                     ),
+                    const SizedBox(height: AppSpacing.sm),
                     JourneyProgressBar(
                       lineId: journey.lineId,
                       stopCount: journey.stopCount,
@@ -458,7 +492,7 @@ class _GameScreenState extends State<GameScreen>
               _UndoOffer(
                 accent: accent,
                 undoLeft: session.undoLeft,
-                onUndo: () => controller.undo(),
+                onUndo: _undo,
                 onGiveUp: controller.acceptGameOver,
               ),
             // Rekoru geçme bildirimi — oyunu durdurmaz.
@@ -583,6 +617,8 @@ class _GameScreenState extends State<GameScreen>
       preview: _preview,
       flash: _flash,
       flashAnimation: _flashController,
+      undo: _undoFx,
+      undoAnimation: _undoController,
     );
 
     return AnimatedBuilder(
@@ -766,7 +802,7 @@ class _StationBonusPulse extends StatelessWidget {
         final t = animation.value;
         if (t == 0) return const SizedBox.shrink();
         return Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.centerLeft,
           child: Opacity(
             opacity: t,
             child: Transform.translate(
@@ -777,7 +813,7 @@ class _StationBonusPulse extends StatelessWidget {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: EdgeInsets.zero,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(

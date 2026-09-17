@@ -563,7 +563,7 @@ class _TileContent extends StatelessWidget {
             tile.lineLabel,
             maxLines: 1,
             style: TextStyle(
-              fontFamily: AppFonts.display,
+              fontFamily: AppFonts.body,
               fontSize: dense ? 15 : 19,
               fontWeight: FontWeight.w800,
               color: foreground,

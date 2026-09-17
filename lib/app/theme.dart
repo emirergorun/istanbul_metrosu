@@ -2,14 +2,30 @@ import 'package:flutter/material.dart';
 
 /// Tipografi.
 ///
-/// metro.istanbul ile aynı font ailesi kullanılır: başlıklarda **Raleway**,
-/// gövde ve butonlarda **Open Sans**. İkisi de SIL Open Font License 1.1
-/// altındadır ve `assets/fonts/` içinde uygulamaya gömülüdür.
+/// Kısa, büyük başlıklarda **Bungee**; diğer her yerde
+/// **Plus Jakarta Sans**. İkisi de SIL OFL 1.1.
+///
+/// Bungee iri, tabela karakterli bir yazı tipidir: yalnızca ~20 punto ve
+/// üstündeki, **tek satıra sığan** başlıklarda okunur. İki satıra taşan
+/// cümleler (onay penceresi başlıkları gibi) bu fontta ağır duruyordu; onlar
+/// Plus Jakarta Sans ExtraBold'dadır. Tek ağırlığı var (400); daha kalın
+/// istenirse Flutter sahte kalınlaştırma yapıp harfleri bozar. Skor, rozet ve
+/// etiket gibi küçük ya da sık değişen metinler de Plus Jakarta Sans'tadır.
+///
+/// Bungee Türkçe için değiştirildi: özgün dosya küçük `i`'yi noktasız
+/// `I` çiziyor ve Türkçe `locl` kuralı yok, "girdin" ekranda "GIRDIN"
+/// okunuyordu. `cmap` içinde `i` → `İ` eşlendi; metinler değişmeden doğru
+/// görünür. Plus Jakarta Sans'ın google/fonts'taki değişken dosyasından
+/// 400 / 500 / 700 / 800 sabit ağırlıkları üretildi.
 class AppFonts {
   const AppFonts._();
 
-  static const String display = 'Raleway';
-  static const String body = 'Open Sans';
+  /// Yalnızca büyük başlıklar (≥ 20 pt). Tek ağırlık: `FontWeight.w400`.
+  static const String display = 'Bungee';
+
+  /// Gövde, düğme, skor, etiketler ve uzun başlıklar.
+  /// Ağırlıklar: 400, 500, 700, 800.
+  static const String body = 'Plus Jakarta Sans';
 }
 
 /// Uygulama renk paleti.
@@ -240,21 +256,20 @@ class AppTheme {
         displaySmall: TextStyle(
           fontFamily: AppFonts.display,
           fontSize: 34,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
           height: 1.05,
-          letterSpacing: -0.5,
         ),
         headlineSmall: TextStyle(
           fontFamily: AppFonts.display,
           fontSize: 22,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
           color: AppColors.textPrimary,
         ),
         titleMedium: TextStyle(
-          fontFamily: AppFonts.display,
+          fontFamily: AppFonts.body,
           fontSize: 17,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
         bodyMedium: TextStyle(
@@ -269,6 +284,9 @@ class AppTheme {
           color: AppColors.textPrimary,
         ),
       ),
+      // Onay penceresi başlıkları cümle uzunluğunda ve iki satıra taşıyor;
+      // başlık fontunda ağır duruyordu.
+      dialogTheme: const DialogThemeData(titleTextStyle: AppText.heading),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.action,
@@ -323,12 +341,21 @@ class AppTheme {
 class AppText {
   const AppText._();
 
-  /// Açılış tabelası. Raleway, sıkı satır arası.
+  /// Açılış tabelası. Bungee, sıkı satır arası.
   static const TextStyle display = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 28,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w400,
     height: 1.12,
+    color: AppColors.textPrimary,
+  );
+
+  /// İki satıra taşabilen başlık: onay penceresi, hata ekranı.
+  static const TextStyle heading = TextStyle(
+    fontFamily: AppFonts.body,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    height: 1.25,
     color: AppColors.textPrimary,
   );
 
@@ -336,13 +363,16 @@ class AppText {
   static const TextStyle title = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 20,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
   );
 
   /// Kart başlığı, öne çıkan satır.
+  ///
+  /// Aile açıkça yazılı: `TextPainter` ile tuvale çizilen rozetler temadan
+  /// yazı tipi devralmaz.
   static const TextStyle lead = TextStyle(
-    fontFamily: AppFonts.display,
+    fontFamily: AppFonts.body,
     fontSize: 17,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -411,7 +441,7 @@ class AppText {
 
 /// Değişen sayılar için ortak stil parçası.
 ///
-/// Open Sans'ta rakam genişlikleri eşit değildir: skor 1'den 2'ye geçerken
+/// Plus Jakarta Sans'ta rakam genişlikleri eşit değildir: skor 1'den 2'ye geçerken
 /// metnin kapladığı yer değişir ve satır oynar. Saniyede bir güncellenen
 /// sayaçta ve her hamlede artan skorda bu titreme sürekli görünür.
 /// [FontFeature.tabularFigures] rakamları sabit genişliğe sabitler.
