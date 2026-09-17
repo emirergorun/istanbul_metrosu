@@ -1,0 +1,10 @@
+# Testlerde kullanılan etiketler.
+#
+# Tanımlanmayan etiket her koşumda uyarı basıyordu. İkisi de varsayılan
+# koşumda çalışır; etiket yalnızca tek başına çağırmak içindir:
+#
+#   flutter test --tags balance   # yalnızca denge raporu
+#   flutter test --tags tools     # yalnızca üretim araçları (ikon vb.)
+tags:
+  balance:
+  tools:

@@ -5,8 +5,22 @@ import 'package:flutter/foundation.dart';
 import '../../../journey/services/route_service.dart';
 import '../domain/block_piece.dart';
 import '../domain/board.dart';
+import '../domain/combo.dart';
 import '../domain/game_state.dart';
 import '../domain/piece_shapes.dart';
+import '../domain/streak.dart';
+import 'game_controller.dart';
+
+/// Kayıttan çözülmüş oyun: tahta durumu + motor durumu.
+///
+/// İkisi ayrı katmanda yaşıyor, kayıt da ikisini ayrı taşıyor.
+@immutable
+class SavedGame {
+  const SavedGame({required this.session, required this.progress});
+
+  final GameSession session;
+  final ResumedProgress progress;
+}
 
 /// Yarım kalan oyunun diske yazılabilir hâli.
 ///
@@ -20,9 +34,13 @@ class GameSnapshot {
   const GameSnapshot._();
 
   /// Kayıt biçimi değişirse eski kayıtlar atılır.
-  static const int version = 1;
+  ///
+  /// v3 skoru ve süreyi motordan okur; tahta durumu artık bunları
+  /// içermiyor.
+  static const int version = 3;
 
-  static String encode(GameSession session) {
+  static String encode(GameController controller) {
+    final session = controller.session;
     return jsonEncode(<String, dynamic>{
       'v': version,
       'origin': session.journey.origin.id,
@@ -35,22 +53,29 @@ class GameSnapshot {
           else
             <String, dynamic>{'id': piece.id, 'color': piece.colorIndex},
       ],
-      'score': session.score,
       'combo': session.combo,
       'bestCombo': session.bestCombo,
+      'comboGrace': session.comboState.movesSinceLastClear,
+      'streak': session.streakState.value,
+      'bestStreak': session.streakState.best,
+      'streakPieces': session.streakState.piecesInSet,
+      'streakCleared': session.streakState.clearedInSet,
       'clearedRows': session.clearedRows,
       'clearedColumns': session.clearedColumns,
-      'elapsed': session.elapsedSeconds,
       'undoLeft': session.undoLeft,
-      'record': session.recordToBeat,
-      'recordBeaten': session.recordBeaten,
-      'stationsPassed': session.stationsPassed,
       'placedPieces': session.placedPieces,
+
+      // --- motor ---
+      'score': controller.score,
+      'elapsed': controller.elapsedSeconds.floor(),
+      'stationsPassed': controller.stationsPassed,
+      'record': controller.recordToBeat,
+      'recordBeaten': controller.recordBeaten,
     });
   }
 
   /// Kayıt bozuk, eski sürüm ya da rotası artık geçersizse `null` döner.
-  static GameSession? decode(String raw, RouteService routeService) {
+  static SavedGame? decode(String raw, RouteService routeService) {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       if (json['v'] != version) return null;
@@ -82,24 +107,34 @@ class GameSnapshot {
         tray.add(shape.withColor(map['color'] as int));
       }
 
-      return GameSession(
-        journey: journey,
-        board: Board.fromGrid(grid),
-        tray: List<BlockPiece?>.unmodifiable(tray),
-        score: json['score'] as int,
-        combo: json['combo'] as int,
-        bestCombo: json['bestCombo'] as int,
-        clearedRows: json['clearedRows'] as int,
-        clearedColumns: json['clearedColumns'] as int,
-        elapsedSeconds: json['elapsed'] as int,
-        // Kayıttan dönen oyun daima duraklatılmış başlar: kullanıcı hazır
-        // olduğunda açıkça "devam et" der.
-        status: GameStatus.paused,
-        undoLeft: json['undoLeft'] as int,
-        recordToBeat: json['record'] as int,
-        recordBeaten: json['recordBeaten'] as bool,
-        stationsPassed: json['stationsPassed'] as int,
-        placedPieces: json['placedPieces'] as int,
+      return SavedGame(
+        session: GameSession(
+          journey: journey,
+          board: Board.fromGrid(grid),
+          tray: List<BlockPiece?>.unmodifiable(tray),
+          comboState: ComboState(
+            value: json['combo'] as int,
+            movesSinceLastClear: json['comboGrace'] as int,
+            best: json['bestCombo'] as int,
+          ),
+          streakState: StreakState(
+            value: json['streak'] as int,
+            best: json['bestStreak'] as int,
+            piecesInSet: json['streakPieces'] as int,
+            clearedInSet: json['streakCleared'] as bool,
+          ),
+          clearedRows: json['clearedRows'] as int,
+          clearedColumns: json['clearedColumns'] as int,
+          undoLeft: json['undoLeft'] as int,
+          placedPieces: json['placedPieces'] as int,
+        ),
+        progress: ResumedProgress(
+          score: json['score'] as int,
+          elapsedSeconds: json['elapsed'] as int,
+          stationsPassed: json['stationsPassed'] as int,
+          recordToBeat: json['record'] as int,
+          recordBeaten: json['recordBeaten'] as bool,
+        ),
       );
     } catch (error, stack) {
       debugPrint('Kayıtlı oyun okunamadı: $error\n$stack');

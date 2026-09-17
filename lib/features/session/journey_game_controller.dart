@@ -223,6 +223,65 @@ abstract class JourneyGameController extends ChangeNotifier
   @protected
   bool get hasStationProgress => _stationProgress;
 
+  /// Tren kaç durağı geçti.
+  int get stationsPassed => _stationsPassed;
+
+  /// Sayacı durdurur ama **durumu değiştirmez**.
+  ///
+  /// Oyun hâlâ `playing` sayılır; yalnızca yolculuk ilerlemesi durur. Blok
+  /// oyunu bunu "hamle kalmadı ama geri alma hakkın var" teklifinde
+  /// kullanıyor: oyuncu karar verene kadar tren beklemeli, yoksa hiç
+  /// oynamadan varışa ulaşılabilir. Duraklatmadan ([pause]) farkı, oyunun
+  /// duraklatılmış görünmemesi.
+  @protected
+  void holdClock() => _stopTimer();
+
+  /// [holdClock] ile durdurulan sayacı yeniden başlatır.
+  @protected
+  void releaseClock() {
+    if (_status != GameStatus.playing) return;
+    _startTimer();
+  }
+
+  /// Oyunun kendi kaydından ya da geri almasından dönen motor durumu.
+  ///
+  /// Motor skoru ve saati kendi tutar; oyunun bunlara doğrudan yazması
+  /// gerekmez. Ama iki durumda geri sarmak şart:
+  ///
+  /// - **geri alma**: hamlenin kazandırdığı puan ve süre geri verilmeli,
+  /// - **kayıttan devam**: yarım kalan oyun kaldığı yerden başlamalı.
+  ///
+  /// Verilmeyen alanlar olduğu gibi kalır.
+  @protected
+  void restoreProgress({
+    int? score,
+    double? elapsedSeconds,
+    int? stationsPassed,
+    bool? recordBeaten,
+    bool? stationProgress,
+  }) {
+    if (score != null) _score = score < 0 ? 0 : score;
+    if (elapsedSeconds != null) {
+      _elapsedSeconds = elapsedSeconds < 0 ? 0 : elapsedSeconds;
+    }
+    if (stationsPassed != null) _stationsPassed = stationsPassed;
+    if (recordBeaten != null) _recordBeaten = recordBeaten;
+    if (stationProgress != null) _stationProgress = stationProgress;
+  }
+
+  /// Geçilecek rekoru doğrudan ayarlar.
+  ///
+  /// Kayıttan dönen oyun, kaydedildiği andaki rekoru taşır; depodaki değer
+  /// bu arada yükselmiş olabilir. İkisinden **yüksek olan** hedeflenir.
+  @protected
+  void raiseRecordToBeat(int value) {
+    if (value > _recordToBeat) _recordToBeat = value;
+  }
+
+  /// Oyunun durumunu doğrudan ayarlar (kayıttan `paused` dönmek gibi).
+  @protected
+  void setStatus(GameStatus value) => _status = value;
+
   /// Oyun kendi kuralına takıldı: hamle kalmadı, çarpıştı, süre doldu…
   @protected
   void endGame() => _finish(GameStatus.gameOver);

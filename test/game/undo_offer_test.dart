@@ -6,6 +6,7 @@ import 'package:istanbul_metro_game/features/games/blocks/domain/game_state.dart
 import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 
+import '../helpers/saved_game_helpers.dart';
 import '../helpers/metro_fixture.dart';
 
 void main() {
@@ -53,7 +54,7 @@ void main() {
 
     // Karar verilene kadar yolculuk ilerlemez.
     controller.debugAdvanceSeconds(30);
-    expect(controller.session.elapsedSeconds, 3);
+    expect(controller.elapsedSeconds, 3);
 
     expect(controller.undo(), isTrue);
     expect(controller.awaitingUndo, isFalse);
@@ -61,7 +62,7 @@ void main() {
     expect(controller.tray.whereType<BlockPiece>(), hasLength(3));
 
     controller.debugAdvanceSeconds(1);
-    expect(controller.session.elapsedSeconds, 4);
+    expect(controller.elapsedSeconds, 4);
   });
 
   test('oyuncu teklifi reddederse oyun biter', () {
@@ -107,7 +108,7 @@ void main() {
     expect(controller.status, GameStatus.playing);
     expect(controller.awaitingUndo, isTrue);
     controller.debugAdvanceSeconds(10);
-    expect(controller.session.elapsedSeconds, 0);
+    expect(controller.elapsedSeconds, 0);
   });
 
   test('kayıttan kilitli tahtayla dönen oyun devam edince biter', () {
@@ -121,8 +122,13 @@ void main() {
         PieceShapes.h2.withColor(2),
         PieceShapes.v2.withColor(3),
       ],
-    ).copyWith(status: GameStatus.paused);
-    final controller = GameController(journey: journey, resumeFrom: locked);
+    );
+    final saved = savedGameOf(locked);
+    final controller = GameController(
+      journey: journey,
+      resumeFrom: saved.session,
+      resumeProgress: saved.progress,
+    );
     addTearDown(controller.dispose);
 
     controller.resume();

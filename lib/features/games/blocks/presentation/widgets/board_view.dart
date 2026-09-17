@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../app/theme.dart';
+import '../../../../../core/constants/app_constants.dart';
 import '../../domain/block_piece.dart';
 import '../../domain/board.dart';
+import '../../domain/clear_result.dart';
 
 /// Sürükleme sırasında board üzerinde gösterilen ön izleme.
 @immutable
@@ -437,6 +439,19 @@ class _BoardPainter extends CustomPainter {
   // ve sabit hızla dağıldığı için efekt "patlama" yerine "yanıp sönme"
   // gibi duruyordu.
 
+  /// Faz 1 — onay duraklaması.
+  ///
+  /// Satır tamamlandığı an patlamaz: kısa bir süre olduğu yerde parlar.
+  /// Bu bekleme oyuncuya "evet, o satırı sen tamamladın" der; patlama
+  /// hemen başlarsa sebep ile sonuç aynı kareye sıkışır ve hamle
+  /// "oldu bitti" gibi geçer.
+  static const Duration holdDuration = Duration(milliseconds: 70);
+
+  /// [holdDuration]'ın normalize edilmiş karşılığı (0..1).
+  static final double _holdSpan =
+      holdDuration.inMilliseconds /
+      AppConstants.lineClearDuration.inMilliseconds;
+
   /// Dalganın bir hücre ilerlemesi için geçen süre.
   static const double _waveStep = 0.034;
 
@@ -449,12 +464,18 @@ class _BoardPainter extends CustomPainter {
   /// Enkazın uçuş süresi.
   static const double _debrisSpan = 0.58;
 
+  /// Enkaz şiddetinin combo'dan alabileceği en yüksek kademe.
+  ///
+  /// Tavan olmadan uzun bir seri ekranı parçacığa boğuyor ve tahta
+  /// okunamaz hâle geliyor.
+  static const int _debrisComboCap = 12;
+
   void _paintFlash(Canvas canvas) {
     final value = flash.value;
     if (value == null || value.isEmpty) return;
 
-    final t = flashAnimation.value.clamp(0.0, 1.0);
-    if (t >= 1) return;
+    final raw = flashAnimation.value.clamp(0.0, 1.0);
+    if (raw >= 1) return;
 
     final cells = _flashCells(value);
 
@@ -464,11 +485,28 @@ class _BoardPainter extends CustomPainter {
           canvas,
           _cellRRect(cell.row, cell.col),
           cell.value,
-          opacity: 1 - t,
+          opacity: 1 - raw,
         );
       }
       return;
     }
+
+    // Faz 1: bloklar yerinde durur, yalnızca beyaza döner.
+    if (raw < _holdSpan) {
+      final k = raw / _holdSpan;
+      for (final cell in cells) {
+        _paintBlock(
+          canvas,
+          _cellRRect(cell.row, cell.col),
+          cell.value,
+          whiten: 0.35 * k,
+        );
+      }
+      return;
+    }
+
+    // Faz 2 ve sonrası: duraklamadan arta kalan süreye yayılır.
+    final t = (raw - _holdSpan) / (1 - _holdSpan);
 
     _paintBeams(canvas, value, t);
     for (final cell in cells) {
@@ -650,8 +688,12 @@ class _BoardPainter extends CustomPainter {
     List<({int row, int col, int value, double delay})> cells,
     double t,
   ) {
-    final perCell = 3 + math.min(flash.lineCount, 3);
-    final power = 1 + 0.18 * (math.min(flash.lineCount, 4) - 1);
+    // Şiddet iki şeyden birden büyür: aynı hamledeki line sayısı ve serinin
+    // sıcaklığı. Uzun bir combo'nun tek satırı da kutlanmayı hak eder.
+    final heat = math.min(flash.combo, _debrisComboCap);
+    final perCell = 3 + math.min(flash.lineCount, 3) + (heat >= 8 ? 2 : 0);
+    final power =
+        (1 + 0.18 * (math.min(flash.lineCount, 4) - 1)) * (1 + 0.04 * heat);
     final paint = Paint();
 
     for (final cell in cells) {
@@ -707,7 +749,18 @@ class _BoardPainter extends CustomPainter {
     }
   }
 
-  /// Parçanın konduğu yerden yükselen "+N" ve varsa combo etiketi.
+  /// Parçanın konduğu yerden yükselen geri bildirim yığını.
+  ///
+  /// En fazla üç satır çizilir ve sıra bilinçlidir:
+  ///
+  ///   üst    Serinin kızışma etiketi ("TAM GAZ"); yoksa çoklu temizlik
+  ///          kademesi ("ÇİFT TEMİZLİK"). İkisi birden çıkmaz — kızışma
+  ///          daha nadir olduğu için önceliklidir.
+  ///   orta   Kazanılan puan.
+  ///   alt    "COMBO xN".
+  ///
+  /// Üçten fazlası 8x8 tahtanın üstünü kapatıyor; kutlama oyunun kendisini
+  /// görmeyi engellememeli.
   void _paintPoints(Canvas canvas, BoardFlash flash, double t) {
     if (flash.points <= 0) return;
 
@@ -723,54 +776,54 @@ class _BoardPainter extends CustomPainter {
     final rise = cellSize * 1.1 * Curves.easeOutCubic.transform(t);
 
     final extra = math.min(flash.lineCount, 4) - 1;
-    final label = TextPainter(
-      text: TextSpan(
-        text: '+${flash.points}',
-        style: TextStyle(
-          fontFamily: AppFonts.body,
-          fontWeight: FontWeight.w800,
-          fontSize: cellSize * (0.62 + 0.10 * extra),
-          height: 1,
-          color: Colors.white.withValues(alpha: alpha),
-          shadows: <Shadow>[
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.55 * alpha),
-              blurRadius: cellSize * 0.18,
-              offset: Offset(0, cellSize * 0.04),
-            ),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    final comboWeight = math.min(flash.combo, 6);
 
-    TextPainter? comboLabel;
-    if (flash.combo >= 2) {
-      comboLabel = TextPainter(
-        text: TextSpan(
-          text: 'COMBO x${flash.combo}',
-          style: TextStyle(
-            fontFamily: AppFonts.body,
-            fontWeight: FontWeight.w800,
-            fontSize: cellSize * 0.30,
-            letterSpacing: cellSize * 0.02,
-            height: 1,
-            color: AppColors.warning.withValues(alpha: alpha),
-            shadows: <Shadow>[
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.55 * alpha),
-                blurRadius: cellSize * 0.14,
-              ),
-            ],
-          ),
+    final lines = <TextPainter>[];
+
+    final heat = comboHeatLabel(flash.combo);
+    final tierLabel = kClearTierLabels[ClearTier.of(flash.lineCount)] ?? '';
+    final topLabel = heat ?? (tierLabel.isEmpty ? null : tierLabel);
+    if (topLabel != null) {
+      lines.add(
+        _flashText(
+          topLabel,
+          size: cellSize * (0.28 + 0.02 * extra),
+          color: heat == null ? Colors.white : AppColors.warning,
+          alpha: alpha,
+          letterSpacing: cellSize * 0.03,
         ),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      );
     }
 
-    final totalHeight =
-        label.height + (comboLabel == null ? 0.0 : comboLabel.height + 4);
-    final maxWidth = math.max(label.width, comboLabel?.width ?? 0.0);
+    lines.add(
+      _flashText(
+        '+${flash.points}',
+        size: cellSize * (0.62 + 0.10 * extra + 0.02 * comboWeight),
+        color: Colors.white,
+        alpha: alpha,
+      ),
+    );
+
+    if (flash.combo >= 2) {
+      lines.add(
+        _flashText(
+          'COMBO x${flash.combo}',
+          size: cellSize * 0.30,
+          color: AppColors.warning,
+          alpha: alpha,
+          letterSpacing: cellSize * 0.02,
+        ),
+      );
+    }
+
+    const gap = 4.0;
+    var totalHeight = 0.0;
+    var maxWidth = 0.0;
+    for (final line in lines) {
+      totalHeight += line.height;
+      if (line.width > maxWidth) maxWidth = line.width;
+    }
+    totalHeight += gap * (lines.length - 1);
 
     // Yazı tahtanın kenarından taşmasın.
     final centerX = anchor.dx
@@ -786,12 +839,44 @@ class _BoardPainter extends CustomPainter {
     canvas.save();
     canvas.translate(centerX, top + totalHeight / 2);
     canvas.scale(pop);
-    label.paint(canvas, Offset(-label.width / 2, -totalHeight / 2));
-    comboLabel?.paint(
-      canvas,
-      Offset(-comboLabel.width / 2, -totalHeight / 2 + label.height + 4),
-    );
+
+    var dy = -totalHeight / 2;
+    for (final line in lines) {
+      line.paint(canvas, Offset(-line.width / 2, dy));
+      dy += line.height + gap;
+    }
     canvas.restore();
+  }
+
+  /// Patlama yazıları için ortak biçim: gövde fontu, kalın, koyu gölgeli.
+  TextPainter _flashText(
+    String text, {
+    required double size,
+    required Color color,
+    required double alpha,
+    double letterSpacing = 0,
+  }) {
+    return TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: AppFonts.body,
+          fontWeight: FontWeight.w800,
+          fontSize: size,
+          letterSpacing: letterSpacing,
+          height: 1,
+          color: color.withValues(alpha: alpha),
+          shadows: <Shadow>[
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.55 * alpha),
+              blurRadius: size * 0.28,
+              offset: Offset(0, size * 0.06),
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
   }
 
   /// Deterministik sözde-rastgele, 0..1. Aynı tohum her karede aynı değeri

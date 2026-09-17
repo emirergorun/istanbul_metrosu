@@ -9,7 +9,6 @@ import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../games/blocks/application/game_snapshot.dart';
-import '../../games/blocks/domain/game_state.dart';
 import '../../games/catalog/mini_game.dart';
 import '../../journey/models/journey.dart';
 import '../../journey/models/station.dart';
@@ -84,16 +83,16 @@ class _TitleScreenState extends State<TitleScreen>
     super.dispose();
   }
 
-  /// Yarım kalan oyun varsa oturumu döner.
-  GameSession? get _savedGame {
+  /// Yarım kalan oyun varsa döner.
+  SavedGame? get _savedGame {
     final scope = AppScope.of(context);
     final raw = scope.store.savedGame;
     if (raw == null || raw.isEmpty) return null;
     return GameSnapshot.decode(raw, scope.routeService);
   }
 
-  Future<void> _resumeSaved(GameSession session) async {
-    await AppRoutes.resumeGame(context, session);
+  Future<void> _resumeSaved(SavedGame saved) async {
+    await AppRoutes.resumeGame(context, saved);
     if (mounted) setState(() {});
   }
 
@@ -247,9 +246,11 @@ class _TitleScreenState extends State<TitleScreen>
                     children: <Widget>[
                       if (saved != null) ...<Widget>[
                         _SavedGameCard(
-                          session: saved,
+                          saved: saved,
                           lineTheme: LineTheme.from(
-                            scope.metro.lineById(saved.journey.lineId)?.color ??
+                            scope.metro
+                                    .lineById(saved.session.journey.lineId)
+                                    ?.color ??
                                 AppColors.brandNavy,
                           ),
                           onResume: () => _resumeSaved(saved),
@@ -408,20 +409,32 @@ class _SignStem extends StatelessWidget {
 /// çıktığı için bu akış varsayılan davranış olmalı.
 class _SavedGameCard extends StatelessWidget {
   const _SavedGameCard({
-    required this.session,
+    required this.saved,
     required this.lineTheme,
     required this.onResume,
     required this.onDiscard,
   });
 
-  final GameSession session;
+  final SavedGame saved;
   final LineTheme lineTheme;
+
+  /// Kayıttaki kalan süre.
+  ///
+  /// Motorun [JourneyGameController.remainingSeconds] kuralıyla aynı:
+  /// `floor` kullanılır ki yolculuk tahmin edilen saniye dolmadan bitmiş
+  /// görünmesin.
+  int get _remainingSeconds {
+    final left =
+        saved.session.journey.estimatedSeconds - saved.progress.elapsedSeconds;
+    return left < 0 ? 0 : left;
+  }
+
   final VoidCallback onResume;
   final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
-    final journey = session.journey;
+    final journey = saved.session.journey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -461,8 +474,8 @@ class _SavedGameCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Skor ${Formatters.score(session.score)} · '
-                          '${Formatters.remaining(session.remainingSeconds)} kaldı',
+                          'Skor ${Formatters.score(saved.progress.score)} · '
+                          '${Formatters.remaining(_remainingSeconds)} kaldı',
                           style: AppText.caption.copyWith(
                             color: AppColors.onAction.withValues(alpha: 0.7),
                           ),

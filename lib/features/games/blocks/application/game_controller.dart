@@ -6,95 +6,161 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/storage/local_store.dart';
 import '../../../journey/models/journey.dart';
-import '../../../session/journey_run.dart';
+import '../../../session/journey_game_controller.dart';
 import '../domain/block_piece.dart';
 import '../domain/board.dart';
+import '../domain/clear_result.dart';
 import '../domain/game_state.dart';
 import '../domain/scoring.dart';
 import 'game_snapshot.dart';
 import 'piece_generator.dart';
 
 /// Bir yerleştirme denemesinin sonucu — UI geri bildirimi için.
+///
+/// Hamlenin **ne olduğu** [ClearResult] içindedir; burada yalnızca
+/// yerleştirmenin kabul edilip edilmediği ve yerleştirmeye eşlik eden
+/// oturum olayları (tepsi yenilendi, rekor geçildi) durur.
 @immutable
 class PlaceOutcome {
   const PlaceOutcome({
     required this.accepted,
-    this.gainedPoints = 0,
-    this.clearedRows = const <int>[],
-    this.clearedColumns = const <int>[],
-    this.combo = 0,
+    this.result,
     this.trayRefilled = false,
     this.beatRecord = false,
-    this.clearedCellValues = const <int, int>{},
   });
 
   const PlaceOutcome.rejected() : this(accepted: false);
 
   final bool accepted;
-  final int gainedPoints;
-  final List<int> clearedRows;
-  final List<int> clearedColumns;
-  final int combo;
+
+  /// Hamlenin tam sonucu. Yerleştirme reddedildiyse `null`.
+  final ClearResult? result;
+
   final bool trayRefilled;
 
   /// Rotanın rekoru **bu hamlede** geçildi mi? Yalnızca bir kez `true` olur;
   /// oyun durmaz, UI kısa bir bildirim gösterir.
   final bool beatRecord;
 
-  /// Temizlenen hücrelerin **silinmeden önceki** renk değerleri.
-  ///
-  /// Anahtar `satır * sütunSayısı + sütun`. Patlama efekti parçacıkları
-  /// blokların kendi renginde savurabilsin diye taşınır; tahta temizlendikten
-  /// sonra bu bilgi başka yerden okunamaz.
-  final Map<int, int> clearedCellValues;
+  // --- [ClearResult] kısayolları ---
+  //
+  // Sunum katmanı her seferinde null kontrolü yapmasın diye.
 
-  int get linesCleared => clearedRows.length + clearedColumns.length;
+  int get gainedPoints => result?.scoreAwarded ?? 0;
+  List<int> get clearedRows => result?.clearedRows ?? const <int>[];
+  List<int> get clearedColumns => result?.clearedColumns ?? const <int>[];
+
+  /// Temizlenen hücrelerin **silinmeden önceki** renk değerleri.
+  Map<int, int> get clearedCellValues =>
+      result?.clearedCellValues ?? const <int, int>{};
+
+  int get combo => result?.comboIndex ?? 0;
+  int get streak => result?.streakIndex ?? 0;
+
+  /// Bu hamlenin yolculuğa kattığı saniye.
+  int get journeySeconds => result?.journeySecondsAwarded ?? 0;
+
+  ClearTier get tier => result?.tier ?? ClearTier.none;
+  int get linesCleared => result?.totalLines ?? 0;
   bool get didClear => linesCleared > 0;
+
+  /// Aynı hamlede hem satır hem sütun temizlendi mi?
+  bool get simultaneousClear => result?.simultaneousClear ?? false;
 }
 
-/// Oyun oturumunu yöneten controller.
+/// Blok Metro'nun oyun kuralları.
 ///
-/// UI, oyun kurallarını bilmez; sadece bu controller'ı dinler.
-/// Kuralların kendisi `domain/` altındaki saf fonksiyonlardadır.
-class GameController extends ChangeNotifier implements JourneyRun {
+/// Yolculuk motorunu ([JourneyGameController]) kullanır: sayaç, varış
+/// tespiti, durak bonusu, sprint, rekor takibi ve kaydı oradan gelir.
+/// Burada yalnızca blok oyununa özgü olan var — tahta, tepsi, combo, seri,
+/// geri alma ve yarım kalan oyunun kaydı.
+///
+/// Motora taşınmadan önce bütün bu ortak mantık burada **ikinci kez**
+/// yazılıydı; sayaç, durak geçişi ve rekor kaydı iki yerde sürdürülüyordu.
+///
+/// UI, oyun kurallarını bilmez; sadece bu controller'ı dinler. Kuralların
+/// kendisi `domain/` altındaki saf fonksiyonlardadır.
+class GameController extends JourneyGameController {
   GameController({
-    required Journey journey,
+    required super.journey,
     PieceGenerator? generator,
-    this.store,
+    super.store,
     Random? random,
-    int recordToBeat = 0,
-    this.tick = AppConstants.playTick,
+    super.recordToBeat = 0,
+    super.tick = AppConstants.playTick,
     GameSession? resumeFrom,
-    // Alan private + mutable (restart tazeliyor), parametre public kalmalı;
-    // `this._recordToBeat` dışarıdan kullanılamayacak bir ad üretirdi.
-    // ignore: prefer_initializing_formals
-  }) : _recordToBeat = recordToBeat,
-       _generator = generator ?? PieceGenerator(random: random) {
+    ResumedProgress? resumeProgress,
+  }) : _generator = generator ?? PieceGenerator(random: random),
+       super(gameId: LocalStore.legacyRouteGameId) {
     _session = resumeFrom ?? _createSession(journey);
+
+    if (resumeProgress != null) {
+      // Kayıt, kaydedildiği andaki rekoru taşır; depodaki değer bu arada
+      // yükselmiş olabilir. Yüksek olan hedeflenir, yoksa oyun seçim
+      // ekranındakinden farklı bir rekor gösterir.
+      raiseRecordToBeat(resumeProgress.recordToBeat);
+      restoreProgress(
+        score: resumeProgress.score,
+        elapsedSeconds: resumeProgress.elapsedSeconds.toDouble(),
+        stationsPassed: resumeProgress.stationsPassed,
+        recordBeaten: resumeProgress.recordBeaten,
+      );
+      // Kayıttan dönen oyun daima duraklatılmış başlar: kullanıcı hazır
+      // olduğunda açıkça "devam et" der.
+      setStatus(GameStatus.paused);
+    }
+
+    _loadRunRecords();
   }
+
+  /// Blok Metro'nun depodaki oyun kimliği.
+  ///
+  /// Oyun bazlı rekorlar gelmeden önce yazıldığı için eski, oyun adı
+  /// taşımayan rota anahtarını kullanmaya devam eder.
+  static const String id = LocalStore.legacyRouteGameId;
 
   final PieceGenerator _generator;
 
-  /// En iyi skorun yazılacağı local depo. Test'te null bırakılabilir.
-  final LocalStore? store;
-
-  /// Bu rotada geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
-  ///
-  /// `final` değildir: [restart] bunu depodan tazeler. Aynı ekranda ikinci
-  /// kez oynarken hedef, bir önceki oyunun kurduğu rekor olmalıdır.
-  int _recordToBeat;
-
-  @override
-  int get recordToBeat => _recordToBeat;
-
-  /// Aktif oyun süresi sayacının periyodu (test'te kısaltılabilir).
-  final Duration tick;
-
   late GameSession _session;
   GameSession? _undoSnapshot;
-  Timer? _timer;
-  bool _isNewBest = false;
-  bool _scoreSaved = false;
+
+  /// Bu koşuda kırılan combo / seri / durak rekorları.
+  ///
+  /// Skordan ayrı tutulur: düşük skorlu bir koşuda bile en iyi seri
+  /// kurulmuş olabilir ve oyuncu bunu görmeyi hak eder.
+  RunRecordResult _runRecords = const RunRecordResult.none();
+  RunRecordResult get runRecords => _runRecords;
+
+  /// Koşu başlarken okunan önceki rekorlar; sonuç paneli kıyas için gösterir.
+  int _bestComboToBeat = 0;
+  int _bestStreakToBeat = 0;
+  int _maxStationsToBeat = 0;
+
+  int get bestComboToBeat => _bestComboToBeat;
+  int get bestStreakToBeat => _bestStreakToBeat;
+  int get maxStationsToBeat => _maxStationsToBeat;
+
+  void _loadRunRecords() {
+    final target = store;
+    if (target == null) return;
+    final origin = journey.origin.id;
+    final destination = journey.destination.id;
+    _bestComboToBeat = target.bestComboForRoute(
+      gameId: gameId,
+      originId: origin,
+      destinationId: destination,
+    );
+    _bestStreakToBeat = target.bestStreakForRoute(
+      gameId: gameId,
+      originId: origin,
+      destinationId: destination,
+    );
+    _maxStationsToBeat = target.maxStationsForRoute(
+      gameId: gameId,
+      originId: origin,
+      destinationId: destination,
+    );
+  }
 
   /// Hamle kalmadı ama son hamle geri alınabiliyor.
   ///
@@ -104,76 +170,25 @@ class GameController extends ChangeNotifier implements JourneyRun {
   bool _awaitingUndo = false;
   bool get awaitingUndo => _awaitingUndo;
 
-  /// Son durak geçişinden beri line temizlendi mi? Durak bonusunun koşulu.
-  bool _clearedSinceLastStation = false;
-
-  /// [_undoSnapshot] alındığı andaki [_clearedSinceLastStation] değeri.
+  /// [_undoSnapshot] alındığı andaki durak bonusu hakkı.
   ///
   /// Geri alınan bir temizlik durak bonusunu hak etmiş saymamalı; yoksa
-  /// oyuncu satırı temizleyip geri alarak bedava +25 kasabiliyor.
-  bool _undoClearedSinceLastStation = false;
+  /// oyuncu satırı temizleyip geri alarak bedava bonus kasabiliyor.
+  bool _undoStationProgress = false;
 
-  /// Kazanılan son durak bonusu ve onu tetikleyen sayaç. UI, sayaç değişince
-  /// kısa bir bildirim gösterir.
-  @override
-  int lastStationBonus = 0;
-  @override
-  int stationBonusPulse = 0;
+  /// Son hamlenin kazandırdığı puan ve süre; geri alma bunları geri verir.
+  int _undoScore = 0;
+  int _undoJourneySeconds = 0;
 
-  /// Durakta boşalan satır ve hücrelerin boşalmadan önceki renkleri.
-  ///
-  /// UI bunu yerleştirme temizliğiyle aynı patlama efektinde kullanır:
-  /// oyuncu için "satır temizlendi" olayı tektir, sebebi ister hamlesi
-  /// ister durak olsun.
-  List<int> lastStationClearedRows = const <int>[];
-  Map<int, int> lastStationClearedCells = const <int, int>{};
-  int stationClearPulse = 0;
+  /// Durakta boşalan satır bilgisi yok: durakta tahtaya dokunulmuyor.
 
   GameSession get session => _session;
 
-  // --- JourneyRun sözleşmesi ---
-  //
-  // Ortak yolculuk kabuğu ([JourneyScaffold]) yalnızca bu üyeleri görür;
-  // board, tepsi ve combo gibi oyuna özgü şeyleri bilmez.
-  @override
-  int get score => _session.score;
-  @override
-  bool get recordBeaten => _session.recordBeaten;
-  @override
-  bool get isFirstRun => _session.isFirstRun;
-  @override
-  double get progress => _session.progress;
-  @override
-  double get recordProgress => _session.recordProgress;
-  @override
-  int get remainingSeconds => _session.remainingSeconds;
-
-  @override
-  bool get isSprint => _session.isSprint;
-
-  /// Sprint **bu anda** başladıysa artan sayaç; UI bir kez şerit gösterir.
-  @override
-  int sprintPulse = 0;
-  bool _sprintAnnounced = false;
-
-  void _announceSprintIfStarted() {
-    if (_sprintAnnounced || !_session.isSprint) return;
-    _sprintAnnounced = true;
-    sprintPulse++;
-  }
-
-  @override
-  Journey get journey => _session.journey;
   Board get board => _session.board;
   List<BlockPiece?> get tray => _session.tray;
-  @override
-  GameStatus get status => _session.status;
-  @override
-  bool get isNewBest => _isNewBest;
+
   bool get canUndo =>
-      _undoSnapshot != null &&
-      _session.undoLeft > 0 &&
-      _session.status == GameStatus.playing;
+      _undoSnapshot != null && _session.undoLeft > 0 && status.isActive;
 
   GameSession _createSession(Journey journey) {
     final profile = journey.difficulty;
@@ -182,82 +197,47 @@ class GameController extends ChangeNotifier implements JourneyRun {
       journey: journey,
       board: board,
       tray: _generator.generateTray(board, profile),
-      recordToBeat: recordToBeat,
     );
   }
 
-  // --- Yaşam döngüsü ---
+  // --- Motor kancaları ---
 
   @override
-  void start() {
-    if (_session.status == GameStatus.playing) return;
-    _session = _session.copyWith(status: GameStatus.playing);
-    _startTimer();
-    notifyListeners();
-  }
-
-  @override
-  void pause() {
-    if (_session.status != GameStatus.playing) return;
-    _stopTimer();
-    _session = _session.copyWith(status: GameStatus.paused);
+  void onRestart() {
+    _undoSnapshot = null;
+    _awaitingUndo = false;
+    _undoScore = 0;
+    _undoJourneySeconds = 0;
+    _undoStationProgress = false;
+    _runRecords = const RunRecordResult.none();
+    _session = _createSession(journey);
+    _loadRunRecords();
     _persistSnapshot();
-    notifyListeners();
   }
 
   @override
-  void resume() {
-    if (_session.status != GameStatus.paused) return;
-    _session = _session.copyWith(status: GameStatus.playing);
+  void onPause() => _persistSnapshot();
 
+  @override
+  void onResume() {
     // Geri alma teklifi açıkken duraklatıldıysa sayaç yine durur.
     if (_awaitingUndo) {
-      notifyListeners();
+      holdClock();
       return;
     }
 
     // Kayıttan dönen oyunun tahtası kilitli olabilir: teklif açıkken uygulama
     // kapandıysa geri alma kaydı diske yazılmadığı için hamle de yoktur.
-    if (!hasAnyLegalMove(_session.board, _session.tray)) {
-      _finish(GameStatus.gameOver);
-      return;
-    }
-
-    _startTimer();
-    notifyListeners();
+    if (!hasAnyLegalMove(_session.board, _session.tray)) endGame();
   }
 
-  /// Aynı rotayla yeni oyun.
   @override
-  void restart() {
-    _stopTimer();
-    _undoSnapshot = null;
-    _isNewBest = false;
-    _scoreSaved = false;
-    _awaitingUndo = false;
-    _clearedSinceLastStation = false;
-    lastStationBonus = 0;
-    sprintPulse = 0;
-    _sprintAnnounced = false;
-    _refreshRecord();
-    _session = _createSession(_session.journey);
-    _persistSnapshot();
-    start();
-  }
+  void onAbandon() => _persistSnapshot();
 
-  /// Geçilecek rekoru depodan tazeler.
-  ///
-  /// Rekor ekran açılırken bir kez okunur. Oyuncu sonuç panelinden "tekrar
-  /// oyna" derse ekran yeniden kurulmaz; tazelenmezse ikinci oyun, az önce
-  /// kırılmış olan **eski** rekoru hedefler ve ilk hamlede "rekoru geçtin"
-  /// bildirimi çıkar.
-  void _refreshRecord() {
-    final journey = _session.journey;
-    final stored = store?.bestScoreForRoute(
-      journey.origin.id,
-      journey.destination.id,
-    );
-    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
+  @override
+  void onFinish(GameStatus status) {
+    unawaited(store?.clearSavedGame() ?? Future<void>.value());
+    unawaited(_persistRunRecords());
   }
 
   /// Kullanıcı rotadan çıktığında (ör. geri tuşu).
@@ -266,37 +246,23 @@ class GameController extends ChangeNotifier implements JourneyRun {
   /// edebilir.
   @override
   void abandon() {
-    _stopTimer();
-    if (_session.status.isFinished) return;
     // Teklif açıkken çıkmak, geri almayı reddetmek demek.
-    if (_awaitingUndo) {
+    if (_awaitingUndo && !status.isFinished) {
       acceptGameOver();
       return;
     }
-    _persistSnapshot();
-    _session = _session.copyWith(status: GameStatus.abandoned);
-    notifyListeners();
+    super.abandon();
   }
 
   /// Yarım kalan oyunu diske yazar. Oyun bittiyse kaydı siler.
   void _persistSnapshot() {
     final target = store;
     if (target == null) return;
-    if (_session.status.isFinished) {
+    if (status.isFinished) {
       unawaited(target.clearSavedGame());
       return;
     }
-    unawaited(target.saveGame(GameSnapshot.encode(_session)));
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(tick, (_) => _onTick());
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
+    unawaited(target.saveGame(GameSnapshot.encode(this)));
   }
 
   /// Testte saniyeleri elle ilerletmek için — gerçek zamanlayıcıyı beklemeden
@@ -304,98 +270,21 @@ class GameController extends ChangeNotifier implements JourneyRun {
   @visibleForTesting
   void debugAdvanceSeconds(int seconds) {
     for (var i = 0; i < seconds; i++) {
-      _onTick();
+      if (_awaitingUndo) return;
+      advance(1);
     }
-  }
-
-  void _onTick() {
-    if (_session.status != GameStatus.playing || _awaitingUndo) return;
-    _session = _session.copyWith(elapsedSeconds: _session.elapsedSeconds + 1);
-
-    _announceSprintIfStarted();
-    _awardStationBonusIfPassed();
-
-    if (_session.remainingSeconds <= 0) {
-      _finish(GameStatus.arrived);
-      return;
-    }
-    notifyListeners();
-  }
-
-  /// Tren yeni bir durağı geçtiyse, o duraktan beri line temizlendiyse bonus.
-  ///
-  /// İlerleme çubuğunu dekorasyon olmaktan çıkarır: her durak arası küçük
-  /// bir hedef olur.
-  void _awardStationBonusIfPassed() {
-    final stops = _session.journey.stopCount;
-    if (stops <= 0) return;
-
-    final passed = (_session.progress * stops).floor();
-    if (passed <= _session.stationsPassed) return;
-
-    final earned = _clearedSinceLastStation;
-    _clearedSinceLastStation = false;
-    _session = _session.copyWith(
-      stationsPassed: passed,
-      score: earned ? _session.score + ScoreRules.stationBonus : null,
-    );
-
-    if (earned) {
-      lastStationBonus = ScoreRules.stationBonus;
-      stationBonusPulse++;
-      _checkRecord();
-    }
-
-    // Geri alma durağın öncesine dönemez. Dönebilseydi `stationsPassed` de
-    // eski değerine döner ve durak bir sonraki saniyede **yeniden** işlenirdi:
-    // geri alınmış tahtadaki kalabalık satırlar bedavaya boşalır, parça da
-    // tepsiye geri gelirdi. Boşalan satır olsun olmasın aynı kural geçerli.
-    _undoSnapshot = null;
-
-    _emptyCrowdedRowsAtStation();
-  }
-
-  /// Durağa varınca **kalabalık vagonlar boşalır**: en az yarısı dolu olan
-  /// satırlar temizlenir.
-  ///
-  /// Ölçümle konuldu, süs değil. `balance_report_test` 150 oyun simüle
-  /// ediyor ve tablo şunu söylüyordu: 9 dakikanın üstündeki her yolculukta
-  /// varış oranı %0-3. Yani oyuncu tahtayı dolduruyor, oyun "hamle kalmadı"
-  /// ile bitiyor ve **ürünün ana vaadi olan varış sahnesi gerçek bir işe
-  /// gidiş yolculuğunda hiç oynamıyordu.** Aynı ölçümle uzun yolculukta
-  /// varış %3'ten %35-48'e çıkıyor, kısa yolculuk ise değişmiyor.
-  ///
-  /// Zorluk ayarlarına dokunulmadı (engel oranı, parça havuzu, undo hakkı
-  /// aynı). Skora da dokunmaz: boşalan satır puan getirmez, yalnız yer
-  /// açar — puanı hâlâ oyuncunun kendi temizlediği satırlar kazandırır.
-  void _emptyCrowdedRowsAtStation() {
-    final rows = crowdedRows(_session.board);
-    if (rows.isEmpty) return;
-
-    lastStationClearedRows = rows;
-    lastStationClearedCells = _cellValuesOf(
-      _session.board,
-      rows: rows,
-      columns: const <int>[],
-    );
-    stationClearPulse++;
-
-    _session = _session.copyWith(board: clearLines(_session.board, rows: rows));
-  }
-
-  /// Rekor bu anda geçildiyse işaretler ve geçildiğini döner.
-  bool _checkRecord() {
-    if (_session.recordBeaten || _session.isFirstRun) return false;
-    if (_session.score <= _session.recordToBeat) return false;
-    _session = _session.copyWith(recordBeaten: true);
-    return true;
   }
 
   // --- Oyun hamlesi ---
 
   /// [trayIndex] parçasını board üzerinde ([row],[col]) köşesine koymayı dener.
+  ///
+  /// Sıra bilinçlidir: önce tahta değişir, sonra combo ve seri ilerler,
+  /// sonra puan **o yeni değerlerle** hesaplanır, en sonda yolculuk kazancı
+  /// süreye eklenir. Kazanç süreyi ilerlettiği için durak geçişini ve hatta
+  /// varışı tetikleyebilir; bu yüzden en sonda durur.
   PlaceOutcome place(int trayIndex, int row, int col) {
-    if (_session.status != GameStatus.playing) {
+    if (!status.isActive || _awaitingUndo) {
       return const PlaceOutcome.rejected();
     }
     if (trayIndex < 0 || trayIndex >= _session.tray.length) {
@@ -409,18 +298,30 @@ class GameController extends ChangeNotifier implements JourneyRun {
     }
 
     _undoSnapshot = _session;
-    _undoClearedSinceLastStation = _clearedSinceLastStation;
+    _undoStationProgress = hasStationProgress;
+    // Bu hamlenin kendi kazancı; önceki hamleninki taşınmamalı.
+    _undoScore = 0;
+    _undoJourneySeconds = 0;
 
     var board = placePiece(_session.board, piece, row, col);
     final completedRows = findCompletedRows(board);
     final completedColumns = findCompletedColumns(board);
+    final didClear = completedRows.isNotEmpty || completedColumns.isNotEmpty;
 
+    // Sıra takibi burada ilerler; skorlama saf hesaplayıcı kalır.
+    final combo = _session.comboState.register(didClear: didClear);
+    final streak = _session.streakState.register(didClear: didClear);
+
+    // Sprint motordan okunur ve hamlenin **yapıldığı andaki** ilerlemeye
+    // göre belirlenir; hamlenin kendi kazandırdığı saniye sprinti açmış
+    // sayılmaz. Çarpan da motorun [addScore] içinde uygulanır, burada
+    // ikinci kez uygulanmamalı.
     final score = calculateScore(
       placedCells: piece.size,
       clearedRows: completedRows.length,
       clearedColumns: completedColumns.length,
-      currentCombo: _session.combo,
-      isSprint: _session.isSprint,
+      combo: combo.value,
+      streak: streak.value,
     );
 
     final clearedCellValues = _cellValuesOf(
@@ -430,6 +331,12 @@ class GameController extends ChangeNotifier implements JourneyRun {
     );
     board = clearLines(board, rows: completedRows, columns: completedColumns);
 
+    final journeySeconds = JourneyRules.secondsFor(
+      tier: ClearTier.of(score.linesCleared),
+      combo: combo.value,
+      streak: streak.value,
+    );
+
     final tray = List<BlockPiece?>.of(_session.tray);
     tray[trayIndex] = null;
 
@@ -437,43 +344,103 @@ class GameController extends ChangeNotifier implements JourneyRun {
     if (tray.every((piece) => piece == null)) {
       tray
         ..clear()
-        ..addAll(_generator.generateTray(board, _session.journey.difficulty));
+        ..addAll(_generator.generateTray(board, journey.difficulty));
       refilled = true;
     }
 
-    if (score.linesCleared > 0) _clearedSinceLastStation = true;
+    if (didClear) markStationProgress();
 
-    final newScore = _session.score + score.points;
     _session = _session.copyWith(
       board: board,
       tray: tray,
-      score: newScore,
-      combo: score.combo,
-      bestCombo: score.combo > _session.bestCombo
-          ? score.combo
-          : _session.bestCombo,
+      comboState: combo,
+      streakState: streak,
       clearedRows: _session.clearedRows + completedRows.length,
       clearedColumns: _session.clearedColumns + completedColumns.length,
       placedPieces: _session.placedPieces + 1,
     );
 
-    final beatRecord = _checkRecord();
+    final scoreBefore = this.score;
+    final beatRecord = addScore(score.points);
+    _undoScore = this.score - scoreBefore;
+
+    final result = didClear
+        ? ClearResult(
+            clearedRows: completedRows,
+            clearedColumns: completedColumns,
+            clearedCellValues: clearedCellValues,
+            comboIndex: combo.value,
+            streakIndex: streak.value,
+            scoreAwarded: _undoScore,
+            journeySecondsAwarded: journeySeconds,
+          )
+        : ClearResult.none(
+            comboIndex: combo.value,
+            streakIndex: streak.value,
+            scoreAwarded: _undoScore,
+          );
 
     final outcome = PlaceOutcome(
       accepted: true,
-      gainedPoints: score.points,
-      clearedRows: completedRows,
-      clearedColumns: completedColumns,
-      combo: score.combo,
+      result: result,
       trayRefilled: refilled,
       beatRecord: beatRecord,
-      clearedCellValues: clearedCellValues,
     );
+
+    // İyi oyun trenin hızını artırır. Varışı tetikleyebileceği için
+    // bitiş koşullarından önce uygulanır.
+    _applyJourneyBonus(journeySeconds);
+    _logMove(result);
+
+    if (status.isFinished) {
+      notifyListeners();
+      return outcome;
+    }
 
     _evaluateEndConditions();
     _persistSnapshot();
     notifyListeners();
     return outcome;
+  }
+
+  /// Hamlenin kazandırdığı saniyeyi yolculuğa ekler.
+  ///
+  /// Geri alma bu saniyeyi de geri verir ([undo]); yoksa oyuncu temizleyip
+  /// geri alarak bedava zaman kasardı.
+  void _applyJourneyBonus(int seconds) {
+    if (seconds <= 0) return;
+    _undoJourneySeconds = seconds;
+    advance(seconds.toDouble());
+  }
+
+  /// Yolculuk ilerledikçe durak geçişini izler.
+  ///
+  /// Geri alma durağın öncesine dönemez: dönebilseydi geçilen durak bir
+  /// sonraki saniyede **yeniden** işlenir, bonus ikinci kez verilirdi.
+  /// Sayaç da, hamlenin kazandırdığı saniye de aynı yoldan geçtiği için
+  /// kontrol tek yerde duruyor.
+  @override
+  void advance(double dt) {
+    final stationsBefore = stationsPassed;
+    super.advance(dt);
+    if (stationsPassed > stationsBefore) _undoSnapshot = null;
+  }
+
+  /// Dengeleme günlüğü — yalnızca debug derlemede.
+  void _logMove(ClearResult result) {
+    if (!kDebugMode) return;
+    debugPrint(
+      'HAMLE #${_session.placedPieces} '
+      '| line ${result.totalLines} (${result.tier.name})'
+      '${result.simultaneousClear ? " satır+sütun" : ""} '
+      '| combo ${result.comboIndex} '
+      '| streak ${result.streakIndex} '
+      '| skor +${result.scoreAwarded} ($score) '
+      '| süre +${result.journeySecondsAwarded} sn '
+      '| ${journey.origin.name} -> ${journey.destination.name} '
+      '| ${elapsedSeconds.floor()}/${journey.estimatedSeconds} sn '
+      '| durak $stationsPassed/${journey.stopCount}',
+    );
   }
 
   /// Temizlenecek hücrelerin renk değerleri; kesişimler bir kez yazılır.
@@ -497,21 +464,31 @@ class GameController extends ChangeNotifier implements JourneyRun {
     return values;
   }
 
-  /// Son hamleyi geri alır. Süre geri sarılmaz — sadece board/skor.
+  /// Son hamleyi geri alır.
+  ///
+  /// Tahta, tepsi, combo ve seri eski hâline döner; motor tarafında da
+  /// hamlenin kazandırdığı puan ve süre geri verilir. Saat geri sarılmaz —
+  /// yolculuk gerçek zamanda ilerliyor.
   bool undo() {
     if (!canUndo) return false;
     final snapshot = _undoSnapshot!;
     _undoSnapshot = null;
+
     // Geri alınan hamle bir line temizlediyse durak bonusu hakkı da geri gider.
-    _clearedSinceLastStation = _undoClearedSinceLastStation;
-    _session = snapshot.copyWith(
-      elapsedSeconds: _session.elapsedSeconds,
-      undoLeft: snapshot.undoLeft - 1,
-      status: GameStatus.playing,
+    revokeStationProgress(_undoStationProgress);
+
+    restoreProgress(
+      score: score - _undoScore,
+      elapsedSeconds: elapsedSeconds - _undoJourneySeconds,
     );
+    _undoScore = 0;
+    _undoJourneySeconds = 0;
+
+    _session = snapshot.copyWith(undoLeft: snapshot.undoLeft - 1);
+
     if (_awaitingUndo) {
       _awaitingUndo = false;
-      _startTimer();
+      releaseClock();
     }
     notifyListeners();
     return true;
@@ -522,7 +499,7 @@ class GameController extends ChangeNotifier implements JourneyRun {
     if (!_awaitingUndo) return;
     _awaitingUndo = false;
     _undoSnapshot = null;
-    _finish(GameStatus.gameOver);
+    endGame();
   }
 
   void _evaluateEndConditions() {
@@ -532,35 +509,45 @@ class GameController extends ChangeNotifier implements JourneyRun {
     // Hak varsa oyun bitmez, son hamleyi geri alma şansı verilir.
     if (canUndo) {
       _awaitingUndo = true;
-      _stopTimer();
+      holdClock();
       return;
     }
-    _finish(GameStatus.gameOver);
+    endGame();
   }
 
-  void _finish(GameStatus status) {
-    _stopTimer();
-    _session = _session.copyWith(status: status);
-    unawaited(store?.clearSavedGame() ?? Future<void>.value());
-    notifyListeners();
-    unawaited(_persistScore());
-  }
-
-  Future<void> _persistScore() async {
+  Future<void> _persistRunRecords() async {
     final target = store;
-    if (target == null || _scoreSaved) return;
-    _isNewBest = await target.submitRouteScore(
-      originId: _session.journey.origin.id,
-      destinationId: _session.journey.destination.id,
-      score: _session.score,
+    if (target == null) return;
+    // Combo, seri ve durak rekorları skordan bağımsız değerlendirilir.
+    _runRecords = await target.submitRunRecords(
+      gameId: gameId,
+      originId: journey.origin.id,
+      destinationId: journey.destination.id,
+      bestCombo: _session.bestCombo,
+      bestStreak: _session.bestStreak,
+      stationsPassed: stationsPassed,
     );
-    _scoreSaved = true;
     notifyListeners();
   }
+}
 
-  @override
-  void dispose() {
-    _stopTimer();
-    super.dispose();
-  }
+/// Kayıttan dönen oyunun **motor** durumu.
+///
+/// Tahta durumu [GameSession] içinde, skor/süre/rekor burada: ikisi ayrı
+/// katmanda yaşıyor, kayıt da ikisini ayrı taşıyor.
+@immutable
+class ResumedProgress {
+  const ResumedProgress({
+    required this.score,
+    required this.elapsedSeconds,
+    required this.stationsPassed,
+    required this.recordToBeat,
+    required this.recordBeaten,
+  });
+
+  final int score;
+  final int elapsedSeconds;
+  final int stationsPassed;
+  final int recordToBeat;
+  final bool recordBeaten;
 }

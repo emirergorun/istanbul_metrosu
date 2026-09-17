@@ -8,10 +8,17 @@ import '../../../core/widgets/metro_train.dart';
 ///
 /// Sıra:
 /// 1. Ekran kararır, oyun kilitlenir.
-/// 2. Tren sağdan girer ve frenleyerek durur.
-/// 3. Peron tabelası belirir.
-/// 4. Kapılar yanlara açılır, içerisi görünür.
-/// 5. Sonuç kartı kapı aralığından büyüyerek çıkar.
+/// 2. Tren sağdan girer ve frenleyerek durur. **Kapı trenin üstündedir**,
+///    onunla birlikte gelir.
+/// 3. Tren durur, kısa bir bekleme olur.
+/// 4. Peron tabelası belirir.
+/// 5. Kapılar yanlara açılır, içerisi görünür.
+/// 6. Sonuç kartı kapı aralığından büyüyerek çıkar.
+///
+/// Kapı bir ara ekranın ortasında sabit duruyordu ve yalnızca saydamlığı
+/// trenle birlikte artıyordu: tren daha yolun yarısındayken kapı havada
+/// belirmiş oluyordu. Artık kapı da trenin taşıdığı öteleme ile hareket
+/// ediyor — önce metro gelir, sonra kapı açılır.
 ///
 /// Her yere dokunulunca atlanır — yirminci yolculukta kimse animasyon
 /// izlemek istemez.
@@ -35,12 +42,32 @@ class ArrivalSequence extends StatefulWidget {
   /// Sahnenin toplam süresi. Yavaşlatılmış hâli görsel kontrol için kullanılır.
   final Duration duration;
 
+  /// Kapı katmanının test anahtarı.
+  ///
+  /// Kapının trenle birlikte hareket ettiğini doğrulamak için gerekli;
+  /// ikisi ayrılırsa sahne yine "kapı havada belirdi" hâline döner.
+  static const Key doorsKey = Key('arrival-doors');
+
+  /// Trenin test anahtarı.
+  static const Key trainKey = Key('arrival-train');
+
+  /// Kapı kanatlarının test anahtarları; açılma aralığı bunlardan ölçülür.
+  static const Key leftDoorKey = Key('arrival-door-left');
+  static const Key rightDoorKey = Key('arrival-door-right');
+
   /// Yolculuğun tek doruk noktası; acele ettirilmemeli.
   ///
   /// 1600 ms'de tren "gelmek" yerine kayıp geçiyordu ve sonuç kartı bir anda
   /// bitmiş oluyordu. Trenin frenlemesi ve kartın açılması artık gözle takip
   /// edilebilecek kadar uzun. Sıkılan oyuncu ekrana dokunup atlayabilir.
-  static const Duration defaultDuration = Duration(milliseconds: 2800);
+  ///
+  /// **Süre `arrival.wav`'e göre seçildi.** Ses 4,03 saniye ve enerjisi
+  /// düz değil: 0,0–0,5 sn sessize yakın (tren uzakta), 0,5–1,6 yükseliyor
+  /// (yaklaşıyor), 1,6–2,3 en yüksek (varış ve kapı), 3,0'dan sonra
+  /// sönüyor. Sahne bu eğriye oturtuldu — tren ses yükselişini bitirdiği
+  /// anda duruyor, kapı sesin en gür olduğu aralıkta açılıyor, sonuç kartı
+  /// ses sönerken tamamlanıyor.
+  static const Duration defaultDuration = Duration(milliseconds: 3200);
 
   @override
   State<ArrivalSequence> createState() => _ArrivalSequenceState();
@@ -74,19 +101,32 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
 
   // Zaman çizelgesi (0..1 aralığında dilimler).
   //
-  // Tren dilimi toplamın yarısından uzun: `easeOutCubic` ile uzun bir fren
-  // eğrisi çiziyor, "gelip duruyor" hissi buradan geliyor. Sonuç kartı da
-  // sona doğru geniş bir dilime yayıldı; aniden belirmiyor.
-  late final Animation<double> _scrim = _curve(0.0, 0.10, Curves.easeOut);
-  late final Animation<double> _train = _curve(0.0, 0.58, Curves.easeOutCubic);
-  late final Animation<double> _sign = _curve(0.56, 0.70, Curves.easeOut);
+  // Dilimler `arrival.wav`'in enerji eğrisiyle hizalı (3200 ms üzerinden):
+  //
+  //   tren   0,00 - 1,60 sn   sesin yaklaşma yükselişi de 1,6'da bitiyor
+  //   bekle  1,60 - 1,79 sn   tren durdu, kapı henüz açılmadı
+  //   tabela 1,66 - 2,05 sn
+  //   kapı   1,79 - 2,50 sn   sesin en gür aralığı 1,6 - 2,3
+  //   kart   2,18 - 3,20 sn   ses 3,0'dan sonra sönüyor
+  //
+  // Tren dilimi `easeOutCubic` ile uzun bir fren eğrisi çiziyor; "gelip
+  // duruyor" hissi buradan geliyor. Sonuç kartı da geniş bir dilime
+  // yayıldı, aniden belirmiyor.
+  late final Animation<double> _scrim = _curve(0.0, 0.09, Curves.easeOut);
+  late final Animation<double> _train = _curve(0.0, 0.50, Curves.easeOutCubic);
+  late final Animation<double> _sign = _curve(0.52, 0.64, Curves.easeOut);
+
+  /// Kapılar **tren durduktan sonra** açılmaya başlar.
+  ///
+  /// Aralığın başı [_train] bittikten sonra: kapının açılması varışın
+  /// sonucu, eşlikçisi değil.
   late final Animation<double> _doors = _curve(
-    0.66,
-    0.88,
+    0.56,
+    0.78,
     Curves.easeInOutCubic,
   );
   late final Animation<double> _content = _curve(
-    0.74,
+    0.68,
     1.0,
     Curves.easeOutCubic,
   );
@@ -137,6 +177,13 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
         return AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
+            // Tren ve kapı **aynı** ötelemeyi taşır: kapı trenin üstünde,
+            // ayrı bir katman değil.
+            final arrivalShift = Offset(
+              (1 - _train.value) * (size.width + trainWidth / 2),
+              0,
+            );
+
             return Stack(
               fit: StackFit.expand,
               children: <Widget>[
@@ -149,11 +196,9 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
                   top: bandTop,
                   left: (size.width - trainWidth) / 2,
                   child: Transform.translate(
-                    offset: Offset(
-                      (1 - _train.value) * (size.width + trainWidth / 2),
-                      0,
-                    ),
+                    offset: arrivalShift,
                     child: MetroTrain(
+                      key: ArrivalSequence.trainKey,
                       color: widget.accent,
                       height: bandHeight,
                       wagons: _wagons,
@@ -162,15 +207,16 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
                   ),
                 ),
 
-                // Kapı bölgesi: önce kapalı, sonra yanlara açılır.
+                // Kapı bölgesi: trenle birlikte gelir, tren durunca açılır.
                 Positioned(
                   top: bandTop,
                   left: 0,
                   right: 0,
                   height: bandHeight,
-                  child: Opacity(
-                    opacity: _train.value,
+                  child: Transform.translate(
+                    offset: arrivalShift,
                     child: _Doors(
+                      key: ArrivalSequence.doorsKey,
                       accent: widget.accent,
                       width: doorWidth,
                       height: bandHeight,
@@ -227,6 +273,7 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
 /// Trenin ortasındaki çift kanatlı kapı.
 class _Doors extends StatelessWidget {
   const _Doors({
+    super.key,
     required this.accent,
     required this.width,
     required this.height,
@@ -271,6 +318,9 @@ class _Doors extends StatelessWidget {
                       ? Alignment.centerLeft
                       : Alignment.centerRight,
                   child: _DoorPanel(
+                    key: isLeft
+                        ? ArrivalSequence.leftDoorKey
+                        : ArrivalSequence.rightDoorKey,
                     accent: accent,
                     width: half,
                     height: doorHeight,
@@ -287,6 +337,7 @@ class _Doors extends StatelessWidget {
 
 class _DoorPanel extends StatelessWidget {
   const _DoorPanel({
+    super.key,
     required this.accent,
     required this.width,
     required this.height,

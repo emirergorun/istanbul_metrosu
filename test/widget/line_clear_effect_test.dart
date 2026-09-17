@@ -6,6 +6,7 @@ import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/constants/app_constants.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/clear_result.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/game_screen.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/widgets/board_view.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
@@ -85,6 +86,37 @@ void main() {
     );
   });
 
+  testWidgets('kızışmış combo etiketiyle çizilir', (tester) async {
+    await paintWholeFlash(
+      tester,
+      BoardFlash(
+        rows: const <int>[3],
+        columns: const <int>[5],
+        cellValues: cellValues,
+        originRow: 3,
+        originCol: 5.5,
+        points: 940,
+        // En üst kızışma eşiğini aşar: "DURDURULAMAZ" çizilir.
+        combo: kComboHeatLabels.keys.last + 2,
+      ),
+    );
+  });
+
+  testWidgets('mega temizlik kademe etiketiyle çizilir', (tester) async {
+    await paintWholeFlash(
+      tester,
+      BoardFlash(
+        rows: const <int>[0, 3, 7],
+        columns: const <int>[5],
+        cellValues: cellValues,
+        originRow: 3,
+        originCol: 5.5,
+        points: 520,
+        combo: 1,
+      ),
+    );
+  });
+
   testWidgets('durakta boşalan satır (başlangıç noktası yok) çizilir', (
     tester,
   ) async {
@@ -110,6 +142,30 @@ void main() {
         reduceMotion: true,
       ),
     );
+  });
+
+  group('kızışma etiketi', () {
+    test('eşiğin altında etiket yok', () {
+      expect(comboHeatLabel(kComboHeatLabels.keys.first - 1), isNull);
+    });
+
+    test('eşikte ve üstünde o kademenin etiketi', () {
+      final first = kComboHeatLabels.entries.first;
+      expect(comboHeatLabel(first.key), first.value);
+      expect(comboHeatLabel(first.key + 1), first.value);
+    });
+
+    test('yüksek combo en üst kademeyi alır', () {
+      final last = kComboHeatLabels.entries.last;
+      expect(comboHeatLabel(last.key + 50), last.value);
+    });
+
+    test('eşikler artan sırada', () {
+      final keys = kComboHeatLabels.keys.toList();
+      for (var i = 1; i < keys.length; i++) {
+        expect(keys[i], greaterThan(keys[i - 1]));
+      }
+    });
   });
 
   testWidgets('tekrar oynanan yolculukta varış sesi yine çalar', (

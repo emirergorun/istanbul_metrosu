@@ -13,7 +13,7 @@ features/
                                  ilerleme çubuğu — hepsi oyundan bağımsız
   games/
     catalog/        oyun listesi + seçim ekranı
-    blocks/         Blok Metro
+    blocks/         Blok Metro (artık o da motoru kullanıyor)
     metro_merge/    Hat Birleştir
     rail_flight/    Ray Uçuşu
     merge_drop/     Hat Düşür

@@ -18,6 +18,19 @@ class LocalStore extends ChangeNotifier {
   /// ve ayarlar ekranı bu kayıtları çizemeyip sessizce atlıyordu.
   static const String _gameRouteSeparator = '|';
   static const String _overallBestKey = 'best_score_overall';
+
+  // --- Koşu rekorları ---
+  //
+  // Skor "ne kadar iyi oynadım"ı ölçüyor; bunlar **nasıl** oynadığımı.
+  // Aynı skora iki farklı yoldan varılabilir: uzun bir seriyle ya da çok
+  // sayıda küçük temizlikle. Oyuncunun kendi tarzını görebilmesi için üçü
+  // ayrı tutulur.
+  //
+  // Skor gibi rota bazında saklanırlar: iki duraklık bir yolculukta kurulan
+  // combo ile uçtan uca bir yolculuğunki kıyaslanamaz.
+  static const String _bestComboPrefix = 'best_combo_';
+  static const String _bestStreakPrefix = 'best_streak_';
+  static const String _bestStationsPrefix = 'best_stations_';
   static const String _hapticsKey = 'haptics_enabled';
   static const String _soundKey = 'sound_enabled';
   static const String _musicKey = 'music_enabled';
@@ -96,6 +109,78 @@ class LocalStore extends ChangeNotifier {
   }
 
   int get overallBest => _prefs?.getInt(_overallBestKey) ?? 0;
+
+  String _runKey(
+    String prefix,
+    String gameId,
+    String originId,
+    String destinationId,
+  ) =>
+      '$prefix$gameId$_gameRouteSeparator'
+      '${routeKey(originId, destinationId)}';
+
+  /// Bu rotada bu oyunda kurulmuş en iyi combo.
+  int bestComboForRoute({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+  }) =>
+      _prefs?.getInt(
+        _runKey(_bestComboPrefix, gameId, originId, destinationId),
+      ) ??
+      0;
+
+  /// Bu rotada bu oyunda kurulmuş en iyi seri.
+  int bestStreakForRoute({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+  }) =>
+      _prefs?.getInt(
+        _runKey(_bestStreakPrefix, gameId, originId, destinationId),
+      ) ??
+      0;
+
+  /// Bu rotada tek koşuda geçilen en çok durak.
+  int maxStationsForRoute({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+  }) =>
+      _prefs?.getInt(
+        _runKey(_bestStationsPrefix, gameId, originId, destinationId),
+      ) ??
+      0;
+
+  /// Bir koşunun combo / seri / durak rekorlarını kaydeder.
+  ///
+  /// Her biri bağımsız değerlendirilir: oyuncu düşük skorlu bir koşuda bile
+  /// en iyi serisini kurmuş olabilir. Hangilerinin kırıldığı döner.
+  Future<RunRecordResult> submitRunRecords({
+    required String gameId,
+    required String originId,
+    required String destinationId,
+    required int bestCombo,
+    required int bestStreak,
+    required int stationsPassed,
+  }) async {
+    Future<bool> put(String prefix, int value) async {
+      if (value <= 0) return false;
+      final key = _runKey(prefix, gameId, originId, destinationId);
+      final previous = _prefs?.getInt(key) ?? 0;
+      if (value <= previous) return false;
+      await _prefs?.setInt(key, value);
+      return true;
+    }
+
+    final result = RunRecordResult(
+      combo: await put(_bestComboPrefix, bestCombo),
+      streak: await put(_bestStreakPrefix, bestStreak),
+      stations: await put(_bestStationsPrefix, stationsPassed),
+    );
+    if (result.any) notifyListeners();
+    return result;
+  }
 
   /// Skoru rotaya kaydeder. Yeni rekorsa `true` döner.
   Future<bool> submitRouteScore({
@@ -211,7 +296,10 @@ class LocalStore extends ChangeNotifier {
         .where(
           (k) =>
               k.startsWith(_bestScorePrefix) ||
-              k.startsWith(_bestGameScorePrefix),
+              k.startsWith(_bestGameScorePrefix) ||
+              k.startsWith(_bestComboPrefix) ||
+              k.startsWith(_bestStreakPrefix) ||
+              k.startsWith(_bestStationsPrefix),
         )
         .toList();
     for (final key in keys) {
@@ -261,6 +349,13 @@ class LocalStore extends ChangeNotifier {
       // okunur. Önce okunuyordu ve `getInt` içeride `as int?` yaptığı için
       // sayı olmayan ilk tercihte (titreşim, ses, yarım kalan oyun) ayarlar
       // ekranı açılır açılmaz çöküyordu.
+      // Koşu rekorları skor değildir; rota rekor listesine girmemeliler.
+      if (key.startsWith(_bestComboPrefix) ||
+          key.startsWith(_bestStreakPrefix) ||
+          key.startsWith(_bestStationsPrefix)) {
+        continue;
+      }
+
       if (key.startsWith(_bestGameScorePrefix)) {
         final score = prefs.getInt(key) ?? 0;
         final rest = key.substring(_bestGameScorePrefix.length);
@@ -293,6 +388,27 @@ class LocalStore extends ChangeNotifier {
     }
     return records;
   }
+}
+
+/// Bir koşuda hangi rekorların kırıldığı.
+@immutable
+class RunRecordResult {
+  const RunRecordResult({
+    required this.combo,
+    required this.streak,
+    required this.stations,
+  });
+
+  const RunRecordResult.none()
+    : combo = false,
+      streak = false,
+      stations = false;
+
+  final bool combo;
+  final bool streak;
+  final bool stations;
+
+  bool get any => combo || streak || stations;
 }
 
 /// Çözülmüş bir rekor kaydı.

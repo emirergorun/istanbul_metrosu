@@ -5,7 +5,6 @@ import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_snapshot.dart';
-import 'package:istanbul_metro_game/features/games/blocks/domain/game_state.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/game_screen.dart';
 import 'package:istanbul_metro_game/features/session/widgets/arrival_sequence.dart';
 import 'package:istanbul_metro_game/features/games/blocks/presentation/widgets/board_view.dart';
@@ -237,13 +236,8 @@ void main() {
         RouteService(metro),
       );
       expect(restored, isNotNull);
-      expect(restored!.score, greaterThan(0));
-      expect(restored.board.filledCount, greaterThan(0));
-      expect(
-        restored.status,
-        GameStatus.paused,
-        reason: 'kayıttan dönen oyun duraklatılmış başlamalı',
-      );
+      expect(restored!.progress.score, greaterThan(0));
+      expect(restored.session.board.filledCount, greaterThan(0));
 
       await disposeGame(tester);
     });

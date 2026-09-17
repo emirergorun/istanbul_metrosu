@@ -25,7 +25,16 @@ class OnboardingSheet extends StatefulWidget {
           title: 'Blokları yerleştir',
           body:
               'Gelen üç parçayı tahtaya sürükle. Dolan satır ve sütunlar '
-              'temizlenir, arka arkaya temizlik combo yapar.',
+              'temizlenir. Tahtaya sığacak parça kalmazsa oyun biter.',
+        ),
+        (
+          icon: Icons.bolt_rounded,
+          title: 'Combo ve seri',
+          body:
+              'Art arda temizlik COMBO yapar ve puanı katlar; temizlemeyen '
+              'iki hamleye kadar bozulmaz. Her üç parçada en az bir temizlik '
+              'de SERİ’yi büyütür. İyi oyun treni hızlandırır, daha erken '
+              'varırsın.',
         ),
         (
           icon: Icons.emoji_events_rounded,

@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/board_helpers.dart';
 import '../helpers/metro_fixture.dart';
+import '../helpers/saved_game_helpers.dart';
 
 void main() {
   final metro = MetroFixture.load();
@@ -42,7 +43,7 @@ void main() {
         PieceShapes.h2.withColor(2),
         PieceShapes.v2.withColor(3),
       ],
-    ).copyWith(undoLeft: undoLeft, status: GameStatus.paused);
+    ).copyWith(undoLeft: undoLeft);
 
     await tester.pumpWidget(
       AppScope(
@@ -52,7 +53,7 @@ void main() {
         routeService: routes,
         child: MaterialApp(
           theme: AppTheme.dark(),
-          home: GameScreen(journey: journey, resumeFrom: session),
+          home: GameScreen(journey: journey, resumeFrom: savedGameOf(session)),
         ),
       ),
     );

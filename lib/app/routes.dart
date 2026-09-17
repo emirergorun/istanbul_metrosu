@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/games/blocks/domain/game_state.dart';
+import '../features/games/blocks/application/game_snapshot.dart';
 import '../features/games/blocks/presentation/game_screen.dart';
 import '../features/games/lane_runner/application/lane_runner_controller.dart';
 import '../features/games/lane_runner/presentation/lane_runner_screen.dart';
@@ -29,7 +29,7 @@ class GameLaunch {
 
   final Journey journey;
   final String gameId;
-  final GameSession? resumeFrom;
+  final SavedGame? resumeFrom;
 }
 
 /// Uygulama rotaları.
@@ -108,7 +108,7 @@ class AppRoutes {
     BuildContext context,
     Journey journey, {
     String gameId = 'blocks',
-    GameSession? resumeFrom,
+    SavedGame? resumeFrom,
   }) {
     return Navigator.of(context).pushNamed<void>(
       game,
@@ -127,15 +127,15 @@ class AppRoutes {
   /// adının söylediği yere değil başlık ekranına dönüyordu.
   ///
   /// Dönen `Future`, oyun seçim ekranı da kapanınca tamamlanır.
-  static Future<void> resumeGame(BuildContext context, GameSession session) {
+  static Future<void> resumeGame(BuildContext context, SavedGame saved) {
     final navigator = Navigator.of(context);
     final gameSelectClosed = navigator.pushNamed<void>(
       gameSelect,
-      arguments: session.journey,
+      arguments: saved.session.journey,
     );
     navigator.pushNamed<void>(
       game,
-      arguments: GameLaunch(journey: session.journey, resumeFrom: session),
+      arguments: GameLaunch(journey: saved.session.journey, resumeFrom: saved),
     );
     return gameSelectClosed;
   }

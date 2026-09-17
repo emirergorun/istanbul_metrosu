@@ -1,12 +1,22 @@
 import 'block_piece.dart';
 import 'cell.dart';
 
-/// MVP parça kataloğu.
+/// Parça kataloğu.
 ///
-/// `01 - MVP` notundaki set: 1x1, 1x2, 1x3, 1x4, 2x1, 3x1, 2x2, L-3, L-5, T-4, T-5.
-/// Dikey karşılıkları (4x1 gibi) ve döndürülmüş varyantlar, oyunun adil
-/// hissetmesi için ayrı şekiller olarak kataloğa eklenmiştir — MVP'de runtime
-/// rotasyon yoktur, varyantlar hazır şekil olarak gelir.
+/// Çekirdek set `01 - MVP` notundan gelir: 1x1, 1x2, 1x3, 1x4, 2x1, 3x1,
+/// 2x2, L-3, L-5, T-4, T-5. Döndürülmüş varyantlar ayrı şekil olarak
+/// tutulur — runtime rotasyon yoktur, varyantlar hazır gelir.
+///
+/// **Arcade seti sonradan eklendi:** S/Z zikzakları, 2x3 ve 3x2
+/// dikdörtgenler, 5'li çubuklar ve 3x3 kare. Sebep: eldeki set en fazla 5
+/// hücreydi ve tek hamlede birden çok hat temizlemek neredeyse yalnızca
+/// şansa kalıyordu. Büyük parçalar hem daha çok yer kaplar (risk) hem de
+/// tek hamlede iki hattı birden tamamlayabilir (ödül) — oyunun "patlatma"
+/// anları buradan çıkar.
+///
+/// 3x3 kare kataloğun en büyük parçasıdır: 9 hücre, tahtanın yedide biri.
+/// Konacak yer bulmak ciddi bir karar, bulunca da genelde büyük bir
+/// temizlik gelir.
 class PieceShapes {
   const PieceShapes._();
 
@@ -104,7 +114,92 @@ class PieceShapes {
     cells: <Cell>[Cell(0, 0), Cell(1, 0), Cell(1, 1), Cell(2, 0)],
   );
 
+  // S ve Z zikzakları, yatay ve dikey.
+  static const BlockPiece s4 = BlockPiece(
+    id: 's4',
+    difficulty: PieceDifficulty.medium,
+    cells: <Cell>[Cell(0, 1), Cell(0, 2), Cell(1, 0), Cell(1, 1)],
+  );
+  static const BlockPiece z4 = BlockPiece(
+    id: 'z4',
+    difficulty: PieceDifficulty.medium,
+    cells: <Cell>[Cell(0, 0), Cell(0, 1), Cell(1, 1), Cell(1, 2)],
+  );
+  static const BlockPiece s4Vertical = BlockPiece(
+    id: 's4_v',
+    difficulty: PieceDifficulty.medium,
+    cells: <Cell>[Cell(0, 0), Cell(1, 0), Cell(1, 1), Cell(2, 1)],
+  );
+  static const BlockPiece z4Vertical = BlockPiece(
+    id: 'z4_v',
+    difficulty: PieceDifficulty.medium,
+    cells: <Cell>[Cell(0, 1), Cell(1, 0), Cell(1, 1), Cell(2, 0)],
+  );
+
   // --- ZOR ---
+
+  /// 2x3 dikdörtgen — tek hamlede iki satırı birden besler.
+  static const BlockPiece rect23 = BlockPiece(
+    id: 'rect23',
+    difficulty: PieceDifficulty.hard,
+    cells: <Cell>[
+      Cell(0, 0),
+      Cell(0, 1),
+      Cell(0, 2),
+      Cell(1, 0),
+      Cell(1, 1),
+      Cell(1, 2),
+    ],
+  );
+
+  /// 3x2 dikdörtgen — iki sütunu birden besler.
+  static const BlockPiece rect32 = BlockPiece(
+    id: 'rect32',
+    difficulty: PieceDifficulty.hard,
+    cells: <Cell>[
+      Cell(0, 0),
+      Cell(0, 1),
+      Cell(1, 0),
+      Cell(1, 1),
+      Cell(2, 0),
+      Cell(2, 1),
+    ],
+  );
+
+  /// 1x5 çubuk — sekiz genişliğindeki tahtada satırın yarısından fazlası.
+  static const BlockPiece h5 = BlockPiece(
+    id: 'h5',
+    difficulty: PieceDifficulty.hard,
+    cells: <Cell>[Cell(0, 0), Cell(0, 1), Cell(0, 2), Cell(0, 3), Cell(0, 4)],
+  );
+
+  /// 5x1 çubuk.
+  static const BlockPiece v5 = BlockPiece(
+    id: 'v5',
+    difficulty: PieceDifficulty.hard,
+    cells: <Cell>[Cell(0, 0), Cell(1, 0), Cell(2, 0), Cell(3, 0), Cell(4, 0)],
+  );
+
+  /// 3x3 kare — kataloğun en büyük parçası, 9 hücre.
+  ///
+  /// Tahtanın yedide biri. Yer bulmak zor, bulunca üç satır ve üç sütunu
+  /// birden besler: oyunun en büyük temizliklerinin çoğu bundan çıkar.
+  static const BlockPiece square3 = BlockPiece(
+    id: 'square3',
+    difficulty: PieceDifficulty.hard,
+    cells: <Cell>[
+      Cell(0, 0),
+      Cell(0, 1),
+      Cell(0, 2),
+      Cell(1, 0),
+      Cell(1, 1),
+      Cell(1, 2),
+      Cell(2, 0),
+      Cell(2, 1),
+      Cell(2, 2),
+    ],
+  );
+
   // L-5 (3x3 köşe), dört yön.
   static const BlockPiece l5a = BlockPiece(
     id: 'l5a',
@@ -169,6 +264,10 @@ class PieceShapes {
     t4Up,
     t4Left,
     t4Right,
+    s4,
+    z4,
+    s4Vertical,
+    z4Vertical,
   ];
 
   static const List<BlockPiece> hard = <BlockPiece>[
@@ -180,6 +279,11 @@ class PieceShapes {
     t5Up,
     t5Left,
     t5Right,
+    rect23,
+    rect32,
+    h5,
+    v5,
+    square3,
   ];
 
   static const List<BlockPiece> all = <BlockPiece>[...easy, ...medium, ...hard];

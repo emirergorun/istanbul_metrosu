@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
+import '../../journey/models/station_progress.dart';
 
 /// Alt sabit alandaki metro ilerleme göstergesi.
 ///
@@ -22,6 +23,8 @@ class JourneyProgressBar extends StatelessWidget {
     this.nextStopName,
     this.isMoving = true,
     this.stopCount,
+    this.stationProgress,
+    this.arrivalPulse = 0,
   });
 
   final String lineId;
@@ -43,6 +46,17 @@ class JourneyProgressBar extends StatelessWidget {
   /// Yolculuktaki durak arası sayısı; ara istasyon noktaları buna göre
   /// çizilir. Verilmezse eski davranış (%25 / %50 / %75) korunur.
   final int? stopCount;
+
+  /// Yolculuğun durak düzeyindeki hâli.
+  ///
+  /// Verilirse üstteki sol etiket **biniş durağı** yerine trenin şu an
+  /// ayrıldığı durağı gösterir ve ray üzerinde içinde bulunulan durak arası
+  /// vurgulanır. Verilmezse çubuk eski hâliyle çizilir — bu widget'ı altı
+  /// oyun paylaşıyor, hiçbirinin ekranı bozulmamalı.
+  final StationProgress? stationProgress;
+
+  /// Durağa varış kutlaması, 0.0 – 1.0. 0 ise kutlama yok.
+  final double arrivalPulse;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +81,7 @@ class JourneyProgressBar extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  originName,
+                  stationProgress?.departed.name ?? originName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.caption.copyWith(
@@ -101,6 +115,8 @@ class JourneyProgressBar extends StatelessWidget {
               progress: value,
               accent: accent,
               stopCount: stopCount,
+              stationsPassed: stationProgress?.stationsPassed,
+              arrivalPulse: arrivalPulse,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -137,11 +153,15 @@ class _ProgressTrack extends StatelessWidget {
     required this.progress,
     required this.accent,
     this.stopCount,
+    this.stationsPassed,
+    this.arrivalPulse = 0,
   });
 
   final double progress;
   final Color accent;
   final int? stopCount;
+  final int? stationsPassed;
+  final double arrivalPulse;
 
   static const double _height = 30;
   static const double _trainHeight = 18;
@@ -165,6 +185,8 @@ class _ProgressTrack extends StatelessWidget {
                     progress: progress,
                     accent: accent,
                     stopCount: stopCount,
+                    stationsPassed: stationsPassed,
+                    arrivalPulse: arrivalPulse,
                   ),
                 ),
               ),
@@ -186,11 +208,19 @@ class _TrackPainter extends CustomPainter {
     required this.progress,
     required this.accent,
     this.stopCount,
+    this.stationsPassed,
+    this.arrivalPulse = 0,
   });
 
   final double progress;
   final Color accent;
   final int? stopCount;
+
+  /// Geçilen durak sayısı; son geçilen durak vurgulanır.
+  final int? stationsPassed;
+
+  /// Varış kutlaması, 0.0 – 1.0.
+  final double arrivalPulse;
 
   /// Ara istasyonların yolculuktaki konumu.
   ///
@@ -230,14 +260,35 @@ class _TrackPainter extends CustomPainter {
     );
 
     // Ara istasyon işaretleri.
+    //
+    // Az önce geçilen durak büyür ve kısa bir halka atar: oyuncu gözünü
+    // tahtadan ayırmadan "bir durak daha geçtim"i görür. Kutlama çubuğun
+    // içinde kalır, oyunu durdurmaz.
+    final justPassed = stationsPassed;
+    var index = 1;
     for (final ratio in _stationRatios) {
       final x = left + (right - left) * ratio;
       final passed = progress >= ratio;
+      final isLatest = justPassed != null && index == justPassed;
+      final pulse = isLatest ? arrivalPulse : 0.0;
+
+      if (pulse > 0) {
+        canvas.drawCircle(
+          Offset(x, y),
+          3 + 9 * pulse,
+          Paint()
+            ..color = accent.withValues(alpha: 0.45 * (1 - pulse))
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+      }
+
       canvas.drawCircle(
         Offset(x, y),
-        3,
+        3 + 2.5 * pulse,
         Paint()..color = passed ? accent : AppColors.outline,
       );
+      index++;
     }
 
     // Başlangıç ve varış noktaları.
@@ -256,5 +307,7 @@ class _TrackPainter extends CustomPainter {
   bool shouldRepaint(_TrackPainter oldDelegate) =>
       oldDelegate.progress != progress ||
       oldDelegate.accent != accent ||
-      oldDelegate.stopCount != stopCount;
+      oldDelegate.stopCount != stopCount ||
+      oldDelegate.stationsPassed != stationsPassed ||
+      oldDelegate.arrivalPulse != arrivalPulse;
 }

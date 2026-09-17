@@ -44,12 +44,35 @@ class PieceGenerator {
   List<BlockPiece> _refill(PieceDifficulty tier) =>
       List<BlockPiece>.of(PieceShapes.pool(tier))..shuffle(_random);
 
+  /// Tahta boşken zor (büyük) havuzun olasılığı bu katsayıyla çarpılır.
+  ///
+  /// 3x3 kare, 2x3 dikdörtgen ve 5'li çubuk eldeki en eğlenceli parçalar:
+  /// tek hamlede iki hattı birden temizleyebiliyorlar. Ama sabit bir
+  /// olasılıkla dağıtıldıklarında iki sorun birden çıkıyordu — tahta
+  /// doluyken geldiklerinde oyunu bitiriyorlar, boşken ise neredeyse hiç
+  /// görünmüyorlardı (ölçüm: tüm parçaların %0.4 - %0.9'u).
+  ///
+  /// Kural tek cümle: **tahta boşken büyük parça gelir, doldukça küçülür.**
+  /// Böylece büyük parça tam da keyifli olduğu anda geliyor, öldürücü
+  /// olduğu anda gelmiyor. Oyuncuya kıyak değil, parçayı doğru zamana
+  /// koymak.
+  static const double openBoardHardBoost = 2.2;
+
+  /// Tahta doluyken aynı olasılığın çarpanı.
+  static const double fullBoardHardBoost = 0.35;
+
   /// Zorluk havuzu seçimi.
   ///
-  /// `hardPieceWeight` doğrudan zor havuzunun olasılığıdır. Kalan olasılık
-  /// kolay/orta arasında 55/45 bölünür.
-  PieceDifficulty _rollDifficulty(DifficultyProfile profile) {
-    final hard = profile.hardPieceWeight.clamp(0.0, 1.0);
+  /// `hardPieceWeight` zor havuzunun temel olasılığıdır; tahtanın doluluğuna
+  /// göre [openBoardHardBoost] ile [fullBoardHardBoost] arasında ölçeklenir.
+  /// Kalan olasılık kolay/orta arasında 55/45 bölünür.
+  PieceDifficulty _rollDifficulty(DifficultyProfile profile, double fill) {
+    final openness = (1 - fill).clamp(0.0, 1.0);
+    final boost =
+        fullBoardHardBoost +
+        (openBoardHardBoost - fullBoardHardBoost) * openness;
+    final hard = (profile.hardPieceWeight * boost).clamp(0.0, 1.0);
+
     final rest = 1.0 - hard;
     final easyChance = rest * 0.55;
 
@@ -60,27 +83,71 @@ class PieceGenerator {
   }
 
   /// Tek parça üretir (renk atanmış olarak).
-  BlockPiece nextPiece(DifficultyProfile profile) =>
-      _drawShape(_rollDifficulty(profile)).withColor(_randomColor());
+  ///
+  /// [fill] tahtanın doluluk oranıdır (0..1); büyük parçaların sıklığını
+  /// belirler. Verilmezse tahta boş sayılır.
+  BlockPiece nextPiece(DifficultyProfile profile, {double fill = 0}) =>
+      _drawShape(_rollDifficulty(profile, fill)).withColor(_randomColor());
 
   int _randomColor() => 1 + _random.nextInt(colorCount);
 
   /// Tepsi için parça çeker; mümkünse tepsideki şekilleri tekrarlamaz.
-  BlockPiece _nextDistinct(DifficultyProfile profile, Set<String> used) {
+  BlockPiece _nextDistinct(
+    DifficultyProfile profile,
+    Set<String> used,
+    double fill,
+  ) {
     for (var attempt = 0; attempt < 6; attempt++) {
-      final piece = nextPiece(profile);
+      final piece = nextPiece(profile, fill: fill);
       if (used.add(piece.id)) return piece;
     }
-    return nextPiece(profile);
+    return nextPiece(profile, fill: fill);
   }
+
+  /// Tahta bu doluluğun üstündeyken tepsi seçimi titizleşir.
+  ///
+  /// Altında tahta zaten rahat: her parça bir yere sığar, seçim yapmanın
+  /// anlamı yok ve rastgelelik korunmalı.
+  static const double crowdedFillRatio = 0.40;
 
   /// 3'lü tepsi üretir.
   ///
-  /// Fairness: tepside en az bir parça board'a konabilmeli. En fazla
+  /// İki kural var:
+  ///
+  /// **Fairness:** tepside en az bir parça board'a konabilmeli. En fazla
   /// [AppConstants.maxTrayGenerationAttempts] deneme yapılır; hiçbiri
   /// tutmazsa son deneme yine de döner (board gerçekten doluysa oyun
   /// zaten game-over olacaktır).
+  ///
+  /// **Sıkışık tahtada aday seçimi:** tahta [crowdedFillRatio] üstündeyse
+  /// [DifficultyProfile.trayCandidates] kadar aday tepsi üretilir ve en çok
+  /// hamle imkânı sunan seçilir. Bu oyuncuya kıyak değil, haksız diziyi
+  /// elemektir: dolu tahtada rastgele üç parçanın hiçbirinin işe yaramaması
+  /// sık oluyor ve oyun oyuncunun hatasından değil şanssızlıktan bitiyordu.
+  /// Tahta rahatken bu adım hiç çalışmaz, rastgelelik bozulmaz.
   List<BlockPiece> generateTray(Board board, DifficultyProfile profile) {
+    final crowded = board.filledCount / board.cellCount >= crowdedFillRatio;
+    final candidates = crowded ? profile.trayCandidates : 1;
+
+    List<BlockPiece>? best;
+    var bestFreedom = -1;
+
+    for (var pick = 0; pick < (candidates < 1 ? 1 : candidates); pick++) {
+      final tray = _generateOne(board, profile);
+      if (candidates <= 1) return tray;
+
+      final freedom = _trayFreedom(board, tray);
+      if (freedom > bestFreedom) {
+        bestFreedom = freedom;
+        best = tray;
+      }
+    }
+    return best ?? _generateOne(board, profile);
+  }
+
+  /// Tek bir aday tepsi üretir; fairness kuralı burada uygulanır.
+  List<BlockPiece> _generateOne(Board board, DifficultyProfile profile) {
+    final fill = board.filledCount / board.cellCount;
     List<BlockPiece> tray = const <BlockPiece>[];
 
     for (
@@ -91,7 +158,7 @@ class PieceGenerator {
       final used = <String>{};
       tray = <BlockPiece>[
         for (var i = 0; i < AppConstants.traySize; i++)
-          _nextDistinct(profile, used),
+          _nextDistinct(profile, used, fill),
       ];
       if (hasAnyLegalMove(board, tray)) return tray;
     }
@@ -110,6 +177,24 @@ class PieceGenerator {
     }
 
     return tray;
+  }
+
+  /// Tepsinin tahtada kaç ayrı yere konabildiği.
+  ///
+  /// "Özgürlük" ölçüsü: sayı ne kadar büyükse oyuncunun o tepsiyle o kadar
+  /// çok seçeneği var, yani tahtayı kilitlemeden oynayabilme ihtimali o
+  /// kadar yüksek. Tek tek parçaların toplamı alınır; hiç sığmayan parça
+  /// sıfır katkı verir.
+  int _trayFreedom(Board board, List<BlockPiece> tray) {
+    var total = 0;
+    for (final piece in tray) {
+      for (var r = 0; r <= board.rows - piece.height; r++) {
+        for (var c = 0; c <= board.cols - piece.width; c++) {
+          if (canPlace(board, piece, r, c)) total++;
+        }
+      }
+    }
+    return total;
   }
 
   /// Oyun başında zorluk profiline göre engel hücreleri serpiştirir.

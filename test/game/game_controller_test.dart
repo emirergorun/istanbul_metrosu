@@ -40,10 +40,10 @@ void main() {
       addTearDown(controller.dispose);
 
       expect(controller.status, GameStatus.ready);
-      expect(controller.session.score, 0);
+      expect(controller.score, 0);
       expect(controller.tray.length, 3);
       expect(controller.session.undoLeft, 1);
-      expect(controller.session.isFirstRun, isTrue);
+      expect(controller.isFirstRun, isTrue);
     });
 
     test('start ile oyun başlar', () {
@@ -64,7 +64,7 @@ void main() {
       final outcome = controller.place(0, 0, 0);
 
       expect(outcome.accepted, isTrue);
-      expect(controller.session.score, piece.size);
+      expect(controller.score, piece.size);
       expect(controller.tray[0], isNull);
       expect(controller.board.filledCount, piece.size);
       expect(controller.session.placedPieces, 1);
@@ -86,11 +86,11 @@ void main() {
       addTearDown(controller.dispose);
 
       expect(controller.place(0, 3, 3).accepted, isTrue);
-      final scoreAfterFirst = controller.session.score;
+      final scoreAfterFirst = controller.score;
 
       // Aynı hücreye ikinci parça konamaz.
       expect(controller.place(1, 3, 3).accepted, isFalse);
-      expect(controller.session.score, scoreAfterFirst);
+      expect(controller.score, scoreAfterFirst);
       expect(controller.board.filledCount, 1);
       expect(controller.tray[1], isNotNull);
     });
@@ -150,7 +150,7 @@ void main() {
       final undone = controller.undo();
 
       expect(undone, isTrue);
-      expect(controller.session.score, 0);
+      expect(controller.score, 0);
       expect(controller.board.filledCount, 0);
       expect(controller.tray[0], isNotNull);
       expect(controller.session.undoLeft, 0);
@@ -223,7 +223,7 @@ void main() {
       controller.place(0, 0, 0);
       controller.restart();
 
-      expect(controller.session.score, 0);
+      expect(controller.score, 0);
       expect(controller.board.filledCount, 0);
       expect(controller.status, GameStatus.playing);
     });
@@ -250,7 +250,7 @@ void main() {
       )..start();
       addTearDown(controller.dispose);
 
-      expect(controller.session.recordToBeat, 10);
+      expect(controller.recordToBeat, 10);
 
       // Oyun sırasında rekor kırılır ve depoya yazılır.
       await store.submitRouteScore(
@@ -262,12 +262,12 @@ void main() {
       controller.restart();
 
       expect(
-        controller.session.recordToBeat,
+        controller.recordToBeat,
         60,
         reason: 'yeni oyun güncel rekoru hedeflemeli',
       );
       expect(
-        controller.session.recordBeaten,
+        controller.recordBeaten,
         isFalse,
         reason: 'yeni oyun rekor geçilmemiş başlamalı',
       );
@@ -306,7 +306,7 @@ void main() {
       if (controller.status == GameStatus.gameOver) {
         expect(hasAnyLegalMove(controller.board, controller.tray), isFalse);
       } else {
-        expect(controller.session.score, greaterThanOrEqualTo(260));
+        expect(controller.score, greaterThanOrEqualTo(260));
       }
     });
 
@@ -383,10 +383,10 @@ void main() {
           beatEvents++;
         }
         moves++;
-        if (controller.session.score > 60) break;
+        if (controller.score > 60) break;
       }
 
-      expect(controller.session.recordBeaten, isTrue);
+      expect(controller.recordBeaten, isTrue);
       expect(
         controller.status,
         GameStatus.playing,
@@ -406,11 +406,11 @@ void main() {
       )..start();
       addTearDown(controller.dispose);
 
-      expect(controller.session.isFirstRun, isTrue);
+      expect(controller.isFirstRun, isTrue);
       for (var i = 0; i < 5; i++) {
         expect(controller.place(i % 3, i, 0).beatRecord, isFalse);
       }
-      expect(controller.session.recordBeaten, isFalse);
+      expect(controller.recordBeaten, isFalse);
     });
   });
 
@@ -467,7 +467,7 @@ void main() {
       final controller = GameController(
         journey: shortJourney(),
         generator: _DotGenerator(),
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
@@ -478,18 +478,15 @@ void main() {
       }
       expect(controller.session.clearedRows, 1, reason: 'satır temizlenmeli');
 
-      final scoreBeforeStation = controller.session.score;
-      final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (controller.session.stationsPassed == 0 &&
-          DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      }
-
-      expect(controller.session.stationsPassed, greaterThan(0));
-      expect(
-        controller.session.score,
-        scoreBeforeStation + ScoreRules.stationBonus,
+      final scoreBeforeStation = controller.score;
+      // Sayaç elle ilerletilir: motor `dt` saniye sayar, gerçek zamanı
+      // beklemek testi hem yavaşlatır hem kırılgan yapar.
+      controller.debugAdvanceSeconds(
+        controller.journey.estimatedSeconds ~/ controller.journey.stopCount + 1,
       );
+
+      expect(controller.stationsPassed, greaterThan(0));
+      expect(controller.score, scoreBeforeStation + ScoreRules.stationBonus);
       expect(controller.stationBonusPulse, 1);
     });
 
@@ -500,7 +497,7 @@ void main() {
       final controller = GameController(
         journey: shortJourney(),
         generator: _DotGenerator(),
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
@@ -513,16 +510,16 @@ void main() {
       expect(controller.undo(), isTrue);
       expect(controller.session.clearedRows, 0, reason: 'temizlik geri alındı');
 
-      final scoreBefore = controller.session.score;
-      final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (controller.session.stationsPassed == 0 &&
-          DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      }
+      final scoreBefore = controller.score;
+      // Sayaç elle ilerletilir: motor `dt` saniye sayar, gerçek zamanı
+      // beklemek testi hem yavaşlatır hem kırılgan yapar.
+      controller.debugAdvanceSeconds(
+        controller.journey.estimatedSeconds ~/ controller.journey.stopCount + 1,
+      );
 
-      expect(controller.session.stationsPassed, greaterThan(0));
+      expect(controller.stationsPassed, greaterThan(0));
       expect(
-        controller.session.score,
+        controller.score,
         scoreBefore,
         reason: 'geri alınan temizlik bonus vermemeli',
       );
@@ -533,21 +530,21 @@ void main() {
       final controller = GameController(
         journey: shortJourney(),
         generator: _DotGenerator(),
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
       controller.place(0, 3, 3); // temizlik yok
-      final scoreBefore = controller.session.score;
+      final scoreBefore = controller.score;
 
-      final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (controller.session.stationsPassed == 0 &&
-          DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      }
+      // Sayaç elle ilerletilir: motor `dt` saniye sayar, gerçek zamanı
+      // beklemek testi hem yavaşlatır hem kırılgan yapar.
+      controller.debugAdvanceSeconds(
+        controller.journey.estimatedSeconds ~/ controller.journey.stopCount + 1,
+      );
 
-      expect(controller.session.stationsPassed, greaterThan(0));
-      expect(controller.session.score, scoreBefore);
+      expect(controller.stationsPassed, greaterThan(0));
+      expect(controller.score, scoreBefore);
       expect(controller.stationBonusPulse, 0);
     });
   });
@@ -556,48 +553,44 @@ void main() {
     test('aktif oyun süresi ilerledikçe progress artar', () async {
       final controller = controllerFor(
         journeyFor('m2_taksim', 'm2_osmanbey'), // 2 dk = 120 sn
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
-      await Future<void>.delayed(const Duration(milliseconds: 60));
+      controller.debugAdvanceSeconds(10);
 
-      expect(controller.session.elapsedSeconds, greaterThan(0));
-      expect(controller.session.progress, greaterThan(0));
-      expect(controller.session.progress, lessThanOrEqualTo(1));
+      expect(controller.elapsedSeconds, greaterThan(0));
+      expect(controller.progress, greaterThan(0));
+      expect(controller.progress, lessThanOrEqualTo(1));
     });
 
     test('duraklatılmışken süre işlemez', () async {
       final controller = controllerFor(
         shortJourney(),
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
       await Future<void>.delayed(const Duration(milliseconds: 30));
       controller.pause();
-      final frozen = controller.session.elapsedSeconds;
+      final frozen = controller.elapsedSeconds;
 
       await Future<void>.delayed(const Duration(milliseconds: 40));
-      expect(controller.session.elapsedSeconds, frozen);
+      expect(controller.elapsedSeconds, frozen);
     });
 
     test('yolculuk süresi dolunca varış durumuna geçer', () async {
       final controller = controllerFor(
         journeyFor('m2_taksim', 'm2_osmanbey'), // 120 sn
-        tick: const Duration(milliseconds: 1),
+        tick: const Duration(days: 1),
       )..start();
       addTearDown(controller.dispose);
 
-      final deadline = DateTime.now().add(const Duration(seconds: 5));
-      while (controller.status != GameStatus.arrived &&
-          DateTime.now().isBefore(deadline)) {
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      }
+      controller.debugAdvanceSeconds(controller.journey.estimatedSeconds + 1);
 
       expect(controller.status, GameStatus.arrived);
-      expect(controller.session.progress, 1.0);
-      expect(controller.session.remainingSeconds, 0);
+      expect(controller.progress, 1.0);
+      expect(controller.remainingSeconds, 0);
     });
   });
 }
@@ -607,7 +600,7 @@ class _DotGenerator extends PieceGenerator {
   _DotGenerator() : super(random: Random(1));
 
   @override
-  BlockPiece nextPiece(DifficultyProfile profile) =>
+  BlockPiece nextPiece(DifficultyProfile profile, {double fill = 0}) =>
       PieceShapes.dot.withColor(1);
 
   @override

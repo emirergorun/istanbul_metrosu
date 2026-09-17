@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/piece_generator.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/clear_result.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/combo.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/scoring.dart';
+import 'package:istanbul_metro_game/features/games/blocks/domain/streak.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 
@@ -48,7 +51,7 @@ void main() {
       // ignore: avoid_print
       print(
         'Profil                            '
-        'Medyan  Varış%  Durak%  Sprint%  Engelsiz',
+        'Medyan  Varış%  Durak%  Sprint%  Combo  Streak  Erken%',
       );
 
       for (final entry in routes.entries) {
@@ -57,27 +60,23 @@ void main() {
             .journey!;
         final profile = journey.difficulty;
 
-        final withBlockers = _run(
+        final run = _run(
           seconds: journey.estimatedSeconds,
           stops: journey.stopCount,
           profile: profile,
-          secondsPerMove: secondsPerMove,
-        );
-        final noBlockers = _run(
-          seconds: journey.estimatedSeconds,
-          stops: journey.stopCount,
-          profile: _withoutBlockers(profile),
           secondsPerMove: secondsPerMove,
         );
 
         // ignore: avoid_print
         print(
           '${entry.key.padRight(34)}'
-          '${withBlockers.medianScore.toString().padLeft(6)}'
-          '${'%${withBlockers.arrivalRate.round()}'.padLeft(8)}'
-          '${'%${withBlockers.stationShare.round()}'.padLeft(8)}'
-          '${'%${withBlockers.sprintShare.round()}'.padLeft(9)}'
-          '${noBlockers.medianScore.toString().padLeft(10)}',
+          '${run.medianScore.toString().padLeft(6)}'
+          '${'%${run.arrivalRate.round()}'.padLeft(8)}'
+          '${'%${run.stationShare.round()}'.padLeft(8)}'
+          '${'%${run.sprintShare.round()}'.padLeft(9)}'
+          '${'x${run.medianBestCombo}'.padLeft(7)}'
+          '${run.medianBestStreak.toString().padLeft(8)}'
+          '${'%${run.journeyShare.round()}'.padLeft(8)}',
         );
       }
     }
@@ -87,21 +86,13 @@ void main() {
       '\nVarış% = yolculuğu tamamlama oranı (kalanı hamlesiz kaldı)\n'
       'Durak% = skorun durak bonusundan gelen payı\n'
       'Sprint% = skorun son %15 diliminde kazanılan payı\n'
-      'Engelsiz = başlangıç engeli kaldırılınca medyan skor',
+      'Combo  = medyan en yüksek combo\n'
+      'Streak = medyan en yüksek streak\n'
+      'Erken% = yolculuğun iyi oyunla kazanılan payı '
+      '(trenin ne kadar hızlandığı)',
     );
   });
 }
-
-DifficultyProfile _withoutBlockers(DifficultyProfile profile) =>
-    DifficultyProfile(
-      id: profile.id,
-      label: profile.label,
-      minMinutes: profile.minMinutes,
-      maxMinutes: profile.maxMinutes,
-      initialBlockerRatio: 0,
-      hardPieceWeight: profile.hardPieceWeight,
-      undoCount: profile.undoCount,
-    );
 
 class _Result {
   const _Result({
@@ -109,14 +100,33 @@ class _Result {
     required this.arrivalRate,
     required this.stationShare,
     required this.sprintShare,
+    required this.medianBestCombo,
+    required this.medianBestStreak,
+    required this.journeyShare,
   });
 
   final int medianScore;
   final double arrivalRate;
   final double stationShare;
   final double sprintShare;
+  final int medianBestCombo;
+  final int medianBestStreak;
+
+  /// Yolculuğun iyi oyunla kazanılan saniyelerinden gelen payı.
+  final double journeyShare;
 }
 
+/// Tek bir profilin [games] oyunluk simülasyonu.
+///
+/// **İki ayrı saat vardır ve karıştırılmamalıdır:**
+/// - `real` oyuncunun saati; hamle sıklığını o belirler (telefonu elinde
+///   tutan insan, trenin hızlanmasıyla daha hızlı oynayamaz).
+/// - `journey` trenin saati; gerçek zamanla birlikte ilerler, ayrıca iyi
+///   hamlelerin kazandırdığı saniyeleri de alır. Varış, durak geçişi ve
+///   sprint bu saatten okunur.
+///
+/// Tek saat kullanılsaydı yolculuk bonusu oyuncuya fazladan hamle de
+/// verirdi; oyunda böyle bir şey yok.
 _Result _run({
   required int seconds,
   required int stops,
@@ -125,10 +135,13 @@ _Result _run({
   int games = 150,
 }) {
   final scores = <int>[];
+  final bestCombos = <int>[];
+  final bestStreaks = <int>[];
   var arrived = 0;
   var stationTotal = 0;
   var sprintTotal = 0;
   var grandTotal = 0;
+  var journeyBonusTotal = 0;
 
   for (var game = 0; game < games; game++) {
     final random = Random(game);
@@ -137,16 +150,22 @@ _Result _run({
     var tray = List<BlockPiece?>.of(generator.generateTray(board, profile));
 
     var score = 0;
-    var combo = 0;
+    var combo = const ComboState();
+    var streak = const StreakState();
     var stationsPassed = 0;
     var clearedSinceStation = false;
     var alive = true;
 
-    for (var t = 1; t <= seconds && alive; t++) {
-      final progress = t / seconds;
-      final isSprint = progress >= ScoreRules.sprintStartsAt;
+    var real = 0;
+    var journey = 0;
 
-      if (t % secondsPerMove == 0) {
+    while (journey < seconds && alive) {
+      real++;
+      journey++;
+
+      final isSprint = journey / seconds >= ScoreRules.sprintStartsAt;
+
+      if (real % secondsPerMove == 0) {
         final move = _bestMove(board, tray);
         if (move == null) {
           alive = false;
@@ -157,21 +176,34 @@ _Result _run({
         var next = placePiece(board, piece, move.row, move.col);
         final rows = findCompletedRows(next);
         final columns = findCompletedColumns(next);
+        final didClear = rows.isNotEmpty || columns.isNotEmpty;
+
+        combo = combo.register(didClear: didClear);
+        streak = streak.register(didClear: didClear);
+
         final result = calculateScore(
           placedCells: piece.size,
           clearedRows: rows.length,
           clearedColumns: columns.length,
-          currentCombo: combo,
+          combo: combo.value,
+          streak: streak.value,
           isSprint: isSprint,
         );
         next = clearLines(next, rows: rows, columns: columns);
 
         board = next;
-        combo = result.combo;
         score += result.points;
         grandTotal += result.points;
         if (isSprint) sprintTotal += result.points;
-        if (result.linesCleared > 0) clearedSinceStation = true;
+        if (didClear) clearedSinceStation = true;
+
+        final bonus = JourneyRules.secondsFor(
+          tier: ClearTier.of(result.linesCleared),
+          combo: combo.value,
+          streak: streak.value,
+        );
+        journey += bonus;
+        journeyBonusTotal += bonus;
 
         tray[move.index] = null;
         if (tray.every((p) => p == null)) {
@@ -182,7 +214,7 @@ _Result _run({
 
       // Durak geçişi
       if (stops > 0) {
-        final passed = (progress * stops).floor();
+        final passed = (journey / seconds * stops).floor();
         if (passed > stationsPassed) {
           stationsPassed = passed;
           if (clearedSinceStation) {
@@ -193,24 +225,31 @@ _Result _run({
           }
           clearedSinceStation = false;
 
-          // Durakta en dolu satır boşalır ("yolcular indi") — gerçek
-          // kuraldaki `busiestRow` + `clearLines` çağrılıyor, simülasyon
-          // kendi kopyasını uydurmuyor.
-          board = clearLines(board, rows: crowdedRows(board));
+          // Durakta tahtaya dokunulmaz. Eskiden kalabalık satırlar
+          // boşalıyordu; oyuncuya tahta her durakta sıfırlanıyormuş gibi
+          // görünüyordu ve oyun kendi kendini oynuyor hissi veriyordu.
         }
       }
     }
 
     if (alive) arrived++;
     scores.add(score);
+    bestCombos.add(combo.best);
+    bestStreaks.add(streak.best);
   }
 
   scores.sort();
+  bestCombos.sort();
+  bestStreaks.sort();
+
   return _Result(
     medianScore: scores[scores.length ~/ 2],
     arrivalRate: arrived / games * 100,
     stationShare: grandTotal == 0 ? 0 : stationTotal / grandTotal * 100,
     sprintShare: grandTotal == 0 ? 0 : sprintTotal / grandTotal * 100,
+    medianBestCombo: bestCombos[bestCombos.length ~/ 2],
+    medianBestStreak: bestStreaks[bestStreaks.length ~/ 2],
+    journeyShare: journeyBonusTotal / (seconds * games) * 100,
   );
 }
 

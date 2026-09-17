@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/app/app.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_snapshot.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
@@ -61,8 +62,15 @@ void main() {
         PieceShapes.v2.withColor(3),
       ],
     );
+    final controller = GameController(
+      journey: session.journey,
+      resumeFrom: session,
+      tick: const Duration(days: 1),
+    );
+    addTearDown(controller.dispose);
+
     await pumpApp(tester, <String, Object>{
-      'saved_game': GameSnapshot.encode(session),
+      'saved_game': GameSnapshot.encode(controller),
     });
 
     await tester.tap(find.text('YARIM KALAN OYUN'));
