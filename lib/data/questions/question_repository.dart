@@ -22,6 +22,7 @@ class TriviaQuestion {
     required this.answerIndex,
     required this.source,
     required this.verification,
+    this.explanation,
   });
 
   final String id;
@@ -38,6 +39,14 @@ class TriviaQuestion {
   final String source;
 
   final TriviaVerification verification;
+
+  /// Cevap gösterilirken ekranda çıkan tek cümlelik not.
+  ///
+  /// **Zorunlu değil.** Yalnızca doğrulanabilir bir gerekçesi olan
+  /// kayıtlarda dolu; boşsa ekran satırı hiç çizmez. Uydurma açıklama
+  /// yazmaktansa hiç yazmamak doğru: yanlış bir açıklama, yanlış bir
+  /// sorudan daha çok zarar verir.
+  final String? explanation;
 
   String get answer => options[answerIndex];
 
@@ -139,6 +148,9 @@ class QuestionDataset implements QuestionRepository {
           verification: TriviaVerification.byId(
             map['verification'] as String? ?? '',
           ),
+          explanation: (map['explanation'] as String?)?.trim().isEmpty ?? true
+              ? null
+              : (map['explanation'] as String).trim(),
         ),
       );
     }

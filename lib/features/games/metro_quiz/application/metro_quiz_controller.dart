@@ -6,6 +6,7 @@ import '../../../session/journey_game_controller.dart';
 import '../../../session/journey_status.dart';
 import '../domain/quiz_question.dart';
 import '../domain/quiz_rules.dart';
+import '../domain/trivia_category.dart';
 import 'quiz_pool.dart';
 
 /// Sorunun o anki hâli.
@@ -34,6 +35,8 @@ class MetroQuizController extends JourneyGameController {
   }) : _pool = pool,
        super(gameId: id) {
     _question = _nextQuestion();
+    _questionRemaining = questionDuration;
+    _countAsked();
   }
 
   /// Rekor anahtarında kullanılır; değiştirilmemeli.
@@ -49,13 +52,19 @@ class MetroQuizController extends JourneyGameController {
   late QuizQuestion _question;
   QuizPhase _phase = QuizPhase.answering;
   int _chosenIndex = -1;
-  double _questionRemaining = QuizRules.answerTime.inSeconds.toDouble();
+  late double _questionRemaining;
 
   int _streak = 0;
   int _bestStreak = 0;
   int _correct = 0;
   int _mistakes = 0;
   int _lastGain = 0;
+  int _jokersLeft = QuizRules.jokerCount;
+  Set<int> _eliminated = const <int>{};
+  final Map<TriviaCategory, int> _correctByCategory = <TriviaCategory, int>{};
+  final Map<TriviaCategory, int> _askedByCategory = <TriviaCategory, int>{};
+  final List<QuizQuestion> _missed = <QuizQuestion>[];
+  int _lastSpeedBonus = 0;
 
   QuizQuestion get question => _question;
   QuizPhase get phase => _phase;
@@ -81,12 +90,79 @@ class MetroQuizController extends JourneyGameController {
   /// Son doğru cevabın kazandırdığı puan — ekranda kısa bir bildirim için.
   int get lastGain => _lastGain;
 
+  /// Son doğru cevabın hız bonusu; yoksa 0.
+  int get lastSpeedBonus => _lastSpeedBonus;
+
+  /// Bu yolculukta kaçırılan sorular — sonuç panelinde listelenir.
+  List<QuizQuestion> get missedQuestions =>
+      List<QuizQuestion>.unmodifiable(_missed);
+
+  /// Doğru cevap treni hızlandırır.
+  ///
+  /// Üç doğru cevap yolculuktan bir saniye siler. Blok Metro'da iyi oyun
+  /// yolculuğu kısaltıyordu; burada doğru cevap yalnızca puan veriyor ve
+  /// oyuncunun iyi oynaması varış sahnesine yaklaştırmıyordu.
+  @override
+  double get journeySecondsPerGoodMove => 1 / 3;
+
   /// Soru sayacının kalan saniyesi.
   double get questionRemaining => _questionRemaining;
 
+  /// Bu sorunun toplam süresi; zorluğa göre değişir.
+  double get questionDuration =>
+      QuizRules.answerTimeFor(_question.difficulty).inSeconds.toDouble();
+
   /// Sayacın 0-1 arası oranı; çubuk bunu çizer.
   double get questionProgress =>
-      (_questionRemaining / QuizRules.answerTime.inSeconds).clamp(0.0, 1.0);
+      (_questionRemaining / questionDuration).clamp(0.0, 1.0);
+
+  /// Sayaç son saniyelerinde mi?
+  bool get isUrgent =>
+      _phase == QuizPhase.answering &&
+      _questionRemaining <= QuizRules.urgentSeconds;
+
+  /// Kalan joker hakkı.
+  int get jokersLeft => _jokersLeft;
+
+  /// Jokerle elenmiş şıkların indeksleri.
+  Set<int> get eliminatedOptions => _eliminated;
+
+  /// Joker bu soruda kullanılabilir mi?
+  bool get canUseJoker =>
+      status == GameStatus.playing &&
+      _phase == QuizPhase.answering &&
+      _jokersLeft > 0 &&
+      _eliminated.isEmpty;
+
+  /// Kategori başına doğru sayısı — sonuç panelinde kırılım için.
+  Map<TriviaCategory, int> get correctByCategory =>
+      Map<TriviaCategory, int>.unmodifiable(_correctByCategory);
+
+  /// Kategori başına sorulan soru sayısı.
+  Map<TriviaCategory, int> get askedByCategory =>
+      Map<TriviaCategory, int>.unmodifiable(_askedByCategory);
+
+  /// En çok doğru yapılan kategori; hiç doğru yoksa `null`.
+  ///
+  /// Beraberlikte **oranı** yüksek olan kazanır: iki kategoriden birinde
+  /// üç soruda üç doğru, diğerinde altı soruda üç doğru varsa ilki daha
+  /// iyi gitmiş demektir.
+  TriviaCategory? get bestCategory {
+    TriviaCategory? best;
+    var bestCount = 0;
+    var bestRatio = 0.0;
+    for (final entry in _correctByCategory.entries) {
+      final asked = _askedByCategory[entry.key] ?? entry.value;
+      final ratio = asked == 0 ? 0.0 : entry.value / asked;
+      if (entry.value > bestCount ||
+          (entry.value == bestCount && ratio > bestRatio)) {
+        best = entry.key;
+        bestCount = entry.value;
+        bestRatio = ratio;
+      }
+    }
+    return bestCount == 0 ? null : best;
+  }
 
   bool get isRevealing => _phase == QuizPhase.revealing;
 
@@ -106,14 +182,44 @@ class MetroQuizController extends JourneyGameController {
     return true;
   }
 
+  /// Joker: iki yanlış şıkkı eler. Kullanıldıysa `true`.
+  ///
+  /// Puanı değiştirmez ve süreyi durdurmaz — joker zaman değil, belirsizlik
+  /// satın alır.
+  bool useJoker() {
+    if (!canUseJoker) return false;
+
+    final wrong = <int>[
+      for (var i = 0; i < _question.options.length; i++)
+        if (i != _question.answerIndex) i,
+    ];
+    // Hangi ikisinin eleneceği sorunun kimliğine bağlı: aynı soru her
+    // oyunda aynı şıkları eler, oyuncu jokeri tekrar tekrar deneyip
+    // farklı sonuç alamaz.
+    wrong.sort(
+      (a, b) => ('\${_question.id}\$a').hashCode.compareTo(
+        ('\${_question.id}\$b').hashCode,
+      ),
+    );
+    _eliminated = wrong.take(QuizRules.jokerEliminates).toSet();
+    _jokersLeft--;
+    notifyListeners();
+    return true;
+  }
+
   // --- Yolculuk motorunun kancaları ---
 
   @override
   void onTick(double dt) {
     if (_phase != QuizPhase.answering) return;
 
+    final wasUrgent = isUrgent;
     _questionRemaining -= dt;
-    if (_questionRemaining > 0) return;
+    if (_questionRemaining > 0) {
+      // Nabız eşiğini geçtiğimiz kare ekranın haberi olsun.
+      if (!wasUrgent && isUrgent) notifyListeners();
+      return;
+    }
 
     // Süre dolması **yanlış cevapla aynı bedele sahip**: seri bozulur ve
     // bir hak gider.
@@ -139,9 +245,16 @@ class MetroQuizController extends JourneyGameController {
     _mistakes = 0;
     _lastGain = 0;
     _chosenIndex = -1;
+    _jokersLeft = QuizRules.jokerCount;
+    _eliminated = const <int>{};
+    _lastSpeedBonus = 0;
+    _correctByCategory.clear();
+    _askedByCategory.clear();
+    _missed.clear();
     _phase = QuizPhase.answering;
-    _questionRemaining = QuizRules.answerTime.inSeconds.toDouble();
     _question = _nextQuestion();
+    _questionRemaining = questionDuration;
+    _countAsked();
   }
 
   @override
@@ -174,16 +287,33 @@ class MetroQuizController extends JourneyGameController {
     if (correct) {
       _streak++;
       _correct++;
+      _correctByCategory.update(
+        _question.category,
+        (v) => v + 1,
+        ifAbsent: () => 1,
+      );
       if (_streak > _bestStreak) _bestStreak = _streak;
       // Çarpan **cevap sayıldıktan sonraki** seriye göre: üçüncü doğru
       // cevap zaten ×2 kazanır, oyuncu çarpanı bir soru sonra değil,
       // seriyi tamamladığı anda hisseder.
-      _lastGain = QuizRules.pointsFor(_streak);
+      _lastSpeedBonus = QuizRules.speedBonus(questionProgress);
+      _lastGain = QuizRules.pointsFor(_streak) + _lastSpeedBonus;
       addScore(_lastGain);
       markStationProgress();
+      // Seri beş katına ulaştıkça joker kazanılır.
+      if (_streak % QuizRules.jokerRewardStreak == 0 &&
+          _jokersLeft < QuizRules.maxJokers) {
+        _jokersLeft++;
+      }
     } else {
       _streak = 0;
       _lastGain = 0;
+      _lastSpeedBonus = 0;
+      // Kaçırılan soru saklanır: yolculuk sonunda oyuncu neyi bilmediğini
+      // görebilmeli. Liste sınırlı — sonuç paneli bir liste ekranı değil.
+      if (_missed.length < 10 && !_missed.contains(_question)) {
+        _missed.add(_question);
+      }
       if (costsLife) _mistakes++;
     }
 
@@ -209,8 +339,18 @@ class MetroQuizController extends JourneyGameController {
     _question = _nextQuestion();
     _phase = QuizPhase.answering;
     _chosenIndex = -1;
-    _questionRemaining = QuizRules.answerTime.inSeconds.toDouble();
+    _eliminated = const <int>{};
+    _questionRemaining = questionDuration;
+    _countAsked();
     notifyListeners();
+  }
+
+  void _countAsked() {
+    _askedByCategory.update(
+      _question.category,
+      (v) => v + 1,
+      ifAbsent: () => 1,
+    );
   }
 
   /// Sıradaki soru.

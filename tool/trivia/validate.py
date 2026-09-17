@@ -13,10 +13,15 @@ CATEGORIES = {
     'culture_art': 'Kültür & Sanat',
     'sports': 'Spor',
     'geography_city': 'Coğrafya & Şehir',
-    'transportation': 'Ulaşım',
+    'istanbul': 'İstanbul',
     'general_knowledge': 'Genel Kültür',
 }
 DIFFICULTIES = {'easy', 'medium', 'hard'}
+# Kategori başına eşit sayı **artık aranmıyor**. İstanbul kategorisi
+# bilinçli olarak daha kalabalık: oyunun konusu bu şehir. Tarih ise çok
+# zor yıl-ezberi soruları silindiği için küçüldü.
+MIN_TOTAL = 1200
+MIN_PER_CATEGORY = 150
 PER_CATEGORY = 200
 
 # "Soru" değil şablon olan gövdeler.
@@ -46,14 +51,14 @@ def audit(path):
 
     # --- sayım ---
     stats['toplam'] = len(qs)
-    if len(qs) != PER_CATEGORY * len(CATEGORIES):
-        err(f'toplam {len(qs)}, beklenen {PER_CATEGORY * len(CATEGORIES)}')
+    if len(qs) < MIN_TOTAL:
+        err(f'toplam {len(qs)}, en az {MIN_TOTAL} olmalı')
 
     by_cat = collections.Counter(q['category'] for q in qs)
     stats['kategori'] = dict(by_cat)
     for cat in CATEGORIES:
-        if by_cat[cat] != PER_CATEGORY:
-            err(f'{cat}: {by_cat[cat]} soru, beklenen {PER_CATEGORY}')
+        if by_cat[cat] < MIN_PER_CATEGORY:
+            err(f'{cat}: {by_cat[cat]} soru, en az {MIN_PER_CATEGORY} olmalı')
     for cat in by_cat:
         if cat not in CATEGORIES:
             err(f'bilinmeyen kategori: {cat}')

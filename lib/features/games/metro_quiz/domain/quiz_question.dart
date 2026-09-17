@@ -17,6 +17,7 @@ class QuizQuestion {
     required this.prompt,
     required this.options,
     required this.answerIndex,
+    this.explanation,
   });
 
   factory QuizQuestion.fromTrivia(TriviaQuestion q) => QuizQuestion(
@@ -26,6 +27,7 @@ class QuizQuestion {
     prompt: q.prompt,
     options: q.options,
     answerIndex: q.answerIndex,
+    explanation: q.explanation,
   );
 
   /// Aynı soruyu bir yolculukta iki kez sormamak için kullanılır.
@@ -38,6 +40,9 @@ class QuizQuestion {
   final String prompt;
   final List<String> options;
   final int answerIndex;
+
+  /// Cevap gösterilirken çıkan tek cümlelik not; çoğu soruda boş.
+  final String? explanation;
 
   String get answer => options[answerIndex];
 

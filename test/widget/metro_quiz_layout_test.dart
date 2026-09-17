@@ -6,6 +6,7 @@ import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
 import 'package:istanbul_metro_game/data/questions/question_repository.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/domain/trivia_category.dart';
+import 'package:istanbul_metro_game/features/games/metro_quiz/presentation/category_glyph.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,6 +60,13 @@ TriviaQuestion _question({
 void main() {
   final metro = MetroFixture.load();
 
+  /// Konu seçimini geçer: testlerin çoğu oyunun kendisini ölçüyor.
+  Future<void> startMixed(WidgetTester tester) async {
+    if (find.text('KARIŞIK').evaluate().isEmpty) return;
+    await tester.tap(find.text('KARIŞIK'));
+    await tester.pump();
+  }
+
   Future<void> pumpScreen(
     WidgetTester tester, {
     QuestionRepository? repository,
@@ -90,6 +98,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await startMixed(tester);
   }
 
   /// Ekranı söker: oyun sayacı widget ağacından sonra da tik atmasın.
@@ -110,7 +119,7 @@ void main() {
     );
 
     expect(find.text('Tarih'), findsOneWidget);
-    expect(find.text('TAR'), findsOneWidget);
+    expect(find.byType(CategoryGlyphIcon), findsOneWidget);
     expect(find.text('Boğaziçi Köprüsü hangi yıl açıldı?'), findsOneWidget);
 
     final categoryY = tester.getTopLeft(find.text('Tarih')).dy;
@@ -256,8 +265,51 @@ void main() {
       ),
     );
     await tester.pump();
+    await startMixed(tester);
 
     expect(tester.takeException(), isNull);
+
+    await tearDownScreen(tester);
+  });
+
+  testWidgets('konu seçimi oyunu tek konuya kilitler', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'onboarding_seen': true,
+    });
+    final store = LocalStore();
+    await store.init();
+    final routes = RouteService(metro);
+    final journey = routes.estimate('m2_taksim', 'm2_levent').journey!;
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      AppScope(
+        store: store,
+        audio: _SilentAudio(),
+        metro: metro,
+        questions: TriviaFixture.repository(),
+        routeService: routes,
+        child: MaterialApp(
+          theme: AppTheme.dark(),
+          home: MetroQuizScreen(journey: journey),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Seçim ekranı önce gelir.
+    expect(find.text('KONU SEÇ'), findsOneWidget);
+    expect(find.text('KARIŞIK'), findsOneWidget);
+
+    await tester.tap(find.text('İstanbul'));
+    await tester.pump();
+
+    expect(find.text('KONU SEÇ'), findsNothing);
+    // Artık yalnızca İstanbul soruları gelir.
+    expect(find.text('İstanbul'), findsWidgets);
 
     await tearDownScreen(tester);
   });

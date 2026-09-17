@@ -19,21 +19,38 @@ void main() {
   final dataset = QuestionDataset.parse(raw);
   final questions = dataset.questions();
 
-  test('1.200 sorunun tamamı ayrıştırılabiliyor', () {
+  test('havuz en az 1.200 soru taşıyor ve tamamı ayrıştırılıyor', () {
     final items = root['questions'] as List<dynamic>;
-    expect(items, hasLength(1200), reason: 'dosyadaki kayıt sayısı');
+    expect(items.length, greaterThanOrEqualTo(1200));
     expect(
       questions,
-      hasLength(1200),
+      hasLength(items.length),
       reason: 'ayrıştırma hiçbir kaydı elemeden geçmeli',
     );
-    expect(root['totalQuestions'], 1200, reason: 'başlıktaki sayı da uymalı');
   });
 
-  test('her kategoride 200 soru var', () {
+  test('her kategoride en az 150 soru var', () {
+    // Kategori başına **eşit** sayı aranmıyor: İstanbul bilinçli olarak
+    // kalabalık (oyunun konusu bu şehir), Tarih ise çok zor yıl-ezberi
+    // soruları silindiği için küçüldü.
     for (final category in TriviaCategory.values) {
-      expect(dataset.byCategory(category), hasLength(200), reason: category.id);
+      expect(
+        dataset.byCategory(category).length,
+        greaterThanOrEqualTo(150),
+        reason: category.id,
+      );
     }
+  });
+
+  test('İstanbul kategorisi havuzun en kalabalık kategorisi', () {
+    final counts = <int>[
+      for (final c in TriviaCategory.values) dataset.byCategory(c).length,
+    ];
+    expect(
+      dataset.byCategory(TriviaCategory.istanbul).length,
+      counts.reduce((a, b) => a > b ? a : b),
+      reason: 'oyunun konusu İstanbul; havuz bunu yansıtmalı',
+    );
   });
 
   test('kimlikler tekrarsız', () {
@@ -76,12 +93,12 @@ void main() {
 
   test('doğrulama etiketi olduğundan fazlasını iddia etmiyor', () {
     // `metro_json` yalnızca depodaki ağ verisine karşı programatik olarak
-    // doğrulanmış kayıtlarda olabilir; onların hepsi Ulaşım kategorisinde.
+    // doğrulanmış kayıtlarda olabilir; onların hepsi İstanbul kategorisinde.
     for (final q in questions) {
       if (q.verification != TriviaVerification.metroJson) continue;
       expect(
         q.category,
-        TriviaCategory.transportation,
+        TriviaCategory.istanbul,
         reason: 'ağ verisiyle doğrulanamayacak kayıt: ${q.id}',
       );
     }

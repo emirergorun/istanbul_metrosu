@@ -107,6 +107,7 @@ class BoardView extends StatelessWidget {
     required this.preview,
     required this.flash,
     required this.flashAnimation,
+    this.gridAccent,
     this.undo,
     this.undoAnimation,
   });
@@ -116,6 +117,15 @@ class BoardView extends StatelessWidget {
   final ValueListenable<BoardPreview?> preview;
   final ValueListenable<BoardFlash?> flash;
   final Animation<double> flashAnimation;
+
+  /// Izgara çizgisinin rengi — **hat kimliği**.
+  ///
+  /// Blok renkleri hattan bağımsız (renk körlüğü ayarı her hat için ayrı
+  /// yapılamazdı) ve bu doğru karar. Sonuç olarak M4'te oynarken ekranda
+  /// hiçbir şey M4'ü hatırlatmıyordu. Izgara çizgisi kimliği geri getiren
+  /// en ucuz yer: blok renkleri değişmiyor, tahtanın zemini hattı
+  /// söylüyor. Boş bırakılırsa nötr çizgi kullanılır.
+  final Color? gridAccent;
 
   /// Geri alma geçişi ve süresi. İkisi birlikte verilmeli.
   final ValueListenable<BoardUndo?>? undo;
@@ -131,6 +141,7 @@ class BoardView extends StatelessWidget {
         size: Size(width, height),
         painter: _BoardPainter(
           board: board,
+          gridAccent: gridAccent,
           cellSize: cellSize,
           preview: preview,
           flash: flash,
@@ -153,6 +164,7 @@ class BoardView extends StatelessWidget {
 class _BoardPainter extends CustomPainter {
   _BoardPainter({
     required this.board,
+    required this.gridAccent,
     required this.cellSize,
     required this.preview,
     required this.flash,
@@ -163,6 +175,7 @@ class _BoardPainter extends CustomPainter {
   }) : super(repaint: repaint);
 
   final Board board;
+  final Color? gridAccent;
   final double cellSize;
   final ValueListenable<BoardPreview?> preview;
   final ValueListenable<BoardFlash?> flash;
@@ -210,7 +223,13 @@ class _BoardPainter extends CustomPainter {
     // gerekçesi `AppColors.cellGrid` üzerinde. Çizgi hücre sınırının tam
     // üstüne oturmasın diye yarım kalınlık içeri alınır.
     final gridPaint = Paint()
-      ..color = AppColors.cellGrid
+      // Hat rengi doğrudan kullanılmaz: ince çizgi, tahtanın zemininde
+      // 3:1 kontrastı tutmak zorunda ve bazı hat renkleri (M5'in moru)
+      // koyu zeminde kayboluyor. Nötr çizgiyle karıştırılır, kimlik
+      // görünür ama okunurluk garanti kalır.
+      ..color = gridAccent == null
+          ? AppColors.cellGrid
+          : Color.lerp(AppColors.cellGrid, gridAccent!, 0.55)!
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 

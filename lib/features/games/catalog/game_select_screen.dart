@@ -205,23 +205,22 @@ class _GameCard extends StatelessWidget {
               ),
               child: Row(
                 children: <Widget>[
-                  // Kutu oyunun kendi renginde, hattın değil: altı kart da
-                  // seçili hattın tonuna boyanınca birbirinden ayırt
-                  // edilemiyordu. Kimlik burada oyuna ait.
+                  // Kutu ve glif **nötr**. Altı oyuna altı ayrı pastel ton
+                  // verilmişti; hepsi aynı ağırlıktaydı, hiçbiri bir şey
+                  // söylemiyordu ve ekrandaki gerçek renk sistemiyle —
+                  // hat kimliğiyle — yarışıyordu. Ayrımı glif ve ad yapar.
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 48,
+                    height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: locked
-                          ? AppColors.surfaceHigh
-                          : game.color.withValues(alpha: 0.16),
+                      color: AppColors.gameGlyphBox,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: GameGlyphIcon(
                       glyph: locked ? GameGlyph.locked : game.glyph,
-                      color: locked ? AppColors.textMuted : game.color,
-                      size: 24,
+                      color: locked ? AppColors.gameGlyphLocked : game.color,
+                      size: 26,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.lg),
@@ -236,7 +235,14 @@ class _GameCard extends StatelessWidget {
                                 game.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppText.lead.copyWith(color: foreground),
+                                // Oyun adı tabela fontunda: ekran başlığı
+                                // ("OYUN SEÇ") ile aynı ses. Kart adı gövde
+                                // fontundayken başlıkla aynı hiyerarşide
+                                // duruyor ve liste bir ayar ekranı gibi
+                                // okunuyordu.
+                                style: AppText.tileTitle.copyWith(
+                                  color: foreground,
+                                ),
                               ),
                             ),
                             if (locked) ...<Widget>[

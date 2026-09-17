@@ -23,6 +23,7 @@ import '../domain/trivia_category.dart';
 class QuizPool {
   QuizPool({
     required QuestionRepository repository,
+    this.onlyCategory,
     Random? random,
     // Alan private, parametre public kalmalı; `this._repository` dışarıdan
     // kullanılamayacak bir ad üretirdi.
@@ -38,6 +39,13 @@ class QuizPool {
 
   /// Zor havuzun devreye girdiği soru sayısı.
   static const int hardUnlockAt = 12;
+
+  /// Yalnızca bu kategoriden soru sorulur; `null` ise hepsi.
+  ///
+  /// Oyuncunun seçimi. Tek kategori seçildiğinde kategori çeşitliliği
+  /// kuralı ([maxSameCategoryStreak]) doğal olarak devre dışı kalır —
+  /// oyuncu zaten üst üste aynı kategoriyi istemiş.
+  final TriviaCategory? onlyCategory;
 
   final QuestionRepository _repository;
   final Random _random;
@@ -87,7 +95,9 @@ class QuizPool {
   /// zorluk kuralı düşer, hâlâ boşsa kategori kuralı düşer. Böylece dar
   /// bir havuzda bile oyun soru bulamadığı için durmaz.
   List<TriviaQuestion> _candidates() {
-    final all = _repository.questions();
+    final all = onlyCategory == null
+        ? _repository.questions()
+        : _repository.byCategory(onlyCategory!);
     if (all.isEmpty) return const <TriviaQuestion>[];
 
     final unused = all.where((q) => !_used.contains(q.id)).toList();
@@ -108,6 +118,7 @@ class QuizPool {
 
   /// Üst üste çıktığı için bu tur elenen kategori.
   TriviaCategory? _blockedCategory() {
+    if (onlyCategory != null) return null;
     if (_recentCategories.length < maxSameCategoryStreak) return null;
     final first = _recentCategories.first;
     return _recentCategories.every((c) => c == first) ? first : null;

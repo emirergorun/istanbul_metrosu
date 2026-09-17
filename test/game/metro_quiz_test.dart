@@ -153,17 +153,75 @@ void main() {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
-      answerCorrectly(controller);
-      answerCorrectly(controller);
+      // Hız bonusu puana karışmasın diye sayacın yarısı tüketiliyor:
+      // bonus yalnızca yarıdan fazlası kalmışsa verilir.
+      void slowCorrect() {
+        controller.debugAdvance(controller.questionDuration * 0.6);
+        answerCorrectly(controller);
+      }
+
+      slowCorrect();
+      slowCorrect();
       expect(controller.score, QuizRules.basePoints * 2);
       expect(controller.multiplier, 1);
 
-      answerCorrectly(controller);
+      slowCorrect();
       expect(controller.multiplier, 2);
       expect(
         controller.score,
         QuizRules.basePoints * 2 + QuizRules.basePoints * 2,
       );
+    });
+
+    test('hızlı cevap ek puan kazandırır, yavaş cevap kazandırmaz', () {
+      final fast = controllerFor()..start();
+      addTearDown(fast.dispose);
+      final slow = controllerFor()..start();
+      addTearDown(slow.dispose);
+
+      answerCorrectly(fast);
+      slow.debugAdvance(slow.questionDuration * 0.7);
+      answerCorrectly(slow);
+
+      expect(fast.score, greaterThan(slow.score));
+      expect(fast.lastSpeedBonus, greaterThan(0));
+      expect(slow.lastSpeedBonus, 0);
+      expect(fast.lastSpeedBonus, lessThanOrEqualTo(QuizRules.speedBonusMax));
+    });
+
+    test('beş doğruluk seri joker kazandırır', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.useJoker();
+      expect(controller.jokersLeft, 0);
+
+      for (var i = 0; i < QuizRules.jokerRewardStreak; i++) {
+        answerCorrectly(controller);
+      }
+      expect(controller.jokersLeft, 1);
+    });
+
+    test('joker tavanı aşılmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < QuizRules.jokerRewardStreak * 4; i++) {
+        answerCorrectly(controller);
+      }
+      expect(controller.jokersLeft, lessThanOrEqualTo(QuizRules.maxJokers));
+    });
+
+    test('kaçırılan sorular saklanır', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final missed = controller.question;
+      answerWrongly(controller);
+
+      expect(controller.missedQuestions, contains(missed));
+      answerCorrectly(controller);
+      expect(controller.missedQuestions, hasLength(1));
     });
 
     test('yanlış cevap seriyi ve çarpanı sıfırlar', () {
@@ -332,6 +390,124 @@ void main() {
       expect(timeout.livesLeft, wrong.livesLeft);
       expect(timeout.streak, wrong.streak);
       expect(timeout.score, wrong.score);
+    });
+  });
+
+  group('joker', () {
+    test('iki yanlış şıkkı eler, doğruyu elemez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.jokersLeft, QuizRules.jokerCount);
+      expect(controller.useJoker(), isTrue);
+
+      expect(controller.eliminatedOptions, hasLength(2));
+      expect(
+        controller.eliminatedOptions.contains(controller.question.answerIndex),
+        isFalse,
+        reason: 'doğru şık asla elenmemeli',
+      );
+      expect(controller.jokersLeft, 0);
+    });
+
+    test('yolculuk başına tek hak', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.useJoker(), isTrue);
+      answerCorrectly(controller);
+      expect(controller.canUseJoker, isFalse);
+      expect(controller.useJoker(), isFalse);
+    });
+
+    test('sıradaki soruda eleme temizlenir', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.useJoker();
+      expect(controller.eliminatedOptions, isNotEmpty);
+      answerCorrectly(controller);
+      expect(controller.eliminatedOptions, isEmpty);
+    });
+
+    test('aynı soruda joker iki kez çalışmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.useJoker(), isTrue);
+      expect(controller.useJoker(), isFalse);
+      expect(controller.eliminatedOptions, hasLength(2));
+    });
+
+    test('yeniden başlatmada joker geri gelir', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.useJoker();
+      controller.restart();
+      expect(controller.jokersLeft, QuizRules.jokerCount);
+      expect(controller.eliminatedOptions, isEmpty);
+    });
+  });
+
+  group('zorluğa göre süre', () {
+    test('zor soru daha uzun sürer', () {
+      expect(
+        QuizRules.answerTimeFor(TriviaDifficulty.hard),
+        QuizRules.answerTime + QuizRules.hardQuestionBonus,
+      );
+      expect(
+        QuizRules.answerTimeFor(TriviaDifficulty.easy),
+        QuizRules.answerTime,
+      );
+      expect(
+        QuizRules.answerTimeFor(TriviaDifficulty.medium),
+        QuizRules.answerTime,
+      );
+    });
+
+    test('sayaç sorunun kendi süresiyle başlar', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(
+        controller.questionRemaining,
+        QuizRules.answerTimeFor(controller.question.difficulty).inSeconds,
+      );
+      expect(controller.questionProgress, 1.0);
+    });
+
+    test('son saniyelerde aciliyet bayrağı kalkar', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.isUrgent, isFalse);
+      controller.debugAdvance(
+        controller.questionDuration - QuizRules.urgentSeconds + 0.5,
+      );
+      expect(controller.isUrgent, isTrue);
+    });
+  });
+
+  group('kategori kırılımı', () {
+    test('doğru cevaplar kategoriye yazılır', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final first = controller.question.category;
+      answerCorrectly(controller);
+
+      expect(controller.correctByCategory[first], 1);
+      expect(controller.askedByCategory[first], greaterThanOrEqualTo(1));
+      expect(controller.bestCategory, first);
+    });
+
+    test('hiç doğru yoksa en iyi kategori yok', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      answerWrongly(controller);
+      expect(controller.bestCategory, isNull);
     });
   });
 

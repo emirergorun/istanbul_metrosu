@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app/app.dart';
+import 'core/telemetry/analytics.dart';
+import 'core/telemetry/error_reporter.dart';
+import 'core/telemetry/usage_stats.dart';
 import 'core/audio/audio_service.dart';
 import 'core/storage/local_store.dart';
 import 'data/metro/metro_repository.dart';
@@ -55,12 +58,25 @@ Future<void> main() async {
   // güvenli — kullanıcı arayüzü görmek için sesin yüklenmesini beklemesin.
   unawaited(audio.init());
 
+  // Ölçüm ve hata kaydı **cihazda kalıyor**; hiçbir ağ isteği yok.
+  // Gerekçesi `UsageStats` ve `ErrorReporter` üzerinde.
+  final errors = ErrorReporter(
+    load: () => store.errorLogRaw,
+    save: store.writeErrorLog,
+  )..install();
+  final analytics = store.statsEnabled
+      ? UsageStats(load: () => store.usageStatsRaw, save: store.writeUsageStats)
+      : const NoopAnalytics();
+  analytics.log(AnalyticsEvent.appOpened);
+
   runApp(
     MetroGameApp(
       store: store,
       audio: audio,
       metro: metro,
       questions: questions,
+      analytics: analytics,
+      errors: errors,
     ),
   );
 }

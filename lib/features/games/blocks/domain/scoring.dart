@@ -14,6 +14,39 @@ class ScoreRules {
   /// Yerleştirilen her hücre.
   static const int perPlacedCell = 1;
 
+  /// Geri almanın sabit puan bedeli.
+  ///
+  /// Geri alma hakkı bedelsizdi: hatalı hamleyi cezasız silmek, en riskli
+  /// oynayan oyuncuyu ödüllendiriyordu. Hamlenin kazandırdığı puan zaten
+  /// geri alınıyor; bunun **üstüne** binen sabit bedel kararı gerçek bir
+  /// karar yapar. Skor sıfırın altına düşmez.
+  static const int undoPenalty = 25;
+
+  /// İki durak arasında temizlenmesi istenen hat sayısı.
+  ///
+  /// Yolculuk boyunca tek ölçü skordu; oyuncu "iyi mi gidiyorum"
+  /// sorusunu yalnızca rekor çizgisine bakarak cevaplayabiliyordu.
+  /// Durak arası kısa ve tekrar eden bir birim: her durakta yeniden
+  /// başlayan küçük bir hedef, ilerlemeyi ölçülebilir yapıyor.
+  ///
+  /// İki hat bilinçli olarak düşük: hedef bir ceza değil, bir bahane.
+  static const int stationGoalLines = 2;
+
+  /// Durak hedefi tutturulduğunda verilen ek bonus.
+  ///
+  /// Normal durak bonusunun ([stationBonus]) üstüne biner; ikisi
+  /// birbirini dışlamaz çünkü biri "bir şey yaptın", diğeri "hedefi
+  /// tutturdun" diyor.
+  static const int stationGoalBonus = 40;
+
+  /// Yolculuk başına verilen tepsi yenileme hakkı.
+  ///
+  /// Üç parçanın da tahtaya sığmadığı an oyun bitiyordu; bazen oyuncunun
+  /// kötü oynadığı için değil, üreticinin o anda kötü bir üçlü verdiği
+  /// için. Tek hak, kaybı tamamen şansa bırakmamak için yeterli — sınırsız
+  /// olsaydı hamlesiz kalmak diye bir şey kalmazdı.
+  static const int trayRefillCount = 1;
+
   /// Temizlenen her satır.
   static const int perClearedRow = 10;
 

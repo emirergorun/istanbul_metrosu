@@ -16,10 +16,13 @@ import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import '../../../session/widgets/result_overlay.dart';
 import '../../../session/widgets/sprint_banner.dart';
+import '../../../../core/telemetry/analytics.dart';
+import '../../../player/application/share_service.dart';
 import '../application/metro_quiz_controller.dart';
 import '../application/quiz_pool.dart';
 import '../domain/quiz_rules.dart';
 import '../domain/trivia_category.dart';
+import 'category_glyph.dart';
 
 /// Metro Bilgi: dört şıklı soru, seri çarpanı, üç yanlış hakkı.
 ///
@@ -59,8 +62,16 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     with WidgetsBindingObserver {
   MetroQuizController? _controller;
   AudioService? _audio;
+
+  /// Oyuncu konu seçmeden oyun başlamaz.
+  ///
+  /// Seçim ekranı tek dokunuşla geçilebilir: "Karışık" birincil eylem,
+  /// kategoriler onun altında. Konu seçmek isteyen seçer, istemeyen
+  /// akışta gecikmez.
+  bool _started = false;
   GameStatus? _musicSyncedFor;
   bool _playedArrivalSound = false;
+  bool _loggedOutcome = false;
   int _seenStreakMultiplier = 1;
 
   @override
@@ -69,18 +80,15 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     WidgetsBinding.instance.addObserver(this);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void _begin(TriviaCategory? category) {
     if (_controller != null) return;
-
     final scope = AppScope.of(context);
     _audio = scope.audio;
 
     final controller = MetroQuizController(
       journey: widget.journey,
       store: scope.store,
-      pool: QuizPool(repository: scope.questions),
+      pool: QuizPool(repository: scope.questions, onlyCategory: category),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: MetroQuizController.id,
         originId: widget.journey.origin.id,
@@ -88,7 +96,17 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       ),
     );
     controller.addListener(_onControllerChanged);
-    _controller = controller;
+    scope.analytics.log(
+      AnalyticsEvent.gameStarted,
+      params: <String, String>{
+        'game': MetroQuizController.id,
+        'kategori': category?.id ?? 'karisik',
+      },
+    );
+    setState(() {
+      _controller = controller;
+      _started = true;
+    });
     controller.start();
   }
 
@@ -108,6 +126,10 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     if (controller.status == GameStatus.arrived && !_playedArrivalSound) {
       _playedArrivalSound = true;
       _sound(GameSound.arrival);
+      _logOutcome(AnalyticsEvent.journeyArrived);
+    }
+    if (controller.status == GameStatus.gameOver && !_loggedOutcome) {
+      _logOutcome(AnalyticsEvent.gameOver);
     }
 
     _syncMusic();
@@ -176,7 +198,29 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     }
   }
 
+  void _useJoker() {
+    if (_controller?.useJoker() ?? false) {
+      _haptic(HapticFeedback.selectionClick);
+    }
+  }
+
+  /// Yolculuğun sonucunu bir kez kaydeder.
+  ///
+  /// Denetleyici aynı durumu birden çok kez duyurabiliyor; sayaç
+  /// şişmesin diye tek seferlik.
+  void _logOutcome(AnalyticsEvent event) {
+    if (_loggedOutcome) return;
+    _loggedOutcome = true;
+    AppScope.of(context).analytics.log(
+      event,
+      params: <String, String>{'game': MetroQuizController.id},
+    );
+  }
+
   void _exitToHome() {
+    if (_controller?.status == GameStatus.playing) {
+      _logOutcome(AnalyticsEvent.gameAbandoned);
+    }
     _controller?.abandon();
     Navigator.of(context).pop();
   }
@@ -184,8 +228,12 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    if (controller == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (!_started || controller == null) {
+      return _CategoryPicker(
+        journey: widget.journey,
+        onPick: _begin,
+        onExit: () => Navigator.of(context).pop(),
+      );
     }
 
     final journey = controller.journey;
@@ -224,6 +272,13 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                           ),
                         _LivesIndicator(left: controller.livesLeft),
                       ],
+                      actions: <Widget>[
+                        _JokerButton(
+                          left: controller.jokersLeft,
+                          enabled: controller.canUseJoker,
+                          onTap: _useJoker,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Expanded(
@@ -233,7 +288,18 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                           Expanded(
                             child: _QuestionCard(controller: controller),
                           ),
-                          if (controller.streak > 0) ...<Widget>[
+                          // Cevap gösterilirken not, oyun sürerken seri.
+                          // İkisi aynı yerde: kartın altındaki tek satır
+                          // her an bir şey söylüyor ama iki şey birden
+                          // söylemiyor.
+                          if (controller.isRevealing &&
+                              controller.question.explanation !=
+                                  null) ...<Widget>[
+                            const SizedBox(height: AppSpacing.sm),
+                            _ExplanationLine(
+                              text: controller.question.explanation!,
+                            ),
+                          ] else if (controller.streak > 0) ...<Widget>[
                             const SizedBox(height: AppSpacing.sm),
                             _StreakLine(controller: controller, accent: accent),
                           ],
@@ -302,6 +368,11 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       extraStats: <Widget>[
         StatRow(label: 'Doğru cevap', value: '${controller.correctCount}'),
         StatRow(label: 'En uzun seri', value: '${controller.bestStreak}'),
+        if (controller.bestCategory != null)
+          StatRow(
+            label: 'En iyi kategori',
+            value: controller.bestCategory!.label,
+          ),
       ],
       gameOverTitle: 'Üç yanlış oldu',
       gameOverSubtitle:
@@ -309,6 +380,15 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
           'üçten fazla yanlış yapmaman gerekiyor.',
       onRestart: controller.restart,
       onExit: _exitToHome,
+      onShare: () => ShareService.shareRun(
+        analytics: AppScope.of(context).analytics,
+        context: context,
+        run: controller,
+        journey: controller.journey,
+        passedStops: controller.stationsPassed,
+        gameName: 'Metro Bilgi',
+        store: AppScope.of(context).store,
+      ),
       showBackdrop: showBackdrop,
     );
   }
@@ -344,7 +424,10 @@ class _QuestionCard extends StatelessWidget {
         children: <Widget>[
           // Süre çubuğu kartın tepesinde: sayı okumak gerekmeden, göz ucuyla
           // "ne kadar kaldı" görülüyor.
-          _TimerBar(progress: controller.questionProgress),
+          _TimerBar(
+            progress: controller.questionProgress,
+            urgent: controller.isUrgent,
+          ),
           // Kategori kartın **tepesinde sabit**, metro tabelasındaki künye
           // gibi. Soruyla birlikte ortalanınca ikisi tek blok oluyor ve
           // kartın üstü yine boş kalıyordu.
@@ -355,7 +438,13 @@ class _QuestionCard extends StatelessWidget {
               AppSpacing.lg,
               0,
             ),
-            child: _CategoryTag(category: question.category),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: _CategoryTag(category: question.category)),
+                const SizedBox(width: AppSpacing.sm),
+                _DifficultyMeter(difficulty: question.difficulty),
+              ],
+            ),
           ),
           Expanded(
             child: CustomScrollView(
@@ -393,12 +482,11 @@ class _QuestionCard extends StatelessWidget {
   }
 }
 
-/// Sorunun kategorisi — üç harfli rozet ve tam adı.
+/// Sorunun kategorisi — simge ve tam adı.
 ///
-/// Rozet dili metro hat rozetiyle aynı (`M4`, `TAR`), ama **rengi hat rengi
-/// değil**: hat rengi bu oyunda da kimlik taşıyor, kategori ondan bağımsız
-/// bir eksen. İkisini aynı renge boyamak "Tarih sorusu M4'e ait" gibi
-/// okunurdu.
+/// Simge **hat renginde değil**: hat rengi bu oyunda da kimlik taşıyor,
+/// kategori ondan bağımsız bir eksen. İkisini aynı renge boyamak "Tarih
+/// sorusu M4'e ait" gibi okunurdu.
 class _CategoryTag extends StatelessWidget {
   const _CategoryTag({required this.category});
 
@@ -412,21 +500,7 @@ class _CategoryTag extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                // Kart artık surfaceHigh; rozet bir basamak aşağıdan.
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                category.badge,
-                style: AppText.micro.copyWith(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
+            CategoryGlyphIcon(category: category, size: 18),
             const SizedBox(width: AppSpacing.sm),
             Flexible(
               child: Text(
@@ -434,7 +508,7 @@ class _CategoryTag extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.captionStrong.copyWith(
-                  color: AppColors.textMuted,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
@@ -445,31 +519,90 @@ class _CategoryTag extends StatelessWidget {
   }
 }
 
-class _TimerBar extends StatelessWidget {
-  const _TimerBar({required this.progress});
+/// Sorunun süre çubuğu.
+///
+/// Son [QuizRules.urgentSeconds] saniyede **nabız atar**: renk değişimi
+/// tek başına yetmiyordu, hareket eden vagonda göz şıklarda olduğu için
+/// çubuğun rengini kimse görmüyor. Hareket çevresel görüşle de fark
+/// edilir. Nabız yalnızca opaklığı oynatır, düzeni değil.
+class _TimerBar extends StatefulWidget {
+  const _TimerBar({required this.progress, required this.urgent});
 
   final double progress;
+  final bool urgent;
+
+  @override
+  State<_TimerBar> createState() => _TimerBarState();
+}
+
+class _TimerBarState extends State<_TimerBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPulse();
+  }
+
+  @override
+  void didUpdateWidget(_TimerBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.urgent != widget.urgent) _syncPulse();
+  }
+
+  void _syncPulse() {
+    // "Hareketi azalt" açıksa nabız atmaz; renk zaten uyarıyor.
+    final reduced = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (widget.urgent && !reduced) {
+      _pulse.repeat(reverse: true);
+    } else {
+      _pulse.stop();
+      _pulse.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Renk **hattan bağımsız**: hat rengi kimliktir, durum değil. M1A'da
     // çubuk hat kırmızısıyla çizilince dolu çubuk "süren bitiyor" gibi
     // okunuyordu. Normalde nötr, son çeyrekte uyarı rengi.
-    final color = progress < 0.25 ? AppColors.danger : AppColors.textSecondary;
+    final base = widget.progress < 0.25
+        ? AppColors.danger
+        : AppColors.textSecondary;
+    final filled = (widget.progress * 1000).round().clamp(0, 1000);
+
     return SizedBox(
       height: 5,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            flex: (progress * 1000).round().clamp(0, 1000),
-            child: ColoredBox(color: color),
-          ),
-          Expanded(
-            flex: 1000 - (progress * 1000).round().clamp(0, 1000),
-            child: const ColoredBox(color: AppColors.surface),
-          ),
-        ],
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, _) {
+          final color = widget.urgent
+              ? Color.lerp(base, AppColors.textPrimary, _pulse.value * 0.7)!
+              : base;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                flex: filled,
+                child: ColoredBox(color: color),
+              ),
+              Expanded(
+                flex: 1000 - filled,
+                child: const ColoredBox(color: AppColors.surface),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -497,13 +630,18 @@ class _Options extends StatelessWidget {
             // Cevaplandıktan sonra doğru şık her hâlükârda gösterilir:
             // oyuncu yanlış yaptıysa doğrusunu öğrenmeden geçmemeli.
             state: !revealing
-                ? _OptionState.idle
+                ? (controller.eliminatedOptions.contains(i)
+                      ? _OptionState.eliminated
+                      : _OptionState.idle)
                 : i == question.answerIndex
                 ? _OptionState.correct
                 : i == controller.chosenIndex
                 ? _OptionState.wrong
                 : _OptionState.dimmed,
-            onTap: revealing || controller.status != GameStatus.playing
+            onTap:
+                revealing ||
+                    controller.status != GameStatus.playing ||
+                    controller.eliminatedOptions.contains(i)
                 ? null
                 : () => onAnswer(i),
           ),
@@ -515,7 +653,7 @@ class _Options extends StatelessWidget {
   }
 }
 
-enum _OptionState { idle, correct, wrong, dimmed }
+enum _OptionState { idle, eliminated, correct, wrong, dimmed }
 
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
@@ -545,6 +683,13 @@ class _OptionButton extends StatelessWidget {
         AppColors.danger.withValues(alpha: 0.18),
         AppColors.danger,
         AppColors.textPrimary,
+      ),
+      // Jokerle elenen şık: yerinde durur ama artık bir seçenek değil.
+      // Kaldırmak düzeni zıplatır ve oyuncu neyin elendiğini göremez.
+      _OptionState.eliminated => (
+        AppColors.background,
+        AppColors.surface,
+        AppColors.textMuted,
       ),
       _OptionState.dimmed => (
         AppColors.background,
@@ -673,10 +818,18 @@ class _LivesIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tek hak kalınca uyarı rengi: sayıyı okumadan da fark edilsin. Hata
-    // rengi (`danger`) bilinçli olarak kullanılmıyor — o renk yalnızca
-    // gerçekleşmiş hatanın rengi, burada henüz hata yok.
-    final color = left <= 1 ? AppColors.warning : AppColors.textSecondary;
+    // Üç basamaklı trafik ışığı: üç hak nötr, iki hak uyarı, tek hak
+    // tehlike. Sayıyı okumadan da nerede olduğun görünür ve son hakta
+    // renk gerçekten bir şey söyler.
+    //
+    // `danger` normalde yalnızca gerçekleşmiş hatanın rengi. Burada
+    // istisna bilinçli: tek hak kalmışsa bir sonraki yanlış yolculuğu
+    // bitiriyor, yani uyarı değil gerçekten tehlike.
+    final color = switch (left) {
+      <= 1 => AppColors.danger,
+      2 => AppColors.warning,
+      _ => AppColors.textSecondary,
+    };
 
     return Semantics(
       label: 'Kalan yanlış hakkı $left / ${QuizRules.mistakeAllowance}',
@@ -730,6 +883,265 @@ class MetroQuizLifeIcon extends StatelessWidget {
           color: Colors.transparent,
           wagons: 1,
           opacity: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+/// Joker düğmesi — iki yanlış şıkkı eler.
+///
+/// Duraklatmanın yanında, HUD'un sağ ucunda. Hak bitince kaybolmaz,
+/// soluklaşır: oyuncu jokerini harcadığını görmeli, düğmenin yok olması
+/// "böyle bir şey yoktu" hissi veriyordu.
+class _JokerButton extends StatelessWidget {
+  const _JokerButton({
+    required this.left,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final int left;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+      semanticLabel: left > 0
+          ? 'Joker: iki yanlış şıkkı ele, $left hak kaldı'
+          : 'Joker hakkı kalmadı',
+      child: Container(
+        // Dokunma hedefi 44'ün altına düşmesin diye kutu geniş tutuldu.
+        constraints: const BoxConstraints(minWidth: 46, minHeight: 44),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+          border: Border.all(
+            color: enabled ? AppColors.outline : AppColors.surface,
+            width: 1.4,
+          ),
+        ),
+        // Çizilmiş glif denendi (dört şık, ikisi çizili) ve ne olduğu
+        // anlaşılmadı. Bilgi yarışması geleneğinde bu jokerin adı zaten
+        // "50:50"; tabela fontu rakamları HUD'daki skordan ayırıyor, yani
+        // sayı olarak değil bir işaret olarak okunuyor.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text(
+            '50:50',
+            style: AppText.tileTitle.copyWith(
+              fontSize: 12,
+              letterSpacing: 0,
+              color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Cevap gösterilirken çıkan tek cümlelik not.
+class _ExplanationLine extends StatelessWidget {
+  const _ExplanationLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: AppText.caption.copyWith(fontSize: 12),
+    );
+  }
+}
+
+/// Sorunun zorluğu — üç kademeli küçük gösterge.
+///
+/// Zor soruya [QuizRules.hardQuestionBonus] kadar ek süre veriliyor ama
+/// oyuncu sorunun zor olduğunu bilmiyordu; ek süreyi fark bile
+/// etmiyordu. Üç çubuktan kaçının dolu olduğu zorluğu söyler, renk
+/// kullanılmaz — kategori zaten renkli, ikinci bir renk ekseni gürültü
+/// olurdu.
+class _DifficultyMeter extends StatelessWidget {
+  const _DifficultyMeter({required this.difficulty});
+
+  final TriviaDifficulty difficulty;
+
+  int get _level => switch (difficulty) {
+    TriviaDifficulty.easy => 1,
+    TriviaDifficulty.medium => 2,
+    TriviaDifficulty.hard => 3,
+  };
+
+  String get _label => switch (difficulty) {
+    TriviaDifficulty.easy => 'Kolay soru',
+    TriviaDifficulty.medium => 'Orta zorlukta soru',
+    TriviaDifficulty.hard => 'Zor soru, süre biraz daha uzun',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: _label,
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            for (var i = 1; i <= 3; i++)
+              Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: Container(
+                  width: 3,
+                  // Çubuklar yükselir: dolu olanların sayısı kadar,
+                  // boyları da zorluğu ikinci kez söyler.
+                  height: 5.0 + i * 3,
+                  decoration: BoxDecoration(
+                    color: i <= _level
+                        ? AppColors.textSecondary
+                        : AppColors.surface,
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Oyun başlamadan önceki konu seçimi.
+///
+/// Havuzda altı kategori var ve oyuncu hepsini istemeyebilir: "bugün
+/// yalnız İstanbul" demek, oyunu yeniden açmak için bir sebep. Karışık
+/// birincil eylem olarak duruyor, yani seçim yapmak **zorunlu değil**.
+class _CategoryPicker extends StatelessWidget {
+  const _CategoryPicker({
+    required this.journey,
+    required this.onPick,
+    required this.onExit,
+  });
+
+  final Journey journey;
+  final ValueChanged<TriviaCategory?> onPick;
+  final VoidCallback onExit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Pressable(
+                    onTap: onExit,
+                    semanticLabel: 'Geri',
+                    borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+                    child: const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Icon(
+                        Icons.chevron_left_rounded,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'KONU SEÇ',
+                      textAlign: TextAlign.center,
+                      style: AppText.title,
+                    ),
+                  ),
+                  const SizedBox(width: 44),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                '${journey.origin.name} → ${journey.destination.name}',
+                textAlign: TextAlign.center,
+                style: AppText.caption,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Pressable(
+                onTap: () => onPick(null),
+                borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+                semanticLabel: 'Karışık: tüm konulardan soru',
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 60),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.action,
+                    borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+                  ),
+                  child: Text(
+                    'KARIŞIK',
+                    style: AppText.tileTitle.copyWith(
+                      color: AppColors.onAction,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text('YA DA TEK KONU', style: AppText.micro),
+              const SizedBox(height: AppSpacing.sm),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: TriviaCategory.values.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) {
+                    final category = TriviaCategory.values[index];
+                    return Pressable(
+                      onTap: () => onPick(category),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.fieldRadius,
+                      ),
+                      semanticLabel: 'Yalnız ${category.label}',
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 56),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.fieldRadius,
+                          ),
+                          border: Border.all(color: AppColors.outline),
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            CategoryGlyphIcon(category: category, size: 20),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                category.label,
+                                style: AppText.bodyStrong,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

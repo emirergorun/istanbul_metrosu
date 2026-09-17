@@ -12,7 +12,7 @@ enum TriviaCategory {
   cultureArt('culture_art', 'Kültür & Sanat', 'SAN'),
   sports('sports', 'Spor', 'SPO'),
   geographyCity('geography_city', 'Coğrafya & Şehir', 'COĞ'),
-  transportation('transportation', 'Ulaşım', 'ULA'),
+  istanbul('istanbul', 'İstanbul', 'IST'),
   generalKnowledge('general_knowledge', 'Genel Kültür', 'GNL');
 
   const TriviaCategory(this.id, this.label, this.badge);

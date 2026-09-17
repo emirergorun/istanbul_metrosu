@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 
 import '../../../app/app_scope.dart';
 import '../../../app/theme.dart';
+import '../../../core/telemetry/analytics.dart';
+import '../../../core/telemetry/usage_stats.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
@@ -25,6 +27,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final scope = AppScope.of(context);
     final store = scope.store;
     final records = store.allRecords();
+    final analytics = scope.analytics;
+    final stats = analytics is UsageStats ? analytics : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,6 +44,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           AppSpacing.xxl,
         ),
         children: <Widget>[
+          // Oyuncu adı en üstte: rekor satırlarının kime ait olduğunu
+          // söyleyen şey bu, altındaki "REKORLAR" bölümünün başlığı gibi
+          // çalışıyor.
+          const _SectionTitle('OYUNCU'),
+          _SettingsCard(
+            children: <Widget>[
+              _PlayerNameRow(name: store.playerName, tag: store.playerTag),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
           const _SectionTitle('OYUN'),
           _SettingsCard(
             children: <Widget>[
@@ -126,6 +141,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ],
+
+          const SizedBox(height: AppSpacing.xl),
+          const _SectionTitle('İSTATİSTİKLERİN'),
+          _SettingsCard(
+            children: <Widget>[
+              // Sayaçlar **cihazdan çıkmıyor**: hiçbir ağ isteği yok.
+              // Oyuncunun kendi verisini görmesi, gönderilmediğini
+              // anlatmanın en dürüst yolu.
+              if (stats != null) ...<Widget>[
+                _StatRow(
+                  label: 'Tamamlanan yolculuk',
+                  value: '${stats.valueOf(AnalyticsEvent.journeyArrived)}',
+                ),
+                const _Divider(),
+                _StatRow(
+                  label: 'Yarıda kalan',
+                  value:
+                      '${stats.valueOf(AnalyticsEvent.gameOver) + stats.valueOf(AnalyticsEvent.gameAbandoned)}',
+                ),
+                const _Divider(),
+                _StatRow(
+                  label: 'Varış oranı',
+                  value: '%${(stats.arrivalRate * 100).round()}',
+                ),
+                const _Divider(),
+              ],
+              _SwitchRow(
+                icon: Icons.insights_rounded,
+                title: 'Kullanım sayaçları',
+                subtitle: 'Cihazında kalır, hiçbir yere gönderilmez',
+                value: store.statsEnabled,
+                onChanged: (value) async {
+                  await store.setStatsEnabled(value);
+                  if (mounted) setState(() {});
+                },
+              ),
+            ],
+          ),
 
           const SizedBox(height: AppSpacing.xl),
           const _SectionTitle('UYGULAMA'),
@@ -228,6 +281,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
+/// Oyuncu adı satırı.
+///
+/// Sonek (`#7F3A`) adın yanında soluk duruyor. Bugün bir işe yaramıyor;
+/// ortak bir skor tablosu geldiğinde aynı adı taşıyanları ayıracak. Şimdi
+/// göstermenin sebebi, o gün geldiğinde oyuncunun onu tanıyor olması.
+class _PlayerNameRow extends StatelessWidget {
+  const _PlayerNameRow({required this.name, required this.tag});
+
+  final String name;
+  final String tag;
+
+  @override
+  Widget build(BuildContext context) {
+    // Satır **dokunulamaz**: ad ilk açılışta bir kez seçiliyor ve orada
+    // kilitleniyor. Buraya bir "değiştir" düğmesi koymak, kilidin
+    // olmadığı izlenimi verirdi.
+    return Semantics(
+      label: 'Oyuncu adın $name, değiştirilemez',
+      child: ExcludeSemantics(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 56),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: <Widget>[
+              const Icon(
+                Icons.badge_outlined,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.bodyStrong,
+                    ),
+                    Text(
+                      'Rekorlarında görünen ad · #$tag',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RecordRow extends StatelessWidget {
   const _RecordRow({required this.record});
 
@@ -286,6 +404,33 @@ class _RecordRow extends StatelessWidget {
           Text(
             Formatters.score(record.score),
             style: AppText.lead.copyWith(color: theme.accent),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Salt okunur sayı satırı.
+class _StatRow extends StatelessWidget {
+  const _StatRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Text(label, style: AppText.body)),
+          Text(
+            value,
+            style: AppText.bodyStrong.copyWith(fontFeatures: kTabularFigures),
           ),
         ],
       ),

@@ -31,6 +31,7 @@ class ResultOverlay extends StatelessWidget {
     required this.onRestart,
     required this.onExit,
     this.extraStats = const <Widget>[],
+    this.onShare,
     this.gameOverTitle = 'Oyun bitti',
     this.gameOverSubtitle = 'Durağa varamadan oyun bitti.',
     this.showBackdrop = true,
@@ -51,6 +52,13 @@ class ResultOverlay extends StatelessWidget {
 
   /// Oyuna özgü istatistik satırları ([StatRow] beklenir).
   final List<Widget> extraStats;
+
+  /// Sonucu paylaşma. Verilmezse düğme çizilmez.
+  ///
+  /// İkincil eylem olarak duruyor: birincil eylem her zaman "tekrar
+  /// oyna" — paylaşmak oyuncunun değil ürünün isteği, o yüzden yolu
+  /// kapatmıyor ama önüne de geçmiyor.
+  final VoidCallback? onShare;
 
   /// Varış dışı bitişin metni. Her oyunun kendi kaybetme koşulu var:
   /// blok oyununda "hamle kalmadı", başka bir oyunda başka bir şey.
@@ -106,6 +114,11 @@ class ResultOverlay extends StatelessWidget {
           onPressed: AppFeedback.onTap(context, onRestart),
           child: const Text('TEKRAR OYNA'),
         ),
+        if (onShare != null)
+          OutlinedButton(
+            onPressed: AppFeedback.onTap(context, onShare!),
+            child: const Text('SONUCU PAYLAŞ'),
+          ),
         TextButton(
           onPressed: AppFeedback.onTap(context, onExit),
           child: const Text('Başka oyun seç'),

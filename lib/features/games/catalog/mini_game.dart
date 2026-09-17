@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+
 import 'game_glyph.dart';
 
 /// Yolculuk sırasında oynanabilecek bir oyun.
@@ -30,7 +31,8 @@ class MiniGame {
   /// gerekçesi [GameGlyph] üzerinde.
   final GameGlyph glyph;
 
-  /// Oyunun kendi kimlik rengi; seçili hattan bağımsız.
+  /// Glifin rengi; seçili hattan bağımsız. Yalnız glifi boyar, kutuyu
+  /// değil — gerekçesi [AppColors.gameGlyphBox] üzerinde.
   final Color color;
 
   /// `false` ise kart kilitli görünür ve seçilemez.
@@ -80,7 +82,7 @@ class MiniGames {
     name: 'Ray Uçuşu',
     tagline: 'Treni uçur, raylara çarpmadan tünellerden geç.',
     glyph: GameGlyph.tunnel,
-    color: AppColors.gameTunnel,
+    color: AppColors.gameRail,
     isAvailable: true,
   );
 
@@ -102,8 +104,8 @@ class MiniGames {
     id: 'metro_quiz',
     name: 'Metro Bilgi',
     tagline: 'Durakları ve İstanbul’u bil, seriyi bozma.',
-    glyph: GameGlyph.sequence,
-    color: AppColors.gameSequence,
+    glyph: GameGlyph.quiz,
+    color: AppColors.gameQuiz,
     isAvailable: true,
   );
 
@@ -121,7 +123,7 @@ class MiniGames {
     name: 'Aktarma',
     tagline: 'Yolcuları doğru hatta yönlendir.',
     glyph: GameGlyph.locked,
-    color: AppColors.textMuted,
+    color: AppColors.gameGlyphLocked,
   );
 
   static const MiniGame signal = MiniGame(
@@ -129,7 +131,7 @@ class MiniGames {
     name: 'Sinyal',
     tagline: 'Işıkları zamanında çevir, trenleri çarpıştırma.',
     glyph: GameGlyph.locked,
-    color: AppColors.textMuted,
+    color: AppColors.gameGlyphLocked,
   );
 
   static const MiniGame wagon = MiniGame(
@@ -137,7 +139,7 @@ class MiniGames {
     name: 'Vagon',
     tagline: 'Vagonları en verimli şekilde doldur.',
     glyph: GameGlyph.locked,
-    color: AppColors.textMuted,
+    color: AppColors.gameGlyphLocked,
   );
 
   /// Kimliği verilen oyun; katalogda yoksa `null`.
@@ -148,12 +150,17 @@ class MiniGames {
     return null;
   }
 
+  /// Listedeki sıra **ürün kararı**: kartlar bu sırayla çizilir.
+  ///
+  /// Metro Bilgi ikinci sırada. Katalog önce eklenme sırasındaydı ve
+  /// oyunun en çok oynanması beklenen ikinci başlığı listenin beşinci
+  /// kartıydı — ekranda kaydırmadan görünmüyordu.
   static const List<MiniGame> all = <MiniGame>[
     blocks,
+    metroQuiz,
     metroMerge,
     railFlight,
     mergeDrop,
-    metroQuiz,
     laneRunner,
     transfer,
     signal,

@@ -100,23 +100,45 @@ void main() {
     });
   });
 
-  group('Oyun kimlik renkleri', () {
-    // Her mini oyunun kendi tonu var ve hepsi ikon kutusunda okunmalı.
-    test('hepsi ikon kutusu zemininde 3:1 geçer', () {
-      for (final c in <Color>[
-        AppColors.gameBlocks,
-        AppColors.gameMerge,
-        AppColors.gameTunnel,
-        AppColors.gameDrop,
-        AppColors.gameSequence,
-        AppColors.gameLanes,
-      ]) {
+  group('Oyun glif renkleri', () {
+    const glyphColors = <String, Color>{
+      'blocks': AppColors.gameBlocks,
+      'quiz': AppColors.gameQuiz,
+      'merge': AppColors.gameMerge,
+      'rail': AppColors.gameRail,
+      'drop': AppColors.gameDrop,
+      'lanes': AppColors.gameLanes,
+    };
+
+    test('hepsi glif kutusunda 3:1 geçer', () {
+      for (final entry in glyphColors.entries) {
         expect(
-          contrast(c, AppColors.surfaceHigh),
+          contrast(entry.value, AppColors.gameGlyphBox),
           greaterThanOrEqualTo(3.0),
-          reason: '$c ikon kutusunda yeterince ayrışmıyor',
+          reason: '${entry.key} glif kutusunda ayrışmıyor',
         );
       }
+    });
+
+    test('ton açıları birbirine yapışmıyor', () {
+      // Önceki set altı pastel tondu ve ikisi ayırt edilemiyordu.
+      final hues =
+          glyphColors.values.map((c) => HSLColor.fromColor(c).hue).toList()
+            ..sort();
+      for (var i = 1; i < hues.length; i++) {
+        expect(
+          hues[i] - hues[i - 1],
+          greaterThanOrEqualTo(30.0),
+          reason: 'iki oyun rengi çok yakın: ${hues[i - 1]} ve ${hues[i]}',
+        );
+      }
+    });
+
+    test('kilitli oyun rengi açık renklerden ayrışır', () {
+      expect(
+        contrast(AppColors.gameGlyphLocked, AppColors.gameGlyphBox),
+        greaterThanOrEqualTo(3.0),
+      );
     });
   });
 }

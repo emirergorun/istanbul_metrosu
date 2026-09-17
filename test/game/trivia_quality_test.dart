@@ -96,7 +96,7 @@ void main() {
             .length;
         expect(
           count,
-          greaterThan(20),
+          greaterThan(15),
           reason: '${category.id} / ${difficulty.id}: $count',
         );
       }

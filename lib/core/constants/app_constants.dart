@@ -9,6 +9,14 @@ class AppConstants {
   static const int boardCols = 8;
 
   // --- Tray ---
+  /// Tepsideki parça sayısı.
+  ///
+  /// Dört parça ölçüldü ve **dengeyi bozdu**: 7 saniyelik hamle
+  /// aralığında varış oranı Uzun profilde %23'ten %9'a, Maraton'da
+  /// %9'dan %5'e düştü. Dört parça tahtayı daha hızlı dolduruyor ve
+  /// büyük parçaları sık göndermenin bedeli burada ödeniyor. Üçte
+  /// kalındı; büyük parçaları sıklaştırmak isteniyorsa tahtanın kendisi
+  /// (9x9) değişmeli.
   static const int traySize = 3;
 
   /// Blok paletindeki renk sayısı — `AppColors.blocks` ile aynı olmalıdır.

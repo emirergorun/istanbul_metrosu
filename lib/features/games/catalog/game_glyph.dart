@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
+
 /// Oyun kataloğundaki ikonlar.
 ///
 /// Stok `Icons.*` yerine elle çizilmiş şekiller kullanılır. Gerekçe iki
@@ -18,7 +20,12 @@ enum GameGlyph {
   /// Yerleşen blok parçası — Blok Metro.
   blocks,
 
-  /// İki rayın tek raya katılması — Hat Birleştir.
+  /// Küçük iki rozetin tek büyük rozette birleşmesi — Hat Birleştir.
+  ///
+  /// 2048 ailesinin görsel dili: yuvarlak köşeli dolu bloklar ve bir
+  /// boyut sıçraması. Önceki hâli iki rayın kavuştuğu bir çatal çizimiydi;
+  /// doğruydu ama oyunun ne olduğunu anlatmıyordu — oyuncu makas değil
+  /// birleştirme yapıyor.
   merge,
 
   /// İki tünel duvarı arasındaki açıklık — Ray Uçuşu.
@@ -27,9 +34,12 @@ enum GameGlyph {
   /// Üst üste yığılan rozetler — Hat Düşür.
   drop,
 
-  /// Ray üzerinde durak dizisi, sonuncusu boş — Metro Bilgi.
-  /// ("Sıradaki durak hangisi?" sorusunun şekli.)
-  sequence,
+  /// Soru işareti ve altında dört şık — Metro Bilgi.
+  ///
+  /// Önceki hâli ray üzerinde durak dizisiydi ve oyun ağ bilgisi sorarken
+  /// doğruydu. Havuz 1.200 soruluk genel kültür veritabanına dönünce glif
+  /// yanlış söz vermeye başladı: bu bir bilgi yarışması, hafıza oyunu değil.
+  quiz,
 
   /// Şeritler arası geçiş — Ray Değiştir.
   lanes,
@@ -92,8 +102,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintTunnel(canvas, s, fill);
       case GameGlyph.drop:
         _paintDrop(canvas, s, fill);
-      case GameGlyph.sequence:
-        _paintSequence(canvas, s, fill, stroke);
+      case GameGlyph.quiz:
+        _paintQuiz(canvas, s, fill, stroke);
       case GameGlyph.lanes:
         _paintLanes(canvas, s, fill, stroke);
       case GameGlyph.locked:
@@ -136,117 +146,165 @@ class GameGlyphPainter extends CustomPainter {
     );
   }
 
-  /// İki ray tek rayda birleşir.
+  /// İki küçük rozet, üstünde birleştikleri büyük rozet.
+  ///
+  /// Boyut sıçraması mekaniği anlatır: aynı iki blok birleşince bir üst
+  /// seviyeye çıkar. Büyük blok dolu, küçükler soluk — göz önce sonucu,
+  /// sonra girdiyi okur.
   void _paintMerge(Canvas canvas, double s, Paint stroke, Paint fill) {
-    final path = Path()
-      ..moveTo(s * 0.14, s * 0.14)
-      ..lineTo(s * 0.44, s * 0.46)
-      ..lineTo(s * 0.86, s * 0.46)
-      ..moveTo(s * 0.14, s * 0.82)
-      ..lineTo(s * 0.44, s * 0.50);
-    canvas.drawPath(path, stroke);
+    final small = s * 0.26;
+    final big = s * 0.40;
+    final radius = Radius.circular(s * 0.09);
 
-    // Birleşme noktasındaki durak işareti.
-    canvas.drawCircle(Offset(s * 0.47, s * 0.48), s * 0.10, fill);
+    final faded = Paint()..color = color.withValues(alpha: 0.45);
+    // Alt sıra: birleşecek iki eş blok.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.10, s * 0.62, small, small),
+        radius,
+      ),
+      faded,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.42, s * 0.62, small, small),
+        radius,
+      ),
+      faded,
+    );
+
+    // Üst sıra: sonuç. Beyaz vurgu çizgisi "bir seviye yukarı"yı işaret eder.
+    final target = Rect.fromLTWH(s * 0.30, s * 0.12, big, big);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(target, Radius.circular(s * 0.12)),
+      fill,
+    );
+    canvas.drawLine(
+      Offset(target.center.dx, target.top + big * 0.26),
+      Offset(target.center.dx, target.bottom - big * 0.26),
+      Paint()
+        ..color = AppColors.background
+        ..strokeWidth = s * 0.07
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawLine(
+      Offset(target.left + big * 0.26, target.center.dy),
+      Offset(target.right - big * 0.26, target.center.dy),
+      Paint()
+        ..color = AppColors.background
+        ..strokeWidth = s * 0.07
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   /// Tünel açıklığından geçen tren.
   void _paintTunnel(Canvas canvas, double s, Paint fill) {
-    // 24pt'de ayrıntı taşımıyor: duvarlar sağ kenardan taşırılır (tünel
-    // devam ediyormuş gibi okunur) ve tren büyütülür. Önceki hâlde duvarlar
-    // serbest duran iki küçük kare gibi görünüyordu.
-    final left = s * 0.66;
-    final inner = Radius.circular(s * 0.10);
-
+    // Duvarlar + tren 26 punto boyunda üç ayrı lekeye dönüşüyordu. Şimdi
+    // iki öge var: üstte ve altta tünelin daralan duvarları, ortada
+    // aralarından geçen tren. Duvarlar iki kenardan da taşar, yani tünel
+    // devam ediyormuş gibi okunur.
+    final wall = Paint()..color = color.withValues(alpha: 0.42);
     canvas.drawRRect(
-      RRect.fromRectAndCorners(
-        Rect.fromLTWH(left, 0, s - left, s * 0.34),
-        bottomLeft: inner,
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-s * 0.05, s * 0.06, s * 1.10, s * 0.22),
+        Radius.circular(s * 0.07),
       ),
-      fill,
+      wall,
     );
     canvas.drawRRect(
-      RRect.fromRectAndCorners(
-        Rect.fromLTWH(left, s * 0.66, s - left, s * 0.34),
-        topLeft: inner,
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-s * 0.05, s * 0.72, s * 1.10, s * 0.22),
+        Radius.circular(s * 0.07),
       ),
-      fill,
+      wall,
     );
 
-    // Açıklığa giren tren; burnu sağa bakar.
+    // Tren: açıklığın ortasında, burnu sağa dönük.
     canvas.drawRRect(
       RRect.fromRectAndCorners(
-        Rect.fromLTWH(s * 0.04, s * 0.36, s * 0.52, s * 0.28),
-        topLeft: Radius.circular(s * 0.06),
-        bottomLeft: Radius.circular(s * 0.06),
-        topRight: Radius.circular(s * 0.14),
-        bottomRight: Radius.circular(s * 0.14),
+        Rect.fromLTWH(s * 0.16, s * 0.38, s * 0.62, s * 0.24),
+        topLeft: Radius.circular(s * 0.05),
+        bottomLeft: Radius.circular(s * 0.05),
+        topRight: Radius.circular(s * 0.12),
+        bottomRight: Radius.circular(s * 0.12),
       ),
       fill,
     );
   }
 
-  /// Kaba düşen rozet — Hat Düşür.
   void _paintDrop(Canvas canvas, double s, Paint fill) {
-    // Hız çizgileri kulak gibi okunuyordu, kaldırıldı. Geriye iki öge
-    // kalıyor: düşen rozet ve onu toplayan kap. "Düşür" fiili bu ikisinden
-    // anlaşılıyor.
-    canvas.drawCircle(Offset(s * 0.50, s * 0.20), s * 0.165, fill);
+    // Kap + tek rozet olarak çizilmişti ve `U` harfi gibi okunuyordu: hangi
+    // oyun olduğu anlaşılmıyordu. Şimdi üç öge var — düşmekte olan rozet,
+    // altındaki yığın ve yığının tabanı. Üst rozetin yığınla hizalı ama
+    // ayrı durması "düşürme" fiilini anlatıyor.
+    final w = s * 0.30;
+    final h = s * 0.19;
+    final x = (s - w) / 2;
 
-    // Açık ağızlı kap.
-    canvas.drawPath(
-      Path()
-        ..moveTo(s * 0.14, s * 0.46)
-        ..lineTo(s * 0.14, s * 0.74)
-        ..arcToPoint(
-          Offset(s * 0.36, s * 0.90),
-          radius: Radius.circular(s * 0.18),
-          clockwise: false,
-        )
-        ..lineTo(s * 0.64, s * 0.90)
-        ..arcToPoint(
-          Offset(s * 0.86, s * 0.74),
-          radius: Radius.circular(s * 0.18),
-          clockwise: false,
-        )
-        ..lineTo(s * 0.86, s * 0.46),
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = s * 0.10
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
+    // Düşen rozet: yığından kopuk, üstte.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, s * 0.06, w, h),
+        Radius.circular(s * 0.06),
+      ),
+      fill,
+    );
+
+    // Oturmuş iki rozet. Alttaki geniş: yığın aşağı doğru büyüyor.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, s * 0.42, w, h),
+        Radius.circular(s * 0.06),
+      ),
+      Paint()..color = color.withValues(alpha: 0.55),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.24, s * 0.65, s * 0.52, h),
+        Radius.circular(s * 0.06),
+      ),
+      Paint()..color = color.withValues(alpha: 0.55),
+    );
+
+    // Taban: yığının dayandığı yer.
+    canvas.drawRect(
+      Rect.fromLTWH(s * 0.14, s * 0.89, s * 0.72, s * 0.07),
+      fill,
     );
   }
 
-  /// Ray üzerinde üç durak; ilk ikisi "hatırlanmış" olarak dolu.
-  void _paintSequence(Canvas canvas, double s, Paint fill, Paint stroke) {
-    // Dört noktayla çizilmişti: 24pt'de nokta çapı ile aralık eşitleniyor,
-    // noktalar birbirine değip tek bir leke oluyordu. Üç nokta aynı fikri
-    // anlatıyor ve aralarında görünür boşluk kalıyor.
-    final y = s * 0.5;
-    canvas.drawLine(
-      Offset(s * 0.12, y),
-      Offset(s * 0.88, y),
-      Paint()
-        ..color = color.withValues(alpha: 0.40)
-        ..strokeWidth = s * 0.065
-        ..strokeCap = StrokeCap.round,
-    );
+  void _paintQuiz(Canvas canvas, double s, Paint fill, Paint stroke) {
+    // Dört şık çubuğu 26 punto boyunda çizgi yığınına dönüşüyordu. İki
+    // çubuk aynı fikri anlatıyor ve soru işaretine nefes bırakıyor: üstte
+    // soru, altta seçenekler, biri seçili.
+    final mark = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = s * 0.115
+      ..strokeCap = StrokeCap.round;
 
-    const count = 3;
-    for (var i = 0; i < count; i++) {
-      final x = s * 0.18 + (s * 0.64) * i / (count - 1);
-      final remembered = i < 2;
-      canvas.drawCircle(
-        Offset(x, y),
-        s * 0.105,
-        remembered
-            ? fill
-            : (Paint()
-                ..color = color
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = s * 0.065),
+    // Soru işaretinin kancası: yarım daire + aşağı inen kısa çizgi.
+    final hook = Path()
+      ..addArc(
+        Rect.fromCircle(center: Offset(s * 0.50, s * 0.28), radius: s * 0.17),
+        3.5,
+        4.0,
+      )
+      ..moveTo(s * 0.50, s * 0.40)
+      ..lineTo(s * 0.50, s * 0.50);
+    canvas.drawPath(hook, mark);
+    canvas.drawCircle(Offset(s * 0.50, s * 0.62), s * 0.065, fill);
+
+    // İki şık; üstteki seçili.
+    final barHeight = s * 0.085;
+    for (var i = 0; i < 2; i++) {
+      final y = s * 0.76 + i * (barHeight + s * 0.065);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(s * 0.18, y, s * 0.64, barHeight),
+          Radius.circular(barHeight / 2),
+        ),
+        i == 0 ? fill : (Paint()..color = color.withValues(alpha: 0.38)),
       );
     }
   }

@@ -26,6 +26,7 @@ import '../../../session/widgets/pause_overlay.dart';
 import 'widgets/piece_tray.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/result_overlay.dart';
+import '../../../player/application/share_service.dart';
 
 /// Oyun ekranı.
 ///
@@ -365,6 +366,12 @@ class _GameScreenState extends State<GameScreen>
   // --- Aksiyonlar ---
 
   /// Son hamleyi geri alır ve tahtayı eski hâline **geçişle** döndürür.
+  void _refillTray() {
+    if (!(_controller?.refillTray() ?? false)) return;
+    _haptic(HapticFeedback.mediumImpact);
+    _sound(GameSound.place);
+  }
+
   void _undo() {
     final controller = _controller;
     if (controller == null) return;
@@ -476,16 +483,23 @@ class _GameScreenState extends State<GameScreen>
                     const SizedBox(height: AppSpacing.sm),
                     AnimatedBuilder(
                       animation: _arrivalPulse,
-                      builder: (context, _) => JourneyStatusBar(
-                        run: controller,
-                        lineStations: AppScope.of(
-                          context,
-                        ).metro.stationsOfLine(journey.lineId),
-                        arrivalPulse: _arrivalPulse.value,
-                        accent: accent,
-                        isMoving:
-                            controller.status == GameStatus.playing &&
-                            !controller.awaitingUndo,
+                      builder: (context, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          _StationGoal(controller: controller, accent: accent),
+                          const SizedBox(height: AppSpacing.sm),
+                          JourneyStatusBar(
+                            run: controller,
+                            lineStations: AppScope.of(
+                              context,
+                            ).metro.stationsOfLine(journey.lineId),
+                            arrivalPulse: _arrivalPulse.value,
+                            accent: accent,
+                            isMoving:
+                                controller.status == GameStatus.playing &&
+                                !controller.awaitingUndo,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -508,7 +522,11 @@ class _GameScreenState extends State<GameScreen>
               _UndoOffer(
                 accent: accent,
                 undoLeft: session.undoLeft,
+                canUndo: controller.canUndo,
+                refillsLeft: controller.trayRefillsLeft,
+                canRefill: controller.canRefillTray,
                 onUndo: _undo,
+                onRefill: _refillTray,
                 onGiveUp: controller.acceptGameOver,
               ),
             // Rekoru geçme bildirimi — oyunu durdurmaz.
@@ -592,6 +610,15 @@ class _GameScreenState extends State<GameScreen>
       isNewBest: controller.isNewBest,
       onRestart: controller.restart,
       onExit: _exitToHome,
+      onShare: () => ShareService.shareRun(
+        analytics: AppScope.of(context).analytics,
+        context: context,
+        run: controller,
+        journey: controller.journey,
+        passedStops: controller.stationsPassed,
+        gameName: 'Blok Metro',
+        store: AppScope.of(context).store,
+      ),
       showBackdrop: showBackdrop,
     );
   }
@@ -638,7 +665,7 @@ class _GameScreenState extends State<GameScreen>
           builder: (context, candidate, rejected) => Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              _buildBoard(controller, boardSize),
+              _buildBoard(controller, boardSize, accent),
               const SizedBox(height: gap),
               SizedBox(
                 width: boardSize,
@@ -663,10 +690,15 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Widget _buildBoard(GameController controller, double boardSize) {
+  Widget _buildBoard(
+    GameController controller,
+    double boardSize,
+    Color accent,
+  ) {
     final board = BoardView(
       key: _boardKey,
       board: controller.board,
+      gridAccent: accent,
       cellSize: _cellSize,
       preview: _preview,
       flash: _flash,
@@ -712,13 +744,21 @@ class _UndoOffer extends StatelessWidget {
   const _UndoOffer({
     required this.accent,
     required this.undoLeft,
+    required this.canUndo,
+    required this.refillsLeft,
+    required this.canRefill,
     required this.onUndo,
+    required this.onRefill,
     required this.onGiveUp,
   });
 
   final Color accent;
   final int undoLeft;
+  final bool canUndo;
+  final int refillsLeft;
+  final bool canRefill;
   final VoidCallback onUndo;
+  final VoidCallback onRefill;
   final VoidCallback onGiveUp;
 
   @override
@@ -727,16 +767,34 @@ class _UndoOffer extends StatelessWidget {
       icon: Icons.undo_rounded,
       accent: accent,
       title: 'Hamle kalmadı',
-      subtitle:
-          'Tahtaya sığacak parça yok. Son hamleni geri alıp farklı '
-          'oynayabilirsin.',
+      subtitle: canUndo
+          ? 'Tahtaya sığacak parça yok. Son hamleni geri alabilir ya da '
+                'tepsiyi yenileyebilirsin.'
+          : 'Tahtaya sığacak parça yok. Tepsiyi bir kez yenileyip devam '
+                'edebilirsin.',
       children: <Widget>[
-        StatRow(label: 'Kalan geri alma', value: '$undoLeft'),
+        if (canUndo) StatRow(label: 'Kalan geri alma', value: '$undoLeft'),
+        StatRow(label: 'Kalan tepsi yenileme', value: '$refillsLeft'),
         const SizedBox(height: AppSpacing.lg),
-        FilledButton(
-          onPressed: AppFeedback.onTap(context, onUndo),
-          child: const Text('SON HAMLEYİ GERİ AL'),
-        ),
+        // Birincil eylem **tepsi yenileme**: geri alma son hamleyi
+        // siliyor ve puan bedeli var, yenileme ise oyuna kaldığı yerden
+        // devam ettiriyor. Oyuncunun burada istediği şey devam etmek.
+        if (canRefill)
+          FilledButton(
+            onPressed: AppFeedback.onTap(context, onRefill),
+            child: const Text('TEPSİYİ YENİLE'),
+          ),
+        if (canRefill && canUndo) const SizedBox(height: AppSpacing.sm),
+        if (canUndo)
+          canRefill
+              ? OutlinedButton(
+                  onPressed: AppFeedback.onTap(context, onUndo),
+                  child: const Text('SON HAMLEYİ GERİ AL'),
+                )
+              : FilledButton(
+                  onPressed: AppFeedback.onTap(context, onUndo),
+                  child: const Text('SON HAMLEYİ GERİ AL'),
+                ),
         const SizedBox(height: AppSpacing.sm),
         TextButton(
           onPressed: AppFeedback.onTap(context, onGiveUp),
@@ -817,3 +875,58 @@ class _TargetBanner extends StatelessWidget {
 ///
 /// İlerleme çubuğunun hemen üstünde belirir; oyuncu bonusun neden geldiğini
 /// (bir durak geçildi) mekânsal olarak da anlasın diye oraya konumlandı.
+
+/// Durak arası hedef göstergesi.
+///
+/// Yolculuk boyunca tek ölçü skordu. Durak arası kısa ve tekrar eden bir
+/// birim; her durakta sıfırlanan küçük bir hedef, "iyi mi gidiyorum"
+/// sorusunu ekranda cevaplıyor. Hedef tutunca satır hat rengine döner ve
+/// sayı yerine onay metni gösterir.
+class _StationGoal extends StatelessWidget {
+  const _StationGoal({required this.controller, required this.accent});
+
+  final GameController controller;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final left = controller.linesToStationGoal;
+    final done = left == 0;
+    final text = done ? 'DURAK HEDEFİ TAMAM' : 'DURAĞA KADAR $left HAT';
+
+    return Semantics(
+      label: done
+          ? 'Durak hedefi tamamlandı'
+          : 'Durak hedefi için $left hat kaldı',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            // Hedef kadar kutucuk; dolanlar hat renginde.
+            for (var i = 0; i < ScoreRules.stationGoalLines; i++)
+              Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: Container(
+                  width: 10,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: i < controller.linesSinceStation
+                        ? accent
+                        : AppColors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              text,
+              style: AppText.micro.copyWith(
+                color: done ? accent : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

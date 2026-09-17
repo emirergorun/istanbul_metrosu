@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/audio/audio_service.dart';
+import '../core/telemetry/analytics.dart';
 import '../core/storage/local_store.dart';
 import '../data/metro/metro_repository.dart';
 import '../data/questions/question_repository.dart';
@@ -18,6 +19,7 @@ class AppScope extends InheritedWidget {
     required this.metro,
     this.questions = const EmptyQuestionRepository(),
     required this.routeService,
+    this.analytics = const NoopAnalytics(),
     required super.child,
   });
 
@@ -31,6 +33,10 @@ class AppScope extends InheritedWidget {
 
   final RouteService routeService;
 
+  /// Kullanım ölçümü. Varsayılan hiçbir şey yapmaz — testler ve ölçümün
+  /// kapalı olduğu durum aynı yoldan geçer.
+  final Analytics analytics;
+
   static AppScope of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
     assert(scope != null, 'AppScope widget ağacında bulunamadı');
@@ -43,5 +49,6 @@ class AppScope extends InheritedWidget {
       audio != oldWidget.audio ||
       metro != oldWidget.metro ||
       questions != oldWidget.questions ||
+      analytics != oldWidget.analytics ||
       routeService != oldWidget.routeService;
 }

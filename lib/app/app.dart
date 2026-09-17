@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/constants/app_constants.dart';
 import '../core/audio/audio_service.dart';
 import '../core/storage/local_store.dart';
+import '../core/telemetry/analytics.dart';
+import '../core/telemetry/error_reporter.dart';
 import '../data/metro/metro_repository.dart';
 import '../data/questions/question_repository.dart';
 import '../features/journey/services/route_service.dart';
@@ -18,12 +20,20 @@ class MetroGameApp extends StatelessWidget {
     required this.audio,
     required this.metro,
     this.questions = const EmptyQuestionRepository(),
+    this.analytics = const NoopAnalytics(),
+    this.errors,
   });
 
   final LocalStore store;
   final AudioService audio;
   final MetroRepository metro;
   final QuestionRepository questions;
+
+  /// Kullanım ölçümü — cihazda kalır, ağa çıkmaz.
+  final Analytics analytics;
+
+  /// Yakalanan hataların kaydı; ayarlardan görüntülenir.
+  final ErrorReporter? errors;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +42,7 @@ class MetroGameApp extends StatelessWidget {
       audio: audio,
       metro: metro,
       questions: questions,
+      analytics: analytics,
       routeService: RouteService(metro),
       child: MaterialApp(
         title: AppConstants.appTitle,

@@ -13,6 +13,7 @@ import '../../games/catalog/mini_game.dart';
 import '../../journey/models/journey.dart';
 import '../../journey/models/station.dart';
 import '../../journey/presentation/widgets/onboarding_sheet.dart';
+import '../../player/presentation/name_picker_sheet.dart';
 
 /// Açılış ekranı.
 ///
@@ -37,6 +38,13 @@ class _TitleScreenState extends State<TitleScreen>
   );
 
   bool _checkedOnboarding = false;
+
+  /// Karşılama akışı: tanıtım, ardından ad seçimi.
+  ///
+  /// Ad seçimi tanıtımdan **sonra** geliyor. Uygulamayı ilk açan kişiye
+  /// ne olduğunu anlatmadan "adını seç" demek, kararı bağlamsız
+  /// bırakıyordu.
+  bool _pickingName = false;
 
   @override
   void initState() {
@@ -74,7 +82,22 @@ class _TitleScreenState extends State<TitleScreen>
         ),
         builder: (_) => const OnboardingSheet(),
       );
+      if (!mounted) return;
+      await _ensurePlayerName(store);
     });
+  }
+
+  /// Adı henüz onaylanmamışsa seçim sayfasını açar.
+  ///
+  /// Tanıtımı daha önce görmüş ama adını seçmemiş oyuncular da buradan
+  /// geçer: sürüm yükseltmesiyle gelen kullanıcılar için tek yol bu.
+  Future<void> _ensurePlayerName(LocalStore store) async {
+    if (store.isPlayerNameLocked || _pickingName) return;
+    _pickingName = true;
+    final picked = await NamePickerSheet.show(context, store.playerName);
+    if (picked != null) await store.confirmPlayerName(picked);
+    _pickingName = false;
+    if (mounted) setState(() {});
   }
 
   @override

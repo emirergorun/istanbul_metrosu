@@ -178,6 +178,11 @@ class GameController extends JourneyGameController {
 
   /// Son hamlenin kazandırdığı puan ve süre; geri alma bunları geri verir.
   int _undoScore = 0;
+  int _trayRefillsLeft = ScoreRules.trayRefillCount;
+  int _linesSinceStation = 0;
+  int _undoLines = 0;
+  int _goalsReached = 0;
+  int goalPulse = 0;
   int _undoJourneySeconds = 0;
 
   /// Durakta boşalan satır bilgisi yok: durakta tahtaya dokunulmuyor.
@@ -348,7 +353,14 @@ class GameController extends JourneyGameController {
       refilled = true;
     }
 
-    if (didClear) markStationProgress();
+    if (didClear) {
+      markStationProgress();
+      final lines = completedRows.length + completedColumns.length;
+      _linesSinceStation += lines;
+      _undoLines = lines;
+    } else {
+      _undoLines = 0;
+    }
 
     _session = _session.copyWith(
       board: board,
@@ -430,8 +442,28 @@ class GameController extends JourneyGameController {
   void advance(double dt) {
     final stationsBefore = stationsPassed;
     super.advance(dt);
-    if (stationsPassed > stationsBefore) _undoSnapshot = null;
+    if (stationsPassed <= stationsBefore) return;
+
+    _undoSnapshot = null;
+    // Durak geçildi: bu aralığın hedefi tutturulduysa ek bonus, sonra
+    // sayaç sıfırlanır ve yeni aralık başlar.
+    if (_linesSinceStation >= ScoreRules.stationGoalLines) {
+      _goalsReached++;
+      goalPulse++;
+      addScore(ScoreRules.stationGoalBonus);
+    }
+    _linesSinceStation = 0;
   }
+
+  /// Bu durak aralığında temizlenen hat sayısı.
+  int get linesSinceStation => _linesSinceStation;
+
+  /// Aralık hedefine kalan hat sayısı; hedef tutmuşsa 0.
+  int get linesToStationGoal =>
+      (ScoreRules.stationGoalLines - _linesSinceStation).clamp(0, 99).toInt();
+
+  /// Yolculuk boyunca tutturulan durak hedefi sayısı.
+  int get goalsReached => _goalsReached;
 
   /// Dengeleme günlüğü — yalnızca debug derlemede.
   void _logMove(ClearResult result) {
@@ -484,12 +516,16 @@ class GameController extends JourneyGameController {
     // Geri alınan hamle bir line temizlediyse durak bonusu hakkı da geri gider.
     revokeStationProgress(_undoStationProgress);
 
+    // Hamlenin puanı geri alınır, **üstüne** sabit bedel biner.
     restoreProgress(
-      score: score - _undoScore,
+      score: (score - _undoScore - ScoreRules.undoPenalty).clamp(0, score),
       elapsedSeconds: elapsedSeconds - _undoJourneySeconds,
     );
     _undoScore = 0;
     _undoJourneySeconds = 0;
+    // Geri alınan hamle hat temizlediyse hedef sayacı da geri gider.
+    _linesSinceStation = (_linesSinceStation - _undoLines).clamp(0, 99).toInt();
+    _undoLines = 0;
 
     _session = snapshot.copyWith(undoLeft: snapshot.undoLeft - 1);
 
@@ -497,6 +533,37 @@ class GameController extends JourneyGameController {
       _awaitingUndo = false;
       releaseClock();
     }
+    notifyListeners();
+    return true;
+  }
+
+  /// Kalan tepsi yenileme hakkı.
+  int get trayRefillsLeft => _trayRefillsLeft;
+
+  /// Tepsi yenilenebilir mi?
+  ///
+  /// Yalnızca **hamlesiz kalındığında** kullanılabilir. Oyun sürerken
+  /// istenen parçayı beklemek için basılabilseydi tepsi bir kaynak değil,
+  /// bir kumanda olurdu.
+  bool get canRefillTray =>
+      _trayRefillsLeft > 0 &&
+      status.isActive &&
+      !hasAnyLegalMove(_session.board, _session.tray);
+
+  /// Tepsiyi yeniler: üç yeni parça gelir, oyun devam eder.
+  bool refillTray() {
+    if (!canRefillTray) return false;
+    _trayRefillsLeft--;
+    _undoSnapshot = null;
+    _session = _session.copyWith(
+      tray: _generator.generateTray(_session.board, journey.difficulty),
+    );
+    if (_awaitingUndo) {
+      _awaitingUndo = false;
+      releaseClock();
+    }
+    // Yeni tepsi de sığmıyorsa oyun normal akışına döner.
+    _evaluateEndConditions();
     notifyListeners();
     return true;
   }
@@ -512,6 +579,13 @@ class GameController extends JourneyGameController {
   void _evaluateEndConditions() {
     // Hedefe ulaşmak oyunu bitirmez — tek final varıştır.
     if (hasAnyLegalMove(_session.board, _session.tray)) return;
+
+    // Tepsi yenileme hakkı varsa oyun bitmez: oyuncuya sorulur.
+    if (_trayRefillsLeft > 0) {
+      _awaitingUndo = true;
+      holdClock();
+      return;
+    }
 
     // Hak varsa oyun bitmez, son hamleyi geri alma şansı verilir.
     if (canUndo) {

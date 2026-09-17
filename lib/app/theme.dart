@@ -110,22 +110,58 @@ class AppColors {
   static const Color success = Color(0xFF2FB37A);
   static const Color warning = Color(0xFFF5C518);
 
-  /// Oyun kimlik renkleri — her mini oyunun kendi tonu.
+  /// Oyun kartı simgesinin arkasındaki kutu — **her oyunda aynı**.
   ///
-  /// Hat renginden **bağımsız**: oyun kataloğu hangi rotayı seçtiğinle
-  /// değişmez, altı oyun her zaman aynı altı renkte görünür. Aksi hâlde
-  /// (eskiden olduğu gibi) tüm kartlar seçili hattın tonuna boyanıyor ve
-  /// birbirinden ayırt edilemiyordu.
+  /// Kutu bir zamanlar oyunun renginin soluk hâliyle doluyordu ve altı
+  /// kart altı renkli lekeye dönüyordu; ekrandaki gerçek renk sistemiyle
+  /// (hat kimliği) yarışıyordu. Renk artık yalnızca glifin kendisinde,
+  /// yani çok küçük bir alanda. Liste sakin kalıyor, oyunun tonu yine de
+  /// görünüyor.
+  static const Color gameGlyphBox = Color(0xFF3A3F48);
+
+  /// Kilitli oyunun glifi.
+  static const Color gameGlyphLocked = Color(0xFF99A1AF);
+
+  /// Oyun glif renkleri.
   ///
-  /// Renk tek ayrım değil: her oyunun ayrıca kendi çizilmiş glifi var
-  /// (`GameGlyph`), yani renk körlüğünde de kartlar ayrışır. Hepsi
-  /// [surfaceHigh] üzerinde en az 5.2:1 kontrasta sahip.
-  static const Color gameBlocks = Color(0xFFE8A33D);
-  static const Color gameMerge = Color(0xFF5BB8E8);
-  static const Color gameTunnel = Color(0xFF4FC08D);
-  static const Color gameDrop = Color(0xFFD98BB8);
-  static const Color gameSequence = Color(0xFFC9A0F0);
-  static const Color gameLanes = Color(0xFFF0D95E);
+  /// Önceki set altı pastel tondan oluşuyordu (turuncu, gök mavisi, nane
+  /// yeşili, pastel pembe, lavanta, sarı): hepsi aynı parlaklıkta, aynı
+  /// doygunlukta ve birbirine yakın. Bu kombinasyon bir palet değil,
+  /// varsayılan bir dolgu gibi okunuyordu.
+  ///
+  /// Yenisinde iki kural var:
+  ///
+  /// 1. **Renk çemberine yayılmış.** Ton açıları 40° / 85° / 160° / 195° /
+  ///    275° / 340°; en dar aralık 35°, yani hiçbir ikisi kardeş değil.
+  /// 2. **Doygun ve koyu zeminde okunur.** Hepsi glif kutusunda
+  ///    ([gameGlyphBox]) en az 3.9:1 — WCAG'in ince grafik nesne sınırı
+  ///    3.0.
+  ///
+  /// Renk **tek ayrım değil**: her oyunun kendi çizilmiş glifi ve tabela
+  /// fontuyla yazılmış adı var, renk körlüğünde de kartlar ayrışır.
+  static const Color gameBlocks = Color(0xFFFFB020);
+  static const Color gameQuiz = Color(0xFFC77DFF);
+  static const Color gameMerge = Color(0xFF4CC9F0);
+  static const Color gameRail = Color(0xFF2DD4A0);
+  static const Color gameDrop = Color(0xFFFF6B9D);
+  static const Color gameLanes = Color(0xFFA8E05F);
+
+  /// Metro Bilgi kategori simgelerinin renkleri.
+  ///
+  /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori
+  /// hangi hatta oynandığınla ilgili değil. Okabe–Ito ailesinden seçildi,
+  /// altısı da renk körlüğü altında ayrışıyor ve kart yüzeyinde
+  /// ([surfaceHigh]) en az 3.6:1 kontrasta sahip — WCAG'in ince grafik
+  /// nesne sınırı 3.0.
+  ///
+  /// Renk **tek ayrım değil**: her kategorinin ayrıca kendi çizilmiş
+  /// simgesi ve yanında tam adı var.
+  static const Color categoryHistory = Color(0xFFE69F00);
+  static const Color categoryCultureArt = Color(0xFFCC79A7);
+  static const Color categorySports = Color(0xFF009E73);
+  static const Color categoryGeography = Color(0xFF56B4E9);
+  static const Color categoryIstanbul = Color(0xFFF0E442);
+  static const Color categoryGeneral = Color(0xFFB08AE8);
 
   /// Engel hücresi (zorluk profilinden gelen başlangıç doluluğu).
   static const Color blocker = Color(0xFF535A66);
@@ -365,10 +401,28 @@ class AppText {
   );
 
   /// Ekran başlığı (AppBar, panel başlığı).
+  ///
+  /// Kart başlığından ([tileTitle], 17) belirgin şekilde büyük olmalı:
+  /// ikisi 24/18 iken aynı hiyerarşide okunuyor, "OYUN SEÇ" ile oyun
+  /// adları yarışıyordu. 26/17 arası %53 fark var.
   static const TextStyle title = TextStyle(
     fontFamily: AppFonts.display,
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: FontWeight.w400,
+    color: AppColors.textPrimary,
+  );
+
+  /// Liste kartı başlığı — oyun adı, tabela dili.
+  ///
+  /// Bungee tek ağırlıklıdır ve iri çizer; 17 punto bu ailenin pratik
+  /// küçük sınırı. Ekran başlığıyla ([title], 26) aynı ses ama açıkça
+  /// bir basamak aşağıda.
+  static const TextStyle tileTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 17,
+    fontWeight: FontWeight.w400,
+    height: 1.2,
+    letterSpacing: 0.2,
     color: AppColors.textPrimary,
   );
 

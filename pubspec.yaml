@@ -27,6 +27,7 @@ dependencies:
   # widget testlerinde tester.pump(süre) ile zamanlayıcı, ham DateTime.now()
   # ile uyumsuz kalmadan hızlandırılabiliyor.
   clock: ^1.1.2
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

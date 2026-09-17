@@ -3,8 +3,14 @@
 
 Kaynak dosyalarda yazarken verilen etiket bir ilk tahmindir ve kategoriler
 arasında tutarsız kalıyordu. Burada tek bir kural kümesi uygulanır, sonra
-kategori içinde hedef dağılıma (%35 kolay / %45 orta / %20 zor) yaklaşacak
+kategori içinde hedef dağılıma (%45 kolay / %43 orta / %12 zor) yaklaşacak
 şekilde sınırdaki kayıtlar kaydırılır.
+
+Zor dilimi bilerek dar: bu havuzdaki zor soruların çoğu yıl ezberi
+("hangi yılda imzalandı", dört yıl şıkkı). Çoktan seçmelide bu tür, elemeyle
+daraltılamadığı için tahmine düşüyor ve üç canla oynanan bir oyunda
+yolculuğu erken bitiriyordu. Oran %20'den %12'ye indirildi; sorular
+silinmedi, yalnızca daha seyrek karşılaşılıyor.
 
 Kaydırma rastgele değil, **sıralamayla** yapılır: her sorunun bir zorluk
 puanı vardır, kategori bu puana göre sıralanır ve dilimlenir. Böylece
@@ -12,7 +18,7 @@ puanı vardır, kategori bu puana göre sıralanır ve dilimlenir. Böylece
 """
 import re, collections
 
-TARGET = (('easy', 0.35), ('medium', 0.45), ('hard', 0.20))
+TARGET = (('easy', 0.45), ('medium', 0.43), ('hard', 0.12))
 
 # Herkesin bildiği temel olgular.
 EASY = re.compile(

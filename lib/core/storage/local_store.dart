@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/player/domain/player_name.dart';
+
 /// Cihaz üzerinde tutulan küçük kalıcı veriler.
 ///
 /// Sadece **local**: en iyi skor ve haptic tercihi. Hesap, cloud save,
@@ -38,6 +40,12 @@ class LocalStore extends ChangeNotifier {
   static const String _savedGameKey = 'saved_game';
   static const String _lastOriginKey = 'last_route_origin';
   static const String _lastDestinationKey = 'last_route_destination';
+  static const String _playerNameKey = 'player_name';
+  static const String _playerTagKey = 'player_tag';
+  static const String _playerNameLockedKey = 'player_name_locked';
+  static const String _usageStatsKey = 'usage_stats';
+  static const String _errorLogKey = 'error_log';
+  static const String _statsEnabledKey = 'stats_enabled';
 
   SharedPreferences? _prefs;
   bool _ready = false;
@@ -51,7 +59,65 @@ class LocalStore extends ChangeNotifier {
   /// daha müdahaleci olduğu için aynı gerekçe fazlasıyla geçerli.
   bool _musicEnabled = false;
 
+  /// Oyuncu adı — ilk açılışta sessizce atanır.
+  ///
+  /// Kurulum akışına "ad seç" adımı konmadı: oyuncu daha oyunu görmeden
+  /// karar vermek zorunda kalıyor ve bu ilk deneyime sürtünme ekliyor.
+  /// Ad zaten var, beğenmeyen ayarlardan değiştiriyor.
+  String _playerName = '';
+  String _playerTag = '';
+
+  /// Ad bir kez onaylandıktan sonra kilitlenir.
+  ///
+  /// Ürün kararı: ad bir imza, takma ad değil. Her istediğinde
+  /// değiştirilebilseydi paylaşılan sonuç kartındaki ad ile skor
+  /// tablosundaki ad tutmazdı ve "bu rekoru kim kırdı" sorusunun
+  /// cevabı oynak olurdu.
+  ///
+  /// Kilit **ilk seçimden sonra** iniyor, atamadan sonra değil: rastgele
+  /// verilmiş bir adla ömür boyu yaşamak zorunda kalmak kötü bir
+  /// karşılama olurdu. Oyuncu bir kez seçiyor, o seçim kalıcı.
+  bool _playerNameLocked = false;
+
   bool get isReady => _ready;
+
+  /// Oyuncunun görünen adı.
+  String get playerName => _playerName;
+
+  /// Aynı adı taşıyanları ayıran sonek. Ad değişse bile sabit kalır.
+  String get playerTag => _playerTag;
+
+  /// Ad onaylandı mı? Onaylandıysa bir daha değişmez.
+  bool get isPlayerNameLocked => _playerNameLocked;
+
+  /// Kullanım sayaçları tutulsun mu?
+  ///
+  /// Sayaçlar **cihazdan çıkmıyor**; bu anahtar oyuncuya kendi
+  /// verisi üzerinde söz hakkı veriyor ve uzak gönderim eklendiği gün
+  /// hazır duruyor. Varsayılan açık: hiçbir şey gönderilmediği için
+  /// kapalı başlamasının bir karşılığı yok.
+  bool _statsEnabled = true;
+  bool get statsEnabled => _statsEnabled;
+
+  /// Kullanım sayaçlarının ham kaydı.
+  String? get usageStatsRaw => _prefs?.getString(_usageStatsKey);
+
+  /// Hata kaydının ham hâli.
+  String? get errorLogRaw => _prefs?.getString(_errorLogKey);
+
+  Future<void> writeUsageStats(String raw) async {
+    await _prefs?.setString(_usageStatsKey, raw);
+  }
+
+  Future<void> writeErrorLog(String raw) async {
+    await _prefs?.setString(_errorLogKey, raw);
+  }
+
+  Future<void> setStatsEnabled(bool value) async {
+    _statsEnabled = value;
+    await _prefs?.setBool(_statsEnabledKey, value);
+  }
+
   bool get hapticsEnabled => _hapticsEnabled;
   bool get soundEnabled => _soundEnabled;
   bool get musicEnabled => _musicEnabled;
@@ -64,6 +130,8 @@ class LocalStore extends ChangeNotifier {
       _hapticsEnabled = _prefs?.getBool(_hapticsKey) ?? true;
       _soundEnabled = _prefs?.getBool(_soundKey) ?? false;
       _musicEnabled = _prefs?.getBool(_musicKey) ?? false;
+      _statsEnabled = _prefs?.getBool(_statsEnabledKey) ?? true;
+      _restorePlayerIdentity();
     } catch (error, stack) {
       debugPrint('LocalStore init başarısız: $error\n$stack');
       _prefs = null;
@@ -266,6 +334,39 @@ class LocalStore extends ChangeNotifier {
     await _prefs?.setString(_lastOriginKey, originId);
     await _prefs?.setString(_lastDestinationKey, destinationId);
     notifyListeners();
+  }
+
+  /// Adı ve soneki kayıttan okur; yoksa üretir.
+  ///
+  /// Kayıttaki ad sözlükten üretilmemişse atılır ve yenisi verilir: elle
+  /// düzenlenmiş bir tercih dosyası uygulamaya rastgele metin sokamaz.
+  void _restorePlayerIdentity() {
+    final saved = _prefs?.getString(_playerNameKey);
+    _playerName = (saved != null && PlayerName.isValid(saved))
+        ? saved
+        : PlayerName.random();
+    _playerTag = _prefs?.getString(_playerTagKey) ?? PlayerName.discriminator();
+    _playerNameLocked = _prefs?.getBool(_playerNameLockedKey) ?? false;
+    if (saved != _playerName) {
+      _prefs?.setString(_playerNameKey, _playerName);
+    }
+    if (_prefs?.getString(_playerTagKey) == null) {
+      _prefs?.setString(_playerTagKey, _playerTag);
+    }
+  }
+
+  /// Oyuncu adını **bir kez** belirler ve kilitler.
+  ///
+  /// Kilit inmişse ya da ad sözlük dışıysa `false` döner ve hiçbir şey
+  /// değişmez.
+  Future<bool> confirmPlayerName(String name) async {
+    if (_playerNameLocked) return false;
+    if (!PlayerName.isValid(name)) return false;
+    _playerName = name;
+    _playerNameLocked = true;
+    await _prefs?.setString(_playerNameKey, name);
+    await _prefs?.setBool(_playerNameLockedKey, true);
+    return true;
   }
 
   Future<void> setHapticsEnabled(bool value) async {

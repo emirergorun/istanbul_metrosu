@@ -77,14 +77,40 @@ void main() {
     expect(controller.canUndo, isFalse);
   });
 
-  test('hak yoksa oyun hemen biter', () {
+  test('geri alma hakkı yoksa tepsi yenileme teklif edilir', () {
     final controller = lockingController(undoLeft: 0);
     addTearDown(controller.dispose);
 
     controller.place(0, 0, 0);
 
-    expect(controller.status, GameStatus.gameOver);
+    expect(controller.status, GameStatus.playing);
+    expect(controller.awaitingUndo, isTrue);
+    expect(controller.canUndo, isFalse);
+    expect(controller.canRefillTray, isTrue);
+  });
+
+  test('tepsi yenileme oyunu sürdürür ve hakkı tüketir', () {
+    final controller = lockingController(undoLeft: 0);
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+
+    expect(controller.refillTray(), isTrue);
+    expect(controller.trayRefillsLeft, 0);
     expect(controller.awaitingUndo, isFalse);
+    // Yeni tepsi tahtaya sığıyorsa oyun devam eder; sığmıyorsa hak
+    // kalmadığı için biter. İkisi de geçerli, aradaki "teklif açık"
+    // durumu artık olamaz.
+    expect(controller.status, anyOf(GameStatus.playing, GameStatus.gameOver));
+  });
+
+  test('yenileme hakkı bir kez kullanılır', () {
+    final controller = lockingController(undoLeft: 0);
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+
+    expect(controller.refillTray(), isTrue);
+    expect(controller.refillTray(), isFalse, reason: 'hak tükendi');
+    expect(controller.trayRefillsLeft, 0);
   });
 
   test('teklif açıkken çıkmak oyunu bitirir', () {
@@ -134,5 +160,21 @@ void main() {
     controller.resume();
 
     expect(controller.status, GameStatus.gameOver);
+  });
+
+  test('geri alma sabit puan bedeli öder', () {
+    final controller = lockingController();
+    addTearDown(controller.dispose);
+    controller.place(0, 0, 0);
+    final before = controller.score;
+
+    expect(controller.undo(), isTrue);
+
+    expect(
+      controller.score,
+      lessThan(before),
+      reason: 'hamlenin puanı geri alınır, üstüne sabit bedel biner',
+    );
+    expect(controller.score, greaterThanOrEqualTo(0));
   });
 }
