@@ -57,6 +57,13 @@ abstract class JourneyRun implements Listenable {
   int get lastStationBonus;
   int get stationBonusPulse;
 
+  /// Her durak geçişinde artan sayaç — bonus kazanılmasa da.
+  ///
+  /// [stationBonusPulse]'dan farkı: bonus yalnızca o duraktan beri kayda
+  /// değer bir şey yapıldıysa gelir, oysa durağın kendisi her hâlükârda
+  /// geçilir. Yolculuğun ilerlediği oyuncuya bu sayaçla gösterilir.
+  int get stationPulse;
+
   void start();
   void pause();
   void resume();

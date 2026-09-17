@@ -30,6 +30,7 @@ class ArrivalSequence extends StatefulWidget {
     required this.stationName,
     required this.child,
     this.duration = defaultDuration,
+    this.onSkipped,
   });
 
   final Color accent;
@@ -41,6 +42,12 @@ class ArrivalSequence extends StatefulWidget {
 
   /// Sahnenin toplam süresi. Yavaşlatılmış hâli görsel kontrol için kullanılır.
   final Duration duration;
+
+  /// Oyuncu sahneyi atladığında çağrılır.
+  ///
+  /// Tören sesi sahneden uzun (4 sn); atlandığında kesilmezse sonuç
+  /// panelini okurken arka planda tren sesi kalıyor.
+  final VoidCallback? onSkipped;
 
   /// Kapı katmanının test anahtarı.
   ///
@@ -142,6 +149,7 @@ class _ArrivalSequenceState extends State<ArrivalSequence>
 
   void _skip() {
     if (!_isPlaying) return;
+    widget.onSkipped?.call();
     _controller.animateTo(
       1,
       duration: const Duration(milliseconds: 200),

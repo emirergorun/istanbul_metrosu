@@ -65,24 +65,25 @@ void main() {
     return tester.getTopRight(button).dx;
   }
 
-  testWidgets('rozet yokken duraklatma düğmesi sağ kenarda', (tester) async {
+  testWidgets('okuma yokken duraklatma düğmesi sağ kenarda', (tester) async {
     final rightEdge = await pumpHud(tester, width: 390);
 
     expect(tester.takeException(), isNull);
     expect(pauseRight(tester), closeTo(rightEdge, 1));
   });
 
-  testWidgets('rozet varken de sağ kenarda', (tester) async {
+  testWidgets('okuma varken de sağ kenarda', (tester) async {
     final rightEdge = await pumpHud(
       tester,
       width: 390,
       chips: <Widget>[
-        const ComboChip(
+        ComboReadout(
           combo: 4,
+          streak: 6,
+          accent: Colors.red,
           graceLeft: 2,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
-        const StreakChip(streak: 6),
       ],
     );
 
@@ -90,54 +91,58 @@ void main() {
     expect(pauseRight(tester), closeTo(rightEdge, 1));
   });
 
-  testWidgets('dar ekranda üç haneli rozetler satırı taşırmaz', (tester) async {
+  testWidgets('dar ekranda üç haneli sayılar satırı taşırmaz', (tester) async {
     final rightEdge = await pumpHud(
       tester,
       width: 320,
       chips: <Widget>[
-        const ComboChip(
+        ComboReadout(
           combo: 128,
+          streak: 256,
+          accent: Colors.red,
           graceLeft: 1,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
-        const StreakChip(streak: 256),
       ],
     );
 
     expect(
       tester.takeException(),
       isNull,
-      reason: 'rozetler küçülmeli, satır taşmamalı',
+      reason: 'okuma küçülmeli, satır taşmamalı',
     );
     expect(pauseRight(tester), closeTo(rightEdge, 1));
   });
 
-  testWidgets('geniş ekranda rozetler küçültülmez', (tester) async {
+  testWidgets('geniş ekranda okuma küçültülmez', (tester) async {
     await pumpHud(
       tester,
       width: 900,
       chips: <Widget>[
-        const ComboChip(
+        ComboReadout(
           combo: 4,
+          streak: 6,
+          accent: Colors.red,
           graceLeft: 2,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
-        const StreakChip(streak: 6),
       ],
     );
 
     expect(tester.takeException(), isNull);
-    // Rozetler doğal yüksekliğinde: ölçekleme devreye girmemiş.
-    expect(tester.getSize(find.byType(StreakChip)).height, greaterThan(24));
+    // Okuma doğal yüksekliğinde: ölçekleme devreye girmemiş.
+    expect(tester.getSize(find.byType(ComboReadout)).height, greaterThan(24));
   });
 
-  testWidgets('skor rozetlerin yerini kapmaz', (tester) async {
+  testWidgets('skor okumanın yerini kapmaz', (tester) async {
     await pumpHud(
       tester,
       width: 390,
       chips: <Widget>[
-        const ComboChip(
+        ComboReadout(
           combo: 4,
+          streak: 0,
+          accent: Colors.red,
           graceLeft: 2,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
@@ -145,8 +150,7 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    // Rozet tam genişliğinde çizilmeli; skor sütunu kalanı doldurur.
-    expect(find.text('COMBO'), findsOneWidget);
-    expect(find.text('x4'), findsOneWidget);
+    // Okuma tam genişliğinde çizilmeli; skor sütunu kalanı doldurur.
+    expect(find.text('×4'), findsOneWidget);
   });
 }

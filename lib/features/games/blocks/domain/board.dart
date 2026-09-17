@@ -200,3 +200,29 @@ bool hasAnyLegalMove(Board board, Iterable<BlockPiece?> pieces) {
   }
   return false;
 }
+
+/// Tahtada **kapanmaya yakın** bir hat var mı?
+///
+/// "Az kalmış" demek: bir satır ya da sütunun en çok [maxGap] hücresi boş.
+/// Oyuncunun kurduğu bir planın son adımı genelde böyle görünür — satır üç
+/// hücreye kadar getirilmiştir ve kapanmayı bekler.
+///
+/// Parça üreticisi bunu kurtarıcı parça vermek için kullanır; tamamen dolu
+/// hatlar sayılmaz, onlar zaten temizlenmiştir.
+bool hasNearCompleteLine(Board board, {int maxGap = 3}) {
+  for (var r = 0; r < board.rows; r++) {
+    var empty = 0;
+    for (var c = 0; c < board.cols; c++) {
+      if (board.isEmptyAt(r, c)) empty++;
+    }
+    if (empty > 0 && empty <= maxGap) return true;
+  }
+  for (var c = 0; c < board.cols; c++) {
+    var empty = 0;
+    for (var r = 0; r < board.rows; r++) {
+      if (board.isEmptyAt(r, c)) empty++;
+    }
+    if (empty > 0 && empty <= maxGap) return true;
+  }
+  return false;
+}

@@ -194,240 +194,161 @@ class SprintChip extends StatelessWidget {
 }
 
 /// Ardışık temizlik göstergesi. Oyunlar `chips` ile ekler.
-/// Combo ve seri rozetlerinin ortak rengi ve metni.
+/// Combo ve serinin HUD'daki okuması.
 ///
-/// İkisi de aynı hat renginde ve yalnızca sayıyla gösteriliyordu; oyuncu
-/// hangisinin ne olduğunu ayırt edemiyordu. Artık her birinin kendi rengi,
-/// kendi adı ve basılı tutunca çıkan kendi açıklaması var.
+/// Önce iki ayrı hap rozetti: her biri ikon + büyük harf etiket + sayı +
+/// nokta göstergesi taşıyordu, ikisi de aynı kenarlık ve dolguyla, biri
+/// sarı biri yeşil. Üç sorun birdendi.
 ///
-/// Renkler bilinçli: combo **sarı** (anlık, hızlı, dikkat çeken), seri
-/// **yeşil** (uzun soluklu, sağlıklı gidiş), risk altındaki seri
-/// **kırmızı** (bu hamlede kopabilir).
-class _ChipStyle {
-  const _ChipStyle._();
-
-  static const Color combo = AppColors.warning;
-  static const Color streak = AppColors.success;
-  static const Color streakAtRisk = AppColors.danger;
-}
-
-/// HUD'daki combo rozeti.
+/// **Hiyerarşi yoktu.** Combo anlık ve gürültülü, seri uzun soluklu ve
+/// sessiz; eşit ağırlıkta iki rozet ikisini de aynı şey gibi gösteriyordu.
 ///
-/// Sayının yanında **hazırlık payı** da gösterilir: combo, temizlemeyen
-/// hamlelerle hemen sönmüyor artık, ama oyuncu kaç hakkı kaldığını
-/// göremezse kural görünmez bir şans oyununa dönüşür. Dolu nokta kalan
-/// hakkı, boş nokta harcanmış hakkı gösterir.
+/// **Hat kimliğinden kopuktu.** Ekrandaki her şey hattın renginde — rozet,
+/// tren, ray, ilerleme — ama bu iki rozet sabit sarı ve yeşildi. M1A
+/// oynarken ekranda üç ilgisiz renk oluyordu.
 ///
-/// Sayı her değiştiğinde rozet kısa bir sıçrama yapar — combo'nun arttığı
-/// gözden kaçmasın diye.
+/// **Tekrardı.** Combo zaten patlama anında tahtanın üstünde, gözün
+/// olduğu yerde, iri iri yazılıyor. Sağ üst köşe oyun sırasında en az
+/// bakılan yer.
 ///
-/// Basılı tutunca kuralı anlatan kısa bir açıklama çıkar. Oyunda başka
-/// yerde öğretilmiyor; rozetin kendisi kendini anlatmalı.
-class ComboChip extends StatelessWidget {
-  const ComboChip({
+/// Şimdi tek bir okuma var: çarpan büyük ve hat renginde, seri onun
+/// altında küçük ve sessiz. Kutu, kenarlık, dolgu ve ikon yok — biçimi
+/// tipografi ve renk taşıyor.
+class ComboReadout extends StatelessWidget {
+  const ComboReadout({
     super.key,
     required this.combo,
+    required this.streak,
+    required this.accent,
     this.graceLeft,
     this.graceTotal,
+    this.streakAtRisk = false,
   });
 
+  /// Şu anki combo. 2'nin altındaysa çarpan yazılmaz.
   final int combo;
 
-  /// Combo sönmeden önce kalan hazırlık hamlesi. `null` ise nokta çizilmez.
+  /// Şu anki seri. 1'in altındaysa seri satırı yazılmaz.
+  final int streak;
+
+  /// Hattın rengi. Çarpan bu renkte yanar.
+  final Color accent;
+
+  /// Combo sönmeden önce kalan hazırlık hamlesi.
   final int? graceLeft;
 
-  /// Toplam hazırlık payı; nokta sayısı budur.
+  /// Toplam hazırlık payı.
   final int? graceTotal;
 
-  String get _explanation {
+  /// Seri bu hamlede kopabilir mi?
+  final bool streakAtRisk;
+
+  bool get _showCombo => combo >= 2;
+  bool get _showStreak => streak >= 1;
+
+  /// Combo sönmeye yaklaştıkça çarpan soluyor.
+  ///
+  /// Önce kalan hak nokta olarak çiziliyordu; nokta dizisi ne anlama
+  /// geldiği söylenmeden anlaşılmıyordu. Solma evrensel okunur: "bu şey
+  /// bitmek üzere".
+  double get _comboOpacity {
     final left = graceLeft;
-    final base = 'COMBO: art arda sıra temizledikçe artar ve puanı katlar.';
-    if (left == null) return base;
-    return left > 0
-        ? '$base Temizlemeyen $left hamle hakkın kaldı.'
-        : '$base Sıradaki temizliksiz hamle combo’yu bitirir.';
+    final total = graceTotal;
+    if (left == null || total == null || total <= 0) return 1;
+    return 0.5 + 0.5 * (left / total).clamp(0.0, 1.0);
   }
-
-  @override
-  Widget build(BuildContext context) {
-    const color = _ChipStyle.combo;
-    final total = graceTotal ?? 0;
-    final left = graceLeft ?? 0;
-
-    return Tooltip(
-      message: _explanation,
-      triggerMode: TooltipTriggerMode.tap,
-      showDuration: const Duration(seconds: 4),
-      child: Semantics(
-        label: 'Combo $combo. $_explanation',
-        child: ExcludeSemantics(
-          child: TweenAnimationBuilder<double>(
-            // Anahtar combo'ya bağlı: her artışta animasyon baştan başlar.
-            key: ValueKey<int>(combo),
-            tween: Tween<double>(begin: 1.35, end: 1),
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOutBack,
-            builder: (context, scale, child) =>
-                Transform.scale(scale: scale, child: child),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withValues(alpha: 0.6)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Icon(Icons.bolt_rounded, size: 14, color: color),
-                  const SizedBox(width: 3),
-                  Flexible(
-                    child: Text(
-                      'COMBO',
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      softWrap: false,
-                      style: AppText.label.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'x$combo',
-                    style: AppText.statSmall.copyWith(color: color),
-                  ),
-                  if (total > 0) ...<Widget>[
-                    const SizedBox(width: 5),
-                    for (var i = 0; i < total; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 2),
-                        child: _GraceDot(filled: i < left, color: color),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Combo rozetindeki hazırlık noktası.
-class _GraceDot extends StatelessWidget {
-  const _GraceDot({required this.filled, required this.color});
-
-  final bool filled;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 5,
-      height: 5,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: filled ? color : Colors.transparent,
-        border: Border.all(
-          color: color.withValues(alpha: filled ? 1 : 0.45),
-          width: 1,
-        ),
-      ),
-    );
-  }
-}
-
-/// HUD'daki seri rozeti.
-///
-/// Combo'dan ayrı bir şey ölçer: combo son birkaç hamleyi, seri bütün
-/// koşunun temposunu. Bu yüzden ayrı bir rozet, ayrı bir renk ve ayrı bir
-/// ad — aynı renkte iki sayı göstermek ikisini de okunmaz yapıyordu.
-///
-/// [atRisk] açıkken rozet kırmızıya döner: açık tepside henüz temizlik yok
-/// ve son parça kaldı, yani bu hamle seriyi ya sürdürecek ya bitirecek.
-class StreakChip extends StatelessWidget {
-  const StreakChip({
-    super.key,
-    required this.streak,
-    this.atRisk = false,
-    this.piecesLeft,
-  });
-
-  final int streak;
-  final bool atRisk;
-
-  /// Açık tepside kalan parça sayısı; açıklamada kullanılır.
-  final int? piecesLeft;
 
   String get _explanation {
-    const base =
-        'SERİ: her üç parçada en az bir sıra temizlersen büyür, '
-        'temizliksiz geçen tepside sıfırlanır.';
-    if (!atRisk) return base;
-    final left = piecesLeft ?? 1;
-    return '$base Bu tepside henüz temizlik yok, $left parça kaldı.';
+    final parts = <String>[];
+    if (_showCombo) {
+      parts.add(
+        'Combo ×$combo: art arda sıra temizledikçe artar ve puanı katlar.',
+      );
+      final left = graceLeft;
+      if (left != null) {
+        parts.add(
+          left > 0
+              ? 'Temizlemeyen $left hamle hakkın kaldı.'
+              : 'Sıradaki temizliksiz hamle combo’yu bitirir.',
+        );
+      }
+    }
+    if (_showStreak) {
+      parts.add(
+        'Seri $streak: her üç parçada en az bir sıra temizlersen büyür.',
+      );
+      if (streakAtRisk) parts.add('Bu tepside henüz temizlik yok.');
+    }
+    return parts.join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = atRisk ? _ChipStyle.streakAtRisk : _ChipStyle.streak;
+    if (!_showCombo && !_showStreak) return const SizedBox.shrink();
+
+    final streakColor = streakAtRisk
+        ? AppColors.danger
+        : AppColors.textSecondary;
 
     return Tooltip(
       message: _explanation,
       triggerMode: TooltipTriggerMode.tap,
       showDuration: const Duration(seconds: 4),
       child: Semantics(
-        label: 'Seri $streak. $_explanation',
+        label: _explanation,
         child: ExcludeSemantics(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withValues(alpha: 0.6)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(
-                  atRisk
-                      ? Icons.warning_amber_rounded
-                      : Icons.trending_up_rounded,
-                  size: 14,
-                  color: color,
-                ),
-                const SizedBox(width: 3),
-                Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (_showCombo)
+                TweenAnimationBuilder<double>(
+                  // Anahtar combo'ya bağlı: her artışta baştan oynar.
+                  key: ValueKey<int>(combo),
+                  tween: Tween<double>(begin: 1.3, end: 1),
+                  duration: const Duration(milliseconds: 220),
+                  curve: _kEase,
+                  builder: (context, scale, child) => Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.centerRight,
+                    child: child,
+                  ),
                   child: Text(
-                    'SERİ',
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                    softWrap: false,
-                    style: AppText.label.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
+                    '×$combo',
+                    style: AppText.stat.copyWith(
+                      fontSize: 22,
+                      height: 1,
+                      letterSpacing: -0.5,
+                      color: accent.withValues(alpha: _comboOpacity),
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '$streak',
-                  style: AppText.statSmall.copyWith(color: color),
+              if (_showStreak)
+                Padding(
+                  padding: EdgeInsets.only(top: _showCombo ? 3 : 0),
+                  child: Text(
+                    'seri $streak',
+                    style: AppText.label.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4,
+                      height: 1,
+                      color: streakColor,
+                    ),
+                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 }
+
+/// Giriş hareketleri için ortak eğri.
+///
+/// `easeOutBack` kadar zıplamaz, `easeInOut` kadar da uyuşuk değil.
+const Cubic _kEase = Cubic(0.32, 0.72, 0.0, 1.0);
 
 /// HUD'daki kare ikon butonu.
 class HudButton extends StatelessWidget {

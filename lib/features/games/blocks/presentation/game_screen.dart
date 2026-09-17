@@ -11,10 +11,8 @@ import '../../../../core/audio/audio_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
-import '../../../journey/models/station.dart';
-import '../../../journey/models/station_progress.dart';
 import '../../../session/widgets/journey_hud.dart';
-import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../application/game_controller.dart';
 import '../application/game_snapshot.dart';
@@ -88,13 +86,6 @@ class _GameScreenState extends State<GameScreen>
   );
   Timer? _targetBannerTimer;
 
-  /// Durak bonusu bildirimi — ilerleme çubuğunun üstünde kısa süre belirir.
-  late final AnimationController _stationBonus = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 240),
-  );
-  Timer? _stationBonusTimer;
-
   /// Durağa varış kutlaması: ray üzerindeki durak noktası büyür, halka atar.
   ///
   /// Bildirim şeridinden ayrı bir denetleyici: şerit 1,4 saniye durur ama
@@ -106,9 +97,6 @@ class _GameScreenState extends State<GameScreen>
 
   /// En son görülen durak sayısı; artışı varış olayı sayılır.
   int _seenStationsPassed = 0;
-
-  /// Son varılan durak. Bildirim şeridi bunu gösterir.
-  StationReachedEvent? _lastStationEvent;
 
   double _cellSize = 40;
 
@@ -193,15 +181,12 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  /// Tren bir durak geçtiyse varışı kutla.
+  /// Tren bir durak geçtiyse ses, titreşim ve ray nabzı.
   ///
-  /// Tetikleyici **durak sayısı**, bonus değil: bonus yalnızca o duraktan
-  /// beri satır temizlendiyse geliyor, oysa durağın kendisi her hâlükârda
-  /// geçiliyor. Eskiden bonussuz durak sessizce geçiyordu ve yolculuk
-  /// ilerlemesi oyuncuya hiç görünmüyordu.
-  ///
-  /// Kutlama oyunu durdurmaz: ray üzerinde kısa bir nabız, üstte 1,4
-  /// saniyelik bir şerit. Toplam kesinti bir saniyenin altında.
+  /// Durağın **adını** gösteren şerit ortak katmanda ([StationBanner]);
+  /// burada yalnızca bu oyuna özgü geri bildirim kalıyor. Tetikleyici
+  /// motorun durak sayacı: bonus yalnızca o duraktan beri satır
+  /// temizlendiyse geliyor, oysa durağın kendisi her hâlükârda geçiliyor.
   void _showStationReachedIfNew() {
     final controller = _controller;
     if (controller == null) return;
@@ -212,68 +197,12 @@ class _GameScreenState extends State<GameScreen>
       _seenStationsPassed = passed;
       return;
     }
-
-    final previousCount = _seenStationsPassed;
     _seenStationsPassed = passed;
 
-    final event = _stationEventFor(previousCount, passed);
-    if (event == null) return;
-
-    _lastStationEvent = event;
     _haptic(HapticFeedback.selectionClick);
     _sound(GameSound.station);
-
     _arrivalPulse.forward(from: 0);
-    _stationBonusTimer?.cancel();
-    _stationBonus.forward();
-    _stationBonusTimer = Timer(const Duration(milliseconds: 1400), () {
-      if (mounted) _stationBonus.reverse();
-    });
   }
-
-  /// Varış olayını yolculuk verisinden kurar.
-  StationReachedEvent? _stationEventFor(int previousCount, int passed) {
-    final controller = _controller;
-    if (controller == null) return null;
-
-    final journey = controller.journey;
-    final stations = AppScope.of(context).metro.stationsOfLine(journey.lineId);
-    if (stations.isEmpty) return null;
-
-    final direction = journey.destination.order > journey.origin.order ? 1 : -1;
-    Station? at(int index) {
-      if (index < 0 || index > journey.stopCount) return null;
-      final order = journey.origin.order + direction * index;
-      for (final station in stations) {
-        if (station.order == order) return station;
-      }
-      return null;
-    }
-
-    final reached = at(passed);
-    if (reached == null) return null;
-
-    return StationReachedEvent(
-      previous: at(previousCount) ?? journey.origin,
-      reached: reached,
-      next: at(passed + 1),
-      stationsPassed: passed,
-      stopCount: journey.stopCount,
-      // Bonus yalnızca o duraktan beri temizlik yapıldıysa verilir.
-      bonusAwarded:
-          controller.stationBonusPulse > 0 &&
-              controller.lastStationBonus > 0 &&
-              _bonusBelongsTo(passed)
-          ? controller.lastStationBonus
-          : 0,
-    );
-  }
-
-  /// Controller'ın son bonusu **bu** durağa mı ait?
-  ///
-  /// Bonus ve durak geçişi aynı karede işleniyor; sayaç artmışsa bonus da
-  /// bu durağındır.
-  bool _bonusBelongsTo(int passed) => _controller?.stationsPassed == passed;
 
   /// Seri bu hamlede kopabilir mi?
   ///
@@ -284,16 +213,6 @@ class _GameScreenState extends State<GameScreen>
     return streak.value >= 1 &&
         !streak.clearedInSet &&
         streak.piecesLeftInSet <= 1;
-  }
-
-  /// Yolculuğun durak düzeyindeki hâli — ilerleme çubuğu bunu gösterir.
-  StationProgress? _stationProgress(GameController controller) {
-    final journey = controller.journey;
-    return stationProgressFor(
-      journey: journey,
-      lineStations: AppScope.of(context).metro.stationsOfLine(journey.lineId),
-      progress: controller.progress,
-    );
   }
 
   @override
@@ -316,8 +235,6 @@ class _GameScreenState extends State<GameScreen>
     _controller?.removeListener(_onControllerChanged);
     _controller?.dispose();
     _targetBannerTimer?.cancel();
-    _stationBonusTimer?.cancel();
-    _stationBonus.dispose();
     _arrivalPulse.dispose();
     _flashController.dispose();
     _undoController.dispose();
@@ -510,22 +427,18 @@ class _GameScreenState extends State<GameScreen>
                       run: controller,
                       accent: accent,
                       onPause: controller.pause,
-                      // HUD sırası: skor, sonra oyuna özgü rozetler.
-                      // Combo ve streak yalnızca **varken** görünür; boş
-                      // rozetler kalıcı gürültü olurdu.
+                      // Combo ve seri tek okumada: çarpan hat renginde
+                      // büyük, seri altında küçük. İkisi de yokken hiç
+                      // çizilmez.
                       chips: <Widget>[
-                        if (session.combo >= 2)
-                          ComboChip(
-                            combo: session.combo,
-                            graceLeft: session.comboState.graceLeft,
-                            graceTotal: ScoreRules.comboGraceMoves,
-                          ),
-                        if (session.streak >= 1)
-                          StreakChip(
-                            streak: session.streak,
-                            atRisk: _streakAtRisk(session),
-                            piecesLeft: session.streakState.piecesLeftInSet,
-                          ),
+                        ComboReadout(
+                          combo: session.combo,
+                          streak: session.streak,
+                          accent: accent,
+                          graceLeft: session.comboState.graceLeft,
+                          graceTotal: ScoreRules.comboGraceMoves,
+                          streakAtRisk: _streakAtRisk(session),
+                        ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -549,13 +462,7 @@ class _GameScreenState extends State<GameScreen>
                     // büyüyüp tahta aşağı kayıyordu.
                     Row(
                       children: <Widget>[
-                        Expanded(
-                          child: _StationPulse(
-                            animation: _stationBonus,
-                            accent: accent,
-                            event: _lastStationEvent,
-                          ),
-                        ),
+                        const Spacer(),
                         HudButton(
                           icon: Icons.undo_rounded,
                           tooltip: 'Geri al',
@@ -569,24 +476,17 @@ class _GameScreenState extends State<GameScreen>
                     const SizedBox(height: AppSpacing.sm),
                     AnimatedBuilder(
                       animation: _arrivalPulse,
-                      builder: (context, _) {
-                        final stations = _stationProgress(controller);
-                        return JourneyProgressBar(
-                          lineId: journey.lineId,
-                          stopCount: journey.stopCount,
-                          originName: journey.origin.name,
-                          destinationName: journey.destination.name,
-                          progress: controller.progress,
-                          remainingSeconds: controller.remainingSeconds,
-                          nextStopName: stations?.approaching?.name,
-                          stationProgress: stations,
-                          arrivalPulse: _arrivalPulse.value,
-                          accent: accent,
-                          isMoving:
-                              controller.status == GameStatus.playing &&
-                              !controller.awaitingUndo,
-                        );
-                      },
+                      builder: (context, _) => JourneyStatusBar(
+                        run: controller,
+                        lineStations: AppScope.of(
+                          context,
+                        ).metro.stationsOfLine(journey.lineId),
+                        arrivalPulse: _arrivalPulse.value,
+                        accent: accent,
+                        isMoving:
+                            controller.status == GameStatus.playing &&
+                            !controller.awaitingUndo,
+                      ),
                     ),
                   ],
                 ),
@@ -621,6 +521,8 @@ class _GameScreenState extends State<GameScreen>
             if (controller.status == GameStatus.arrived)
               ArrivalSequence(
                 accent: accent,
+                // Sahne atlanınca tören sesi de sussun.
+                onSkipped: () => AppScope.of(context).audio.stopLongForm(),
                 lineId: journey.lineId,
                 stationName: journey.destination.name,
                 child: _buildResult(controller, accent, showBackdrop: false),
@@ -915,70 +817,3 @@ class _TargetBanner extends StatelessWidget {
 ///
 /// İlerleme çubuğunun hemen üstünde belirir; oyuncu bonusun neden geldiğini
 /// (bir durak geçildi) mekânsal olarak da anlasın diye oraya konumlandı.
-/// Durağa varış bildirimi — ilerleme çubuğunun üstünde kısa süre belirir.
-///
-/// Durak adını her varışta gösterir; bonus kazanıldıysa onu da ekler.
-/// Yalnızca bonus gösterilseydi bonussuz duraklar sessizce geçerdi ve
-/// yolculuk ilerlemesi oyuncunun gözünden kaçardı.
-class _StationPulse extends StatelessWidget {
-  const _StationPulse({
-    required this.animation,
-    required this.accent,
-    required this.event,
-  });
-
-  final Animation<double> animation;
-  final Color accent;
-  final StationReachedEvent? event;
-
-  @override
-  Widget build(BuildContext context) {
-    final reached = event;
-    if (reached == null) return const SizedBox.shrink();
-
-    final bonus = reached.bonusAwarded;
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final t = animation.value;
-        if (t == 0) return const SizedBox.shrink();
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: Opacity(
-            opacity: t,
-            child: Transform.translate(
-              offset: Offset(0, (1 - t) * 8),
-              child: child,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-          border: Border.all(color: accent.withValues(alpha: 0.55)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(Icons.trip_origin_rounded, size: 15, color: accent),
-            const SizedBox(width: AppSpacing.sm),
-            Flexible(
-              child: Text(
-                bonus > 0
-                    ? '${reached.reached.name} · +$bonus'
-                    : reached.reached.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.captionStrong.copyWith(color: accent),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

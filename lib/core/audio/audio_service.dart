@@ -152,6 +152,26 @@ class AudioService {
   /// Tören sesi (kapı) çalıyor mu?
   bool _longFormPlaying = false;
 
+  /// Çalan tören sesinin player'ı; erken kesilebilsin diye tutulur.
+  AudioPlayer? _longFormPlayer;
+
+  /// Çalan tören sesini keser.
+  ///
+  /// Varış sahnesi atlanabiliyor: oyuncu ekrana dokunduğunda sahne 200
+  /// ms'de kapanıyor ama 4 saniyelik kapı sesi çalmaya devam ediyordu.
+  /// Sonuç panelini okurken arka planda tren sesi kalıyordu.
+  ///
+  /// Ses çalmıyorsa hiçbir şey yapmaz.
+  void stopLongForm() {
+    final player = _longFormPlayer;
+    if (player == null) return;
+    _longFormPlayer = null;
+    _longFormPlaying = false;
+    unawaited(
+      player.stop().then((_) => player.dispose()).catchError((Object _) {}),
+    );
+  }
+
   /// Kapı sesini tek başına, taze bir player'la çalar.
   ///
   /// Varış anı oyunun en kalabalık karesi: aynı karede son durak bonusu,
@@ -172,6 +192,8 @@ class AudioService {
     }
 
     final player = AudioPlayer();
+    _longFormPlayer = player;
+
     // Bir şey ters giderse efektler sonsuza kadar susmasın.
     final safety = Timer(
       const Duration(seconds: 6),
@@ -180,6 +202,9 @@ class AudioService {
     void finish() {
       safety.cancel();
       _longFormPlaying = false;
+      // Ses bu arada elle kesilmişse player başkasının; ona dokunma.
+      if (!identical(_longFormPlayer, player)) return;
+      _longFormPlayer = null;
       unawaited(player.dispose());
     }
 

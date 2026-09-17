@@ -104,6 +104,34 @@ class PieceGenerator {
     return nextPiece(profile, fill: fill);
   }
 
+  // --- Kurtarıcı parça ---
+  //
+  // Tahtada az kalmış bir hat varken (ör. alt satırın yalnızca üç hücresi
+  // boş) tepsinin oyuncuya **tam o boşluğa oturan** parçayı vermesi.
+  // Oyuncu patlatır, "yakaladım" der ve devam etme isteği artar.
+  //
+  // Bu bilinçli bir kayırma. Gerekçesi: tek başına rastgelelik, oyuncunun
+  // kurduğu planı çoğu zaman ödüllendirmiyor — satırı üç hücreye kadar
+  // getirip sonra işe yaramaz üç parça alan oyuncu, kendi hatasından değil
+  // şanssızlıktan kaybediyor. Kurtarıcı parça bu emeği karşılıyor.
+  //
+  // Her seferinde verilmez: [rescueChance] altında kalınırsa tepsi normal
+  // yoldan üretilir. Sürekli verilseydi oyuncu kalıbı birkaç turda çözer,
+  // patlatma sıradanlaşır ve gerilim biterdi.
+
+  /// Bir hattın "kapanmaya yakın" sayılması için en çok kaç hücresi boş
+  /// olabilir.
+  ///
+  /// Üçten fazlası artık "az kalmış" değil: tek parçayla kapatmak da zor,
+  /// oyuncunun kurduğu bir plan olduğu da şüpheli.
+  static const int nearCompleteGap = 3;
+
+  /// Az kalmış hat varken kurtarıcı parçanın gelme olasılığı.
+  static const double rescueChance = 0.70;
+
+  /// Kurtarıcı parça aranırken denenecek aday tepsi sayısı.
+  static const int rescueCandidates = 8;
+
   /// Tahta bu doluluğun üstündeyken tepsi seçimi titizleşir.
   ///
   /// Altında tahta zaten rahat: her parça bir yere sığar, seçim yapmanın
@@ -127,23 +155,43 @@ class PieceGenerator {
   /// Tahta rahatken bu adım hiç çalışmaz, rastgelelik bozulmaz.
   List<BlockPiece> generateTray(Board board, DifficultyProfile profile) {
     final crowded = board.filledCount / board.cellCount >= crowdedFillRatio;
-    final candidates = crowded ? profile.trayCandidates : 1;
+
+    // Kurtarıcı parça yalnızca kapanmaya yakın bir hat varken devreye
+    // girer; boş tahtada aranacak bir şey yok.
+    final rescue =
+        hasNearCompleteLine(board, maxGap: nearCompleteGap) &&
+        _random.nextDouble() < rescueChance;
+
+    var candidates = crowded ? profile.trayCandidates : 1;
+    if (rescue && candidates < rescueCandidates) candidates = rescueCandidates;
+    if (candidates < 1) candidates = 1;
+
+    if (candidates == 1) return _generateOne(board, profile);
 
     List<BlockPiece>? best;
-    var bestFreedom = -1;
+    var bestScore = -1;
 
-    for (var pick = 0; pick < (candidates < 1 ? 1 : candidates); pick++) {
+    for (var pick = 0; pick < candidates; pick++) {
       final tray = _generateOne(board, profile);
-      if (candidates <= 1) return tray;
-
       final freedom = _trayFreedom(board, tray);
-      if (freedom > bestFreedom) {
-        bestFreedom = freedom;
+
+      // Kurtarma turunda hattı kapatabilen tepsi her zaman önce gelir;
+      // eşitlik bozulursa yine en çok hamle imkânı sunan seçilir.
+      final score = rescue && _canCompleteLine(board, tray)
+          ? freedom + _rescueBonus
+          : freedom;
+
+      if (score > bestScore) {
+        bestScore = score;
         best = tray;
       }
     }
     return best ?? _generateOne(board, profile);
   }
+
+  /// Kurtarıcı tepsinin puanına eklenen, özgürlükle yarışmayacak kadar
+  /// büyük sabit. Tahtadaki toplam konum sayısından fazla olmalı.
+  static const int _rescueBonus = 1 << 20;
 
   /// Tek bir aday tepsi üretir; fairness kuralı burada uygulanır.
   List<BlockPiece> _generateOne(Board board, DifficultyProfile profile) {
@@ -177,6 +225,60 @@ class PieceGenerator {
     }
 
     return tray;
+  }
+
+  /// Tepsideki parçalardan biri tek hamlede bir hat kapatabiliyor mu?
+  bool _canCompleteLine(Board board, List<BlockPiece> tray) {
+    for (final piece in tray) {
+      for (var r = 0; r <= board.rows - piece.height; r++) {
+        for (var c = 0; c <= board.cols - piece.width; c++) {
+          if (!canPlace(board, piece, r, c)) continue;
+          if (_completesLine(board, piece, r, c)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Parça ([row],[col]) köşesine konunca bir satır ya da sütun dolar mı?
+  ///
+  /// Tahtayı kopyalamadan bakar: her satır ve sütunun boş hücre sayısı
+  /// biliniyorsa, parçanın o hat üzerinde kaç boş hücre doldurduğunu saymak
+  /// yeter. Tepsi üretimi aday başına yüzlerce konum deniyor; her denemede
+  /// tahta kopyalamak ölçülebilir şekilde yavaşlatıyordu.
+  bool _completesLine(Board board, BlockPiece piece, int row, int col) {
+    final rowFill = <int, int>{};
+    final colFill = <int, int>{};
+    for (final cell in piece.cells) {
+      final r = row + cell.row;
+      final c = col + cell.col;
+      rowFill[r] = (rowFill[r] ?? 0) + 1;
+      colFill[c] = (colFill[c] ?? 0) + 1;
+    }
+
+    for (final entry in rowFill.entries) {
+      if (_emptyInRow(board, entry.key) == entry.value) return true;
+    }
+    for (final entry in colFill.entries) {
+      if (_emptyInColumn(board, entry.key) == entry.value) return true;
+    }
+    return false;
+  }
+
+  int _emptyInRow(Board board, int row) {
+    var empty = 0;
+    for (var c = 0; c < board.cols; c++) {
+      if (board.isEmptyAt(row, c)) empty++;
+    }
+    return empty;
+  }
+
+  int _emptyInColumn(Board board, int col) {
+    var empty = 0;
+    for (var r = 0; r < board.rows; r++) {
+      if (board.isEmptyAt(r, col)) empty++;
+    }
+    return empty;
   }
 
   /// Tepsinin tahtada kaç ayrı yere konabildiği.

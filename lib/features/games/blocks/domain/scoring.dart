@@ -82,23 +82,23 @@ class JourneyRules {
   /// Kademe başına temel saniye kazancı.
   static const Map<ClearTier, int> secondsPerTier = <ClearTier, int>{
     ClearTier.none: 0,
-    ClearTier.single: 6,
-    ClearTier.double: 12,
-    ClearTier.triple: 20,
-    ClearTier.mega: 30,
+    ClearTier.single: 2,
+    ClearTier.double: 4,
+    ClearTier.triple: 7,
+    ClearTier.mega: 10,
   };
 
   /// Combo bonusunun başladığı combo değeri.
   static const int comboBonusStartsAt = 3;
 
   /// Combo bonusunun tavanı (saniye).
-  static const int comboBonusCap = 14;
+  static const int comboBonusCap = 5;
 
   /// Kaç streak seviyesi bir saniye eder.
   static const int streakLevelsPerSecond = 4;
 
   /// Streak bonusunun tavanı (saniye).
-  static const int streakBonusCap = 10;
+  static const int streakBonusCap = 3;
 
   /// Bir hamlenin yolculuğa katacağı toplam saniye.
   ///

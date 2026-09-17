@@ -11,7 +11,10 @@ import 'package:istanbul_metro_game/features/session/widgets/arrival_sequence.da
 void main() {
   const duration = ArrivalSequence.defaultDuration;
 
+  var skipped = 0;
+
   Future<void> pumpScene(WidgetTester tester) async {
+    skipped = 0;
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -24,6 +27,7 @@ void main() {
             accent: Colors.red,
             lineId: 'M2',
             stationName: 'Levent',
+            onSkipped: () => skipped++,
             child: const Center(child: Text('SONUÇ')),
           ),
         ),
@@ -116,6 +120,28 @@ void main() {
 
     expect(find.text('SONUÇ'), findsOneWidget);
     expect(doorGap(tester), greaterThan(10));
+    expect(skipped, 1, reason: 'tören sesi kesilsin diye atlama bildirilmeli');
+  });
+
+  testWidgets('sahne kendi biterse atlama bildirilmez', (tester) async {
+    await pumpScene(tester);
+    await tester.pump(duration);
+    await tester.pumpAndSettle();
+
+    expect(find.text('SONUÇ'), findsOneWidget);
+    expect(skipped, 0);
+  });
+
+  testWidgets('ikinci dokunuş tekrar bildirmez', (tester) async {
+    await pumpScene(tester);
+    await tester.pump(at(0.2));
+
+    await tester.tapAt(const Offset(200, 700));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(200, 700));
+    await tester.pumpAndSettle();
+
+    expect(skipped, 1);
   });
 
   testWidgets('hareketi azalt açıkken sahne beklemeden sonuca geçer', (

@@ -405,12 +405,19 @@ class GameController extends JourneyGameController {
 
   /// Hamlenin kazandırdığı saniyeyi yolculuğa ekler.
   ///
+  /// Motorun ortak kanalı kullanılıyor ([rewardJourney]); `advance(0)`
+  /// birikeni saate yazdırıp durak ve varış kontrollerini çalıştırıyor.
+  /// Blok Metro'nun kazancı tek bir sabite sığmadığı için
+  /// [journeySecondsPerGoodMove] yerine bu yol seçildi: değer temizlenen
+  /// hat sayısına, combo'ya ve seriye göre değişiyor.
+  ///
   /// Geri alma bu saniyeyi de geri verir ([undo]); yoksa oyuncu temizleyip
   /// geri alarak bedava zaman kasardı.
   void _applyJourneyBonus(int seconds) {
     if (seconds <= 0) return;
     _undoJourneySeconds = seconds;
-    advance(seconds.toDouble());
+    rewardJourney(seconds.toDouble());
+    advance(0);
   }
 
   /// Yolculuk ilerledikçe durak geçişini izler.

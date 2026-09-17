@@ -4,170 +4,192 @@ import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/scoring.dart';
 import 'package:istanbul_metro_game/features/session/widgets/journey_hud.dart';
 
-/// HUD rozetleri combo ve seriyi **okunur** kılmalı.
+/// Combo ve serinin HUD okuması.
 ///
-/// İkisi de aynı renkte, adsız birer sayıydı; oyuncu hangisinin ne olduğunu
-/// ayırt edemiyordu. Artık her birinin kendi adı, kendi rengi ve basınca
-/// çıkan kendi açıklaması var.
+/// Önce iki ayrı hap rozetti — ikon, büyük harf etiket, sayı ve nokta
+/// göstergesi taşıyan, biri sarı biri yeşil, eşit ağırlıkta iki kutu.
+/// Hiyerarşi yoktu, hat renginden kopuktu ve combo zaten tahtada
+/// gösterildiği için tekrardı. Tek okumaya indirildi.
 void main() {
-  Future<void> pumpChip(WidgetTester tester, Widget chip) async {
+  const line = Color(0xFFE30613);
+
+  Future<void> pump(WidgetTester tester, Widget child) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark(),
-        home: Scaffold(body: Center(child: chip)),
+        home: Scaffold(body: Center(child: child)),
       ),
     );
+    await tester.pumpAndSettle();
   }
 
   Color colorOf(WidgetTester tester, String text) =>
       tester.widget<Text>(find.text(text)).style!.color!;
 
-  group('ComboChip', () {
-    testWidgets('adını ve değerini gösterir', (tester) async {
-      await pumpChip(tester, const ComboChip(combo: 4));
-      await tester.pumpAndSettle();
+  group('görünürlük', () {
+    testWidgets('combo ve seri yokken hiç çizilmez', (tester) async {
+      await pump(tester, const ComboReadout(combo: 0, streak: 0, accent: line));
 
-      expect(find.text('COMBO'), findsOneWidget);
-      expect(find.text('x4'), findsOneWidget);
+      expect(find.byType(Text), findsNothing);
     });
 
-    testWidgets('combo rengi sarıdır', (tester) async {
-      await pumpChip(tester, const ComboChip(combo: 4));
-      await tester.pumpAndSettle();
+    testWidgets('tek combo yetmez, ikiden başlar', (tester) async {
+      await pump(tester, const ComboReadout(combo: 1, streak: 0, accent: line));
 
-      expect(colorOf(tester, 'x4'), AppColors.warning);
+      expect(find.textContaining('×'), findsNothing);
     });
 
-    testWidgets('hazırlık payı verilmezse nokta çizilmez', (tester) async {
-      await pumpChip(tester, const ComboChip(combo: 3));
-      await tester.pumpAndSettle();
+    testWidgets('combo çarpan olarak yazılır', (tester) async {
+      await pump(tester, const ComboReadout(combo: 4, streak: 0, accent: line));
 
-      expect(find.byType(Container), findsOneWidget);
+      expect(find.text('×4'), findsOneWidget);
+      expect(find.textContaining('seri'), findsNothing);
     });
 
-    testWidgets('kalan hazırlık hakkı nokta olarak gösterilir', (tester) async {
-      await pumpChip(
+    testWidgets('seri combo olmadan da görünür', (tester) async {
+      await pump(tester, const ComboReadout(combo: 0, streak: 6, accent: line));
+
+      expect(find.text('seri 6'), findsOneWidget);
+      expect(find.textContaining('×'), findsNothing);
+    });
+
+    testWidgets('ikisi birlikte alt alta', (tester) async {
+      await pump(tester, const ComboReadout(combo: 4, streak: 6, accent: line));
+
+      final combo = tester.getCenter(find.text('×4'));
+      final streak = tester.getCenter(find.text('seri 6'));
+
+      expect(streak.dy, greaterThan(combo.dy), reason: 'seri altta');
+    });
+  });
+
+  group('renk', () {
+    testWidgets('çarpan hattın renginde yanar', (tester) async {
+      await pump(tester, const ComboReadout(combo: 3, streak: 0, accent: line));
+
+      // Hazırlık payı verilmediğinde tam opak.
+      expect(colorOf(tester, '×3'), line);
+    });
+
+    testWidgets('seri sessiz kalır, hattın rengini çalmaz', (tester) async {
+      await pump(tester, const ComboReadout(combo: 0, streak: 6, accent: line));
+
+      expect(colorOf(tester, 'seri 6'), AppColors.textSecondary);
+    });
+
+    testWidgets('risk altındaki seri uyarı rengine döner', (tester) async {
+      await pump(
         tester,
-        ComboChip(
+        const ComboReadout(
+          combo: 0,
+          streak: 6,
+          accent: line,
+          streakAtRisk: true,
+        ),
+      );
+
+      expect(colorOf(tester, 'seri 6'), AppColors.danger);
+    });
+  });
+
+  group('hazırlık payı', () {
+    testWidgets('hak azaldıkça çarpan solar', (tester) async {
+      await pump(
+        tester,
+        ComboReadout(
           combo: 3,
-          graceLeft: 1,
+          streak: 0,
+          accent: line,
+          graceLeft: ScoreRules.comboGraceMoves,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
       );
-      await tester.pumpAndSettle();
+      final full = colorOf(tester, '×3').a;
 
-      // Rozetin kendisi + her hazırlık hakkı için bir nokta.
-      expect(
-        find.byType(Container),
-        findsNWidgets(1 + ScoreRules.comboGraceMoves),
-      );
-    });
-
-    testWidgets('basınca kuralı anlatan açıklama çıkar', (tester) async {
-      await pumpChip(
+      await pump(
         tester,
-        ComboChip(
+        ComboReadout(
           combo: 3,
-          graceLeft: 2,
-          graceTotal: ScoreRules.comboGraceMoves,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(ComboChip));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('art arda sıra temizledikçe'), findsOneWidget);
-      expect(find.textContaining('2 hamle hakkın kaldı'), findsOneWidget);
-    });
-
-    testWidgets('son hak kalmayınca açıklama uyarır', (tester) async {
-      await pumpChip(
-        tester,
-        ComboChip(
-          combo: 3,
+          streak: 0,
+          accent: line,
           graceLeft: 0,
           graceTotal: ScoreRules.comboGraceMoves,
         ),
       );
-      await tester.pumpAndSettle();
+      final empty = colorOf(tester, '×3').a;
 
-      await tester.tap(find.byType(ComboChip));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('combo’yu bitirir'), findsOneWidget);
+      expect(
+        empty,
+        lessThan(full),
+        reason:
+            'sönmeye yakın combo solar — nokta dizisi açıklama '
+            'gerektiriyordu, solma gerektirmiyor',
+      );
     });
 
-    testWidgets('combo değişince rozet yeniden animasyona girer', (
-      tester,
-    ) async {
-      await pumpChip(tester, const ComboChip(combo: 2));
-      await tester.pumpAndSettle();
-
-      await pumpChip(tester, const ComboChip(combo: 3));
-      // Animasyonun ilk karesi: ölçek henüz 1 değil.
-      await tester.pump(const Duration(milliseconds: 1));
-
-      final scale = tester.widget<Transform>(
-        find
-            .ancestor(of: find.text('x3'), matching: find.byType(Transform))
-            .first,
+    testWidgets('sönse bile okunur kalır', (tester) async {
+      await pump(
+        tester,
+        ComboReadout(
+          combo: 3,
+          streak: 0,
+          accent: line,
+          graceLeft: 0,
+          graceTotal: ScoreRules.comboGraceMoves,
+        ),
       );
-      expect(scale.transform.getMaxScaleOnAxis(), greaterThan(1.0));
 
-      await tester.pumpAndSettle();
+      expect(colorOf(tester, '×3').a, greaterThanOrEqualTo(0.5));
     });
   });
 
-  group('StreakChip', () {
-    testWidgets('adını ve değerini gösterir', (tester) async {
-      await pumpChip(tester, const StreakChip(streak: 7));
-      await tester.pumpAndSettle();
+  testWidgets('combo değişince çarpan sıçrar', (tester) async {
+    await pump(tester, const ComboReadout(combo: 2, streak: 0, accent: line));
 
-      expect(find.text('SERİ'), findsOneWidget);
-      expect(find.text('7'), findsOneWidget);
-    });
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark(),
+        home: const Scaffold(
+          body: Center(child: ComboReadout(combo: 3, streak: 0, accent: line)),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 1));
 
-    testWidgets('güvendeyken yeşil, combo renginden farklı', (tester) async {
-      await pumpChip(tester, const StreakChip(streak: 7));
-      await tester.pumpAndSettle();
+    final scale = tester.widget<Transform>(
+      find
+          .ancestor(of: find.text('×3'), matching: find.byType(Transform))
+          .first,
+    );
+    expect(scale.transform.getMaxScaleOnAxis(), greaterThan(1.0));
 
-      expect(colorOf(tester, '7'), AppColors.success);
-      expect(colorOf(tester, '7'), isNot(AppColors.warning));
-    });
+    await tester.pumpAndSettle();
+  });
 
-    testWidgets('risk altındayken kırmızıya döner', (tester) async {
-      await pumpChip(tester, const StreakChip(streak: 7, atRisk: true));
-      await tester.pumpAndSettle();
+  testWidgets('basınca kuralı anlatan açıklama çıkar', (tester) async {
+    await pump(
+      tester,
+      ComboReadout(
+        combo: 4,
+        streak: 6,
+        accent: line,
+        graceLeft: 2,
+        graceTotal: ScoreRules.comboGraceMoves,
+      ),
+    );
 
-      expect(colorOf(tester, '7'), AppColors.danger);
-      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
-    });
+    await tester.tap(find.byType(ComboReadout));
+    await tester.pumpAndSettle();
 
-    testWidgets('basınca kuralı anlatan açıklama çıkar', (tester) async {
-      await pumpChip(tester, const StreakChip(streak: 7));
-      await tester.pumpAndSettle();
+    expect(find.textContaining('art arda sıra temizledikçe'), findsOneWidget);
+    expect(find.textContaining('her üç parçada'), findsOneWidget);
+  });
 
-      await tester.tap(find.byType(StreakChip));
-      await tester.pumpAndSettle();
+  testWidgets('stok ikon kullanılmaz', (tester) async {
+    // Material ikonları Flutter uygulamalarının en belirgin "üretilmiş"
+    // izi; biçimi tipografi ve renk taşımalı.
+    await pump(tester, const ComboReadout(combo: 4, streak: 6, accent: line));
 
-      expect(
-        find.textContaining('her üç parçada en az bir sıra'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('risk altında açıklama kalan parçayı söyler', (tester) async {
-      await pumpChip(
-        tester,
-        const StreakChip(streak: 7, atRisk: true, piecesLeft: 1),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(StreakChip));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('1 parça kaldı'), findsOneWidget);
-    });
+    expect(find.byType(Icon), findsNothing);
   });
 }

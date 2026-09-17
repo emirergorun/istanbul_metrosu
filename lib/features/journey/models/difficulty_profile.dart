@@ -74,28 +74,31 @@ class DifficultyProfile {
 /// `applyInitialBlockers` içinde duruyor, ileride bir "zor mod" istenirse
 /// yeniden açılabilir.
 ///
-/// **[trayCandidates] hedef varış oranlarına göre ayarlandı.** Durakta
-/// kalabalık satırların boşalması kaldırılınca (oyuncuya tahta her durakta
-/// sıfırlanıyormuş gibi görünüyordu) uzun yolculuklarda varış oranı %5'e
-/// düştü. Tahtaya dokunmadan, yalnızca haksız tepsiyi eleyerek dengelendi.
+/// **Denge kurtarıcı parçayla birlikte yeniden kuruldu.** Tahtada az
+/// kalmış bir hat varken tepsinin onu kapatabilen parçayı vermesi
+/// (`PieceGenerator.rescueChance`) hayatta kalmayı belirgin şekilde
+/// uzattı: varış oranları hedefin çok üstüne çıktı. Üç koldan geri
+/// çekildi — yolculuk kazancı düşürüldü, aday tepsi sayısı azaltıldı ve
+/// uzun yolculuklarda zor parça oranı yükseltildi.
 ///
-/// Arcade parça seti (3x3 kare, 2x3/3x2 dikdörtgen, 5'li çubuk, S/Z)
-/// eklendikten sonra yeniden ölçüldü: büyük parçalar tahtayı hızlı
-/// doldurduğu için aday sayısı ve yolculuk kazancı birlikte artırıldı.
+/// Zor parça oranındaki artış eski "zorluk yolculuk uzadıkça azalır"
+/// kararıyla çelişmiyor, onu tamamlıyor: o karar uzun yolculuklarda varış
+/// oranı %0-3 iken alınmıştı. Bugün oyuncuyu ayakta tutan iş kurtarıcı
+/// parçada; parça havuzu artık zorluğu geri getirmek için kullanılıyor.
+///
 /// `balance_report_test`, 150 oyun, 7 sn hamle aralığı:
 ///
-/// | Profil | Aday | Varış% | Erken% |
-/// |---|---|---|---|
-/// | Mini | 2 | %99 | %19 |
-/// | Kısa | 4 | %55 | %21 |
-/// | Standart | 8 | %44 | %20 |
-/// | Uzun | 9 | %21 | %15 |
-/// | Maraton | 9 | %11 | %12 |
+/// | Profil | Zor oran | Aday | Varış% | Erken% |
+/// |---|---|---|---|---|
+/// | Mini | 0,05 | 1 | %100 | %8 |
+/// | Kısa | 0,10 | 1 | %80 | %13 |
+/// | Standart | 0,14 | 2 | %41 | %12 |
+/// | Uzun | 0,105 | 3 | %23 | %9 |
+/// | Maraton | 0,088 | 4 | %9 | %7 |
 ///
 /// Erken% = yolculuğun iyi oyunla kazanılan payı. Hızlı oynayanda (4 sn
-/// hamle aralığı) varış oranları düşer, erken varış payı artar: Standart
-/// %29, Uzun %7, Maraton %3. Hızlı oynamak tahtayı hızlı doldurur; bu
-/// ceza değil, oyunun kendi mantığı.
+/// hamle aralığı) varış oranları düşer: Standart %19, Uzun %7, Maraton %1.
+/// Hızlı oynamak tahtayı hızlı doldurur; bu ceza değil, oyunun mantığı.
 
 class DifficultyProfiles {
   const DifficultyProfiles._();
@@ -108,7 +111,7 @@ class DifficultyProfiles {
     initialBlockerRatio: 0.0,
     hardPieceWeight: 0.05,
     undoCount: 1,
-    trayCandidates: 2,
+    trayCandidates: 1,
   );
 
   static const DifficultyProfile short = DifficultyProfile(
@@ -119,7 +122,7 @@ class DifficultyProfiles {
     initialBlockerRatio: 0.0,
     hardPieceWeight: 0.1,
     undoCount: 1,
-    trayCandidates: 4,
+    trayCandidates: 1,
   );
 
   static const DifficultyProfile standard = DifficultyProfile(
@@ -128,9 +131,9 @@ class DifficultyProfiles {
     minMinutes: 11,
     maxMinutes: 20,
     initialBlockerRatio: 0.0,
-    hardPieceWeight: 0.12,
+    hardPieceWeight: 0.14,
     undoCount: 2,
-    trayCandidates: 8,
+    trayCandidates: 2,
   );
 
   static const DifficultyProfile long = DifficultyProfile(
@@ -139,9 +142,9 @@ class DifficultyProfiles {
     minMinutes: 21,
     maxMinutes: 35,
     initialBlockerRatio: 0.0,
-    hardPieceWeight: 0.08,
+    hardPieceWeight: 0.105,
     undoCount: 3,
-    trayCandidates: 9,
+    trayCandidates: 3,
   );
 
   static const DifficultyProfile marathon = DifficultyProfile(
@@ -150,9 +153,9 @@ class DifficultyProfiles {
     minMinutes: 36,
     maxMinutes: null,
     initialBlockerRatio: 0.0,
-    hardPieceWeight: 0.05,
+    hardPieceWeight: 0.088,
     undoCount: 4,
-    trayCandidates: 9,
+    trayCandidates: 4,
   );
 
   static const List<DifficultyProfile> all = <DifficultyProfile>[

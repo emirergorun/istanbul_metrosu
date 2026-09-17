@@ -79,6 +79,9 @@ abstract class JourneyGameController extends ChangeNotifier
   @override
   int stationBonusPulse = 0;
 
+  @override
+  int stationPulse = 0;
+
   // --- JourneyRun ---
 
   @override
@@ -180,7 +183,9 @@ abstract class JourneyGameController extends ChangeNotifier
     _scoreSaved = false;
     _stationsPassed = 0;
     _stationProgress = false;
+    _pendingJourneySeconds = 0;
     lastStationBonus = 0;
+    stationPulse = 0;
     sprintPulse = 0;
     _sprintAnnounced = false;
     _refreshRecord();
@@ -213,8 +218,46 @@ abstract class JourneyGameController extends ChangeNotifier
   /// "Bu duraktan beri kayda değer bir şey yaptım" — durak bonusunun koşulu.
   ///
   /// Blok oyununda satır temizlemek, Ray Uçuşu'nda kapı geçmek gibi.
+  ///
+  /// Aynı zamanda yolculuk kazancının tetikleyicisi: oyun
+  /// [journeySecondsPerGoodMove] tanımlamışsa tren o kadar hızlanır.
   @protected
-  void markStationProgress() => _stationProgress = true;
+  void markStationProgress() {
+    _stationProgress = true;
+    rewardJourney(journeySecondsPerGoodMove);
+  }
+
+  /// Bir "iyi hamle"nin yolculuğa kattığı saniye.
+  ///
+  /// **İyi oyun treni hızlandırır.** Yolculuk hâlâ gerçek rotanın gerçek
+  /// süresi kadar, ama iyi oynayan oyuncu daha erken varır.
+  ///
+  /// Varsayılan 0: kazanç açıkça açılmadan hiçbir oyunda çalışmaz. Değer
+  /// oyunun kendi temposuna göre belirlenir — saniyede birkaç kapı geçilen
+  /// gerçek zamanlı bir oyunla, hamlesi yedi saniyede bir gelen sıra
+  /// tabanlı bir oyun aynı sayıyı kullanamaz.
+  ///
+  /// Blok Metro bu kancayı kullanmaz: onun kazancı temizlenen hat sayısına,
+  /// combo'ya ve seriye göre değişiyor, tek bir sabite sığmıyor. Kendi
+  /// hesabını yapıp [rewardJourney] çağırıyor.
+  @protected
+  double get journeySecondsPerGoodMove => 0;
+
+  /// Yolculuğa saniye ekler.
+  ///
+  /// Saat **hemen** ilerletilmez, bir sonraki kareye yazılır. Gerçek zamanlı
+  /// oyunlar bunu [onTick] içinden çağırıyor; oradan doğrudan [advance]
+  /// çağırmak sonsuz özyinelemeye girerdi. Biriken saniye [advance] içinde,
+  /// oyunun kendi karesi işlendikten hemen sonra saate ekleniyor; durak ve
+  /// varış kontrolleri tek seferde, birleşmiş süreyle çalışıyor.
+  @protected
+  void rewardJourney(double seconds) {
+    if (seconds <= 0) return;
+    _pendingJourneySeconds += seconds;
+  }
+
+  /// Oyunun bu karede kazandırdığı, henüz saate yazılmamış saniye.
+  double _pendingJourneySeconds = 0;
 
   /// Durak bonusu hakkını geri alır (geri alınan bir hamle bonus vermemeli).
   @protected
@@ -363,6 +406,13 @@ abstract class JourneyGameController extends ChangeNotifier
     onTick(dt);
     if (_status != GameStatus.playing) return; // oyun bu karede bitmiş olabilir
 
+    // Oyunun bu karede kazandırdığı saniye; durak ve varış kontrolünden
+    // **önce** yazılır ki kazanç bir durağı geçirebilsin.
+    if (_pendingJourneySeconds > 0) {
+      _elapsedSeconds += _pendingJourneySeconds;
+      _pendingJourneySeconds = 0;
+    }
+
     _announceSprintIfStarted();
     _awardStationBonusIfPassed();
 
@@ -395,6 +445,11 @@ abstract class JourneyGameController extends ChangeNotifier
     final earned = _stationProgress;
     _stationProgress = false;
     _stationsPassed = passed;
+
+    // Durak geçişi **her hâlükârda** duyurulur; bonus ayrı bir şey.
+    // Eskiden yalnızca bonuslu duraklar bildiriliyordu ve o duraktan beri
+    // bir şey yapmamış oyuncu için yolculuk sessizce ilerliyordu.
+    stationPulse++;
 
     if (earned) {
       _score += ScoreRules.stationBonus;

@@ -91,7 +91,7 @@ void main() {
     );
   }
 
-  testWidgets('yedi haneli skor ve üç haneli rozetler dar ekranda taşmaz', (
+  testWidgets('yedi haneli skor ve üç haneli sayılar dar ekranda taşmaz', (
     tester,
   ) async {
     await pumpGame(
@@ -109,8 +109,8 @@ void main() {
     );
     // Skor hem HUD'da hem duraklatma panelinde görünür.
     expect(find.text('9.876.543'), findsWidgets);
-    expect(find.text('x128'), findsOneWidget);
-    expect(find.text('256'), findsOneWidget);
+    expect(find.text('×128'), findsOneWidget);
+    expect(find.text('seri 256'), findsOneWidget);
   });
 
   testWidgets('dokuz haneli skor da sığar', (tester) async {
@@ -136,7 +136,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('sıfır combo ve seride rozetler hiç çizilmez', (tester) async {
+  testWidgets('sıfır combo ve seride okuma hiç çizilmez', (tester) async {
     await pumpGame(
       tester,
       size: const Size(375, 667),
@@ -145,7 +145,8 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.textContaining('x0'), findsNothing);
+    expect(find.textContaining('×'), findsNothing);
+    expect(find.textContaining('seri'), findsNothing);
   });
 
   testWidgets('oyun sonu paneli durak ve seri satırlarını gösterir', (

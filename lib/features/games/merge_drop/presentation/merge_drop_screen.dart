@@ -12,7 +12,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
-import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
@@ -240,14 +240,11 @@ class _MergeDropScreenState extends State<MergeDropScreen>
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      JourneyProgressBar(
-                        lineId: journey.lineId,
-                        stopCount: journey.stopCount,
-                        originName: journey.origin.name,
-                        destinationName: journey.destination.name,
-                        progress: controller.progress,
-                        remainingSeconds: controller.remainingSeconds,
-                        nextStopName: _nextStopName(controller),
+                      JourneyStatusBar(
+                        run: controller,
+                        lineStations: AppScope.of(
+                          context,
+                        ).metro.stationsOfLine(journey.lineId),
                         accent: accent,
                         isMoving: controller.status == GameStatus.playing,
                       ),
@@ -273,6 +270,8 @@ class _MergeDropScreenState extends State<MergeDropScreen>
               if (controller.status == GameStatus.arrived)
                 ArrivalSequence(
                   accent: accent,
+                  // Sahne atlanınca tören sesi de sussun.
+                  onSkipped: () => AppScope.of(context).audio.stopLongForm(),
                   lineId: journey.lineId,
                   stationName: journey.destination.name,
                   child: _buildResult(controller, accent, showBackdrop: false),
@@ -313,23 +312,6 @@ class _MergeDropScreenState extends State<MergeDropScreen>
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
     );
-  }
-
-  String? _nextStopName(MergeDropController controller) {
-    final journey = controller.journey;
-    final stops = journey.stopCount;
-    if (stops <= 0) return null;
-    final direction = journey.destination.order > journey.origin.order ? 1 : -1;
-    final passed = (controller.progress * stops).floor();
-    final nextIndex = math.min(passed + 1, stops);
-    final targetOrder = journey.origin.order + direction * nextIndex;
-
-    for (final station in AppScope.of(context).metro.stations()) {
-      if (station.lineId == journey.lineId && station.order == targetOrder) {
-        return station.name;
-      }
-    }
-    return null;
   }
 }
 
@@ -500,9 +482,7 @@ class _DropPlayArea extends StatelessWidget {
                           // yansır: hem görsel derinlik katar hem de
                           // "sırada ne var" ipucu verir.
                           _AmbientTint(
-                            color: _mergeDropLineColor(
-                              controller.currentLevel,
-                            ),
+                            color: _mergeDropLineColor(controller.currentLevel),
                           ),
                           CustomPaint(painter: _MergeDropPainter(controller)),
                         ],
@@ -536,7 +516,10 @@ class _AmbientTint extends StatelessWidget {
         gradient: RadialGradient(
           center: const Alignment(0, -0.55),
           radius: 1.15,
-          colors: <Color>[color.withValues(alpha: 0.16), color.withValues(alpha: 0)],
+          colors: <Color>[
+            color.withValues(alpha: 0.16),
+            color.withValues(alpha: 0),
+          ],
         ),
       ),
     );
@@ -850,7 +833,10 @@ class _MergeDropPainter extends CustomPainter {
     // Levha genişliği metne göre büyür: "M1".."M9" iki karakterken
     // "M10"/"M11" üç karakter — sabit genişlik olsaydı çift haneli
     // etiketler levhadan taşardı. Alt sınır eski görünümü korur.
-    final plateWidth = math.max(radius * 1.05, textPainter.width + radius * 0.36);
+    final plateWidth = math.max(
+      radius * 1.05,
+      textPainter.width + radius * 0.36,
+    );
     final plateRect = RRect.fromRectAndRadius(
       Rect.fromCenter(
         center: plateCenter,

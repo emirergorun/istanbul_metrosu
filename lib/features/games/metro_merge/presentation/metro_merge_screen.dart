@@ -12,7 +12,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
-import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
@@ -246,14 +246,11 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
                         onMove: _move,
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      JourneyProgressBar(
-                        lineId: journey.lineId,
-                        stopCount: journey.stopCount,
-                        originName: journey.origin.name,
-                        destinationName: journey.destination.name,
-                        progress: controller.progress,
-                        remainingSeconds: controller.remainingSeconds,
-                        nextStopName: _nextStopName(controller),
+                      JourneyStatusBar(
+                        run: controller,
+                        lineStations: AppScope.of(
+                          context,
+                        ).metro.stationsOfLine(journey.lineId),
                         accent: accent,
                         isMoving: controller.status == GameStatus.playing,
                       ),
@@ -279,6 +276,8 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
               if (controller.status == GameStatus.arrived)
                 ArrivalSequence(
                   accent: accent,
+                  // Sahne atlanınca tören sesi de sussun.
+                  onSkipped: () => AppScope.of(context).audio.stopLongForm(),
                   lineId: journey.lineId,
                   stationName: journey.destination.name,
                   child: _buildResult(controller, accent, showBackdrop: false),
@@ -325,23 +324,6 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
     );
-  }
-
-  String? _nextStopName(MetroMergeController controller) {
-    final journey = controller.journey;
-    final stops = journey.stopCount;
-    if (stops <= 0) return null;
-    final direction = journey.destination.order > journey.origin.order ? 1 : -1;
-    final passed = (controller.progress * stops).floor();
-    final nextIndex = math.min(passed + 1, stops);
-    final targetOrder = journey.origin.order + direction * nextIndex;
-
-    for (final station in AppScope.of(context).metro.stations()) {
-      if (station.lineId == journey.lineId && station.order == targetOrder) {
-        return station.name;
-      }
-    }
-    return null;
   }
 }
 

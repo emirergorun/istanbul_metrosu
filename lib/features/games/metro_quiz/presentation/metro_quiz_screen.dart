@@ -10,7 +10,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
-import '../../../session/widgets/journey_progress.dart';
+import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import '../../../session/widgets/result_overlay.dart';
@@ -231,13 +231,11 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                     const SizedBox(height: AppSpacing.md),
                     _Options(controller: controller, onAnswer: _answer),
                     const SizedBox(height: AppSpacing.md),
-                    JourneyProgressBar(
-                      lineId: journey.lineId,
-                      originName: journey.origin.name,
-                      destinationName: journey.destination.name,
-                      progress: controller.progress,
-                      remainingSeconds: controller.remainingSeconds,
-                      nextStopName: _nextStopName(controller),
+                    JourneyStatusBar(
+                      run: controller,
+                      lineStations: AppScope.of(
+                        context,
+                      ).metro.stationsOfLine(journey.lineId),
                       accent: accent,
                       isMoving: controller.status == GameStatus.playing,
                     ),
@@ -258,6 +256,8 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
             if (controller.status == GameStatus.arrived)
               ArrivalSequence(
                 accent: accent,
+                // Sahne atlanınca tören sesi de sussun.
+                onSkipped: () => AppScope.of(context).audio.stopLongForm(),
                 lineId: journey.lineId,
                 stationName: journey.destination.name,
                 child: _buildResult(controller, accent, showBackdrop: false),
@@ -297,21 +297,6 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
     );
-  }
-
-  String? _nextStopName(MetroQuizController controller) {
-    final journey = controller.journey;
-    final stops = journey.stopCount;
-    if (stops <= 0) return null;
-    final passed = (controller.progress * stops).floor();
-    if (passed >= stops) return null;
-    final stations = AppScope.of(context).metro.stationsOfLine(journey.lineId);
-    final originIndex = stations.indexWhere((s) => s.id == journey.origin.id);
-    if (originIndex < 0) return null;
-    final step = journey.destination.order > journey.origin.order ? 1 : -1;
-    final index = originIndex + step * (passed + 1);
-    if (index < 0 || index >= stations.length) return null;
-    return stations[index].name;
   }
 }
 
