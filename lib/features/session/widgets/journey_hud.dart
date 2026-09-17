@@ -101,7 +101,7 @@ class JourneyHud extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             // Skor sık değişir: iri başlık fontu değil,
-                            // sabit genişlikli rakamlarla Plus Jakarta Sans.
+                            // sabit genişlikli rakamlarla M PLUS Rounded 1c.
                             style: AppText.stat.copyWith(
                               fontSize: 28,
                               height: 1.1,

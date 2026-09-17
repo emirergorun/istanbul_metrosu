@@ -1,112 +1,154 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
-/// Elle yazılmış bilgi sorusu.
+import '../../features/games/metro_quiz/domain/trivia_category.dart';
+
+/// Küratörlü bilgi sorusu.
 ///
-/// [answerIndex] **dosyadaki** sıraya göre doğru şıkkı gösterir; şıklar
-/// oyuna verilirken karıştırılır, yani doğru cevap her oyunda farklı
-/// konumda çıkar.
+/// [answerIndex] **dosyadaki** sıraya göre doğru şıkkı gösterir. Şıklar
+/// veri hazırlanırken karıştırılmıştır; oyun içinde yeniden karıştırmak
+/// gerekmez ve karıştırılmaz — aynı soru her oyunda aynı görünür, oyuncu
+/// "az önce B'ydi şimdi D" diye şaşırmaz.
+@immutable
 class TriviaQuestion {
   const TriviaQuestion({
     required this.id,
+    required this.category,
+    required this.difficulty,
     required this.prompt,
     required this.options,
     required this.answerIndex,
-    this.context,
-    this.source,
+    required this.source,
+    required this.verification,
   });
 
   final String id;
+  final TriviaCategory category;
+  final TriviaDifficulty difficulty;
   final String prompt;
   final List<String> options;
   final int answerIndex;
 
-  /// Sorunun üstündeki küçük etiket: `Marmaray`, `Tarih` gibi.
-  final String? context;
+  /// Bilginin başvuru kaynağı.
+  ///
+  /// **Doğrulama iddiası taşımaz** — hangi kurumun bu konuyu belgelediğini
+  /// söyler. Kaydın nasıl doğrulandığı [verification] alanındadır.
+  final String source;
 
-  /// Bilginin kaynağı. Kaynaksız soru eklenmemeli: oyun bir bilgiyi
-  /// doğruymuş gibi söylüyorsa, nereden aldığı da yazılı olmalı.
-  final String? source;
+  final TriviaVerification verification;
 
   String get answer => options[answerIndex];
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is TriviaQuestion && other.id == id);
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// Bilgi sorularına tek erişim noktası.
 ///
 /// Oyun kodu dosyayı bilmez, yalnızca bu arayüzü bilir — kaynak ileride
-/// sunucuya taşınırsa **sadece implementasyon** değişir.
+/// sunucuya taşınırsa **sadece implementasyon** değişir. Sunum katmanı
+/// JSON'un tek dosya mı altı dosya mı olduğunu hiç görmez.
 abstract class QuestionRepository {
   List<TriviaQuestion> questions();
+
+  /// Yalnızca verilen kategorinin soruları.
+  List<TriviaQuestion> byCategory(TriviaCategory category);
 }
 
-/// Boş havuz: bilgi sorusu yok, oyun yalnızca üretilen sorularla oynanır.
-///
-/// Varsayılan olarak kullanılır — bilgi soruları oyunun omurgası değil
-/// çeşnisi olduğu için, havuzu vermeyen bir çağıran da geçerli olmalı.
+/// Boş havuz — soru dosyası okunamadığında oyun çökmesin diye.
 class EmptyQuestionRepository implements QuestionRepository {
   const EmptyQuestionRepository();
 
   @override
   List<TriviaQuestion> questions() => const <TriviaQuestion>[];
+
+  @override
+  List<TriviaQuestion> byCategory(TriviaCategory category) =>
+      const <TriviaQuestion>[];
 }
 
-/// `assets/data/questions.json` dosyasından okunan, bellekte tutulan havuz.
+/// `assets/data/trivia.json` dosyasından okunan, bellekte tutulan havuz.
 ///
-/// Veritabanı yok: uygulama çevrimdışı çalışıyor, soru sayısı birkaç yüzü
-/// geçmiyor ve sorular sürüm başına sabit. SQLite ya da uzak servis bugün
-/// yalnızca paket ve karmaşıklık eklerdi.
+/// **Tek dosya** seçildi, kategori başına ayrı dosya değil. Sebep: veri
+/// 1.200 kayıt ve ~600 KB; altı dosya altı ayrı asset kaydı, altı ayrı
+/// okuma ve altı ayrı hata yolu demekti. Kategori zaten her kaydın kendi
+/// alanında; bölmenin kazandıracağı bir şey yok. Uygulama çevrimdışı
+/// çalışıyor, veritabanı ya da ağ yok.
 class QuestionDataset implements QuestionRepository {
-  QuestionDataset._(this._questions);
+  QuestionDataset._(this._questions) : _byCategory = _group(_questions);
 
   final List<TriviaQuestion> _questions;
+  final Map<TriviaCategory, List<TriviaQuestion>> _byCategory;
 
-  static const String assetPath = 'assets/data/questions.json';
-
-  /// Dosya okunamazsa **boş havuz** döner, hata fırlatmaz.
-  ///
-  /// Bilgi soruları oyunun omurgası değil, çeşnisi: dosya bozuksa oyun
-  /// üretilen ağ sorularıyla oynanmaya devam etmeli.
-  static Future<QuestionDataset> load({AssetBundle? bundle}) async {
-    try {
-      final raw = await (bundle ?? rootBundle).loadString(assetPath);
-      return QuestionDataset.parse(raw);
-    } catch (_) {
-      return QuestionDataset._(const <TriviaQuestion>[]);
+  static Map<TriviaCategory, List<TriviaQuestion>> _group(
+    List<TriviaQuestion> all,
+  ) {
+    final map = <TriviaCategory, List<TriviaQuestion>>{};
+    for (final q in all) {
+      (map[q.category] ??= <TriviaQuestion>[]).add(q);
     }
+    return map;
   }
 
-  /// Test ve araçlar için: ham JSON'dan havuz üretir.
-  factory QuestionDataset.parse(String raw) {
-    final json = jsonDecode(raw) as Map<String, dynamic>;
-    final list = (json['questions'] as List<dynamic>? ?? <dynamic>[])
-        .cast<Map<String, dynamic>>();
+  /// Varsayılan veri dosyasını yükler.
+  static Future<QuestionDataset> load({
+    AssetBundle? bundle,
+    String assetPath = 'assets/data/trivia.json',
+  }) async {
+    final raw = await (bundle ?? rootBundle).loadString(assetPath);
+    return parse(raw);
+  }
 
-    final questions = <TriviaQuestion>[];
-    for (final item in list) {
-      final options = (item['options'] as List<dynamic>? ?? <dynamic>[])
-          .map((o) => o as String)
-          .toList();
-      final answer = item['answer'] as int? ?? -1;
-      // Bozuk kayıt sessizce atlanır: tek hatalı soru yüzünden havuzun
-      // tamamı kaybolmamalı.
-      if (options.length < 4) continue;
-      if (answer < 0 || answer >= options.length) continue;
+  /// JSON metnini ayrıştırır. Test'te dosyaya gitmeden çağrılabilir.
+  ///
+  /// Tek bir bozuk kayıt tüm dosyayı düşürmez: kategorisi tanınmayan ya da
+  /// şık sayısı dörtten farklı olan kayıt **atlanır**. Oyun eksik bir
+  /// soruyla devam edebilir, ama hiç soruyla devam edemez.
+  static QuestionDataset parse(String rawJson) {
+    final root = jsonDecode(rawJson) as Map<String, dynamic>;
+    final items = root['questions'] as List<dynamic>;
 
-      questions.add(
+    final out = <TriviaQuestion>[];
+    for (final entry in items) {
+      final map = entry as Map<String, dynamic>;
+      final category = TriviaCategory.byId(map['category'] as String);
+      if (category == null) continue;
+
+      final options = <String>[
+        for (final o in map['options'] as List<dynamic>) o as String,
+      ];
+      final answerIndex = map['correctAnswerIndex'] as int;
+      if (options.length != 4) continue;
+      if (answerIndex < 0 || answerIndex >= options.length) continue;
+
+      out.add(
         TriviaQuestion(
-          id: item['id'] as String,
-          prompt: item['text'] as String,
+          id: map['id'] as String,
+          category: category,
+          difficulty: TriviaDifficulty.byId(map['difficulty'] as String),
+          prompt: map['question'] as String,
           options: List<String>.unmodifiable(options),
-          answerIndex: answer,
-          context: item['context'] as String?,
-          source: item['source'] as String?,
+          answerIndex: answerIndex,
+          source: map['source'] as String? ?? '',
+          verification: TriviaVerification.byId(
+            map['verification'] as String? ?? '',
+          ),
         ),
       );
     }
-    return QuestionDataset._(List<TriviaQuestion>.unmodifiable(questions));
+    return QuestionDataset._(List<TriviaQuestion>.unmodifiable(out));
   }
 
   @override
   List<TriviaQuestion> questions() => _questions;
+
+  @override
+  List<TriviaQuestion> byCategory(TriviaCategory category) =>
+      _byCategory[category] ?? const <TriviaQuestion>[];
 }

@@ -1,0 +1,207 @@
+# Spor — 200 soru (model_knowledge).
+# --- Futbol ---
+easy|Bir futbol takımı sahada kaç oyuncuyla başlar?|11|9|10|12
+easy|Standart bir futbol maçı kaç dakika sürer?|90|60|80|100
+easy|Futbolun uluslararası üst kuruluşu hangisidir?|FIFA|UEFA|FIBA|IAAF
+easy|Avrupa futbolunun üst kuruluşu hangisidir?|UEFA|FIFA|CONMEBOL|CAF
+medium|Dünya Kupası kaç yılda bir düzenlenir?|4|2|3|5
+medium|İlk FIFA Dünya Kupası hangi yılda düzenlenmiştir?|1930|1926|1934|1950
+medium|İlk Dünya Kupası hangi ülkede düzenlenmiştir?|Uruguay|Brezilya|İtalya|Fransa
+medium|Dünya Kupası'nı en çok kazanan ülke hangisidir?|Brezilya|Almanya|İtalya|Arjantin
+medium|2002 Dünya Kupası hangi iki ülkede ortak düzenlenmiştir?|Japonya ve Güney Kore|Almanya ve Avusturya|İsviçre ve Fransa|Belçika ve Hollanda
+medium|Türkiye 2002 Dünya Kupası'nı kaçıncı sırada tamamlamıştır?|Üçüncü|Birinci|İkinci|Dördüncü
+medium|Şampiyonlar Ligi'ni düzenleyen kuruluş hangisidir?|UEFA|FIFA|CONMEBOL|AFC
+medium|Galatasaray hangi yıl UEFA Kupası'nı kazanmıştır?|2000|1996|2003|2008
+medium|Türkiye Süper Lig'de bir sezonda genellikle kaç takım yarışır?|18|16|20|22
+medium|Futbolda kalecinin elle oynayabildiği alan hangisidir?|Ceza sahası|Orta saha|Kale alanı dışı|Taç çizgisi
+medium|Futbolda ikinci sarı kart hangi sonuca yol açar?|Kırmızı kart|Penaltı|Serbest vuruş|Uyarı
+medium|Penaltı noktası kaleye yaklaşık kaç metre uzaklıktadır?|11|9|13|16
+hard|Futbol sahasının uzunluğu uluslararası maçlarda yaklaşık kaç metredir?|105|90|120|140
+medium|Futbolda hat-trick ne anlama gelir?|Bir oyuncunun bir maçta üç gol atması|Üç maç üst üste kazanmak|Üç asist yapmak|Üç kart görmek
+medium|Futbolda ofsayt kuralı neyi engellemeyi amaçlar?|Rakip kaleye yakın bekleyip avantaj sağlamayı|Faul yapmayı|Topu elle oynamayı|Zaman geçirmeyi
+medium|Futbolda VAR kısaltması neyi ifade eder?|Video yardımcı hakem|Değişken atak kuralı|Hakem uyarı sistemi|Kale çizgisi teknolojisi
+medium|Ballon d'Or ödülü hangi spor dalında verilir?|Futbol|Basketbol|Tenis|Atletizm
+medium|Pelé hangi ülkenin futbol tarihinin simge ismidir?|Brezilya|Arjantin|Portekiz|İtalya
+medium|Diego Maradona hangi ülkenin futbol efsanesidir?|Arjantin|Brezilya|İspanya|Uruguay
+medium|Camp Nou stadı hangi kulübe aittir?|Barcelona|Real Madrid|Atletico Madrid|Sevilla
+medium|Santiago Bernabéu stadı hangi kulübe aittir?|Real Madrid|Barcelona|Valencia|Villarreal
+medium|Old Trafford stadı hangi kulübe aittir?|Manchester United|Liverpool|Arsenal|Chelsea
+medium|Anfield stadı hangi kulübe aittir?|Liverpool|Everton|Manchester City|Tottenham
+hard|Türkiye'de en fazla Süper Lig şampiyonluğu olan kulüplerden biri hangisidir?|Galatasaray|Kayserispor|Gaziantep FK|Alanyaspor
+medium|Ülker Stadyumu hangi kulübün sahasıdır?|Fenerbahçe|Galatasaray|Beşiktaş|Trabzonspor
+medium|Vodafone Park hangi kulübün sahasıdır?|Beşiktaş|Fenerbahçe|Galatasaray|Başakşehir
+# --- Basketbol ---
+easy|Bir basketbol takımı sahada kaç oyuncuyla oynar?|5|6|7|4
+medium|FIBA kurallarına göre bir basketbol maçı kaç dakikadır?|40|48|60|36
+medium|NBA'de bir maç kaç dakikadır?|48|40|60|36
+easy|Basketbolun uluslararası üst kuruluşu hangisidir?|FIBA|FIFA|IAAF|FIVB
+medium|Basketbolda üç sayılık atış çizgisinin adı nedir?|Üçlük çizgisi|Serbest atış çizgisi|Orta çizgi|Dip çizgi
+medium|Basketbolda serbest atış kaç sayı değerindedir?|1|2|3|4
+medium|Basketbolda smaç ne anlama gelir?|Potaya yukarıdan basarak sayı yapmak|Uzaktan atış yapmak|Topu çalmak|Ribaund almak
+medium|Basketbolda ribaund ne demektir?|Sekip gelen topu almak|Faul yapmak|Pas vermek|Smaç atmak
+medium|Basketbolda asist ne demektir?|Sayı olan pası vermek|Topu çalmak|Blok yapmak|Faul yapmak
+hard|Basketbolda hücum süresi FIBA kurallarına göre kaç saniyedir?|24|30|35|20
+medium|Türkiye basketbolda 2010 Dünya Şampiyonası'nda kaçıncı olmuştur?|İkinci|Birinci|Üçüncü|Dördüncü
+medium|NBA hangi ülkenin profesyonel basketbol ligidir?|ABD|İspanya|Yunanistan|Türkiye
+hard|Basketbolu icat eden kişi kimdir?|James Naismith|William Morgan|Walter Camp|Pierre de Coubertin
+medium|Basketbolda potanın zeminden yüksekliği yaklaşık kaç metredir?|3,05|2,50|3,50|4,00
+# --- Voleybol ---
+easy|Bir voleybol takımı sahada kaç oyuncuyla oynar?|6|5|7|4
+medium|Voleybolda bir set genellikle kaç sayıya oynanır?|25|21|15|30
+medium|Voleybolda maç genellikle kaç set üzerinden oynanır?|5|3|7|4
+easy|Voleybolun uluslararası üst kuruluşu hangisidir?|FIVB|FIBA|FIFA|IHF
+medium|Voleybolda savunma uzmanı olarak oynayan ve farklı formalı oyuncuya ne denir?|Libero|Pasör|Smaçör|Orta oyuncu
+medium|Voleybolda topu smaçöre hazırlayan oyuncuya ne denir?|Pasör|Libero|Smaçör|Orta oyuncu
+medium|Türkiye Kadın Milli Voleybol Takımı'nın takma adı nedir?|Filenin Sultanları|Ay Yıldızlılar|Potanın Perileri|Çelik Kızlar
+hard|Türkiye Kadın Voleybol Milli Takımı 2023 Avrupa Şampiyonası'nda ne başardı?|Şampiyon oldu|İkinci oldu|Üçüncü oldu|Elendi
+hard|Voleybolu icat eden kişi kimdir?|William Morgan|James Naismith|Walter Camp|Juan Samaranch
+# --- Olimpiyatlar ---
+easy|Modern olimpiyatlar kaç yılda bir düzenlenir?|4|2|3|5
+medium|İlk modern olimpiyatlar hangi yılda düzenlenmiştir?|1896|1900|1912|1924
+medium|İlk modern olimpiyatlar hangi şehirde düzenlenmiştir?|Atina|Paris|Londra|Roma
+medium|Modern olimpiyatların kurucusu sayılan kişi kimdir?|Pierre de Coubertin|James Naismith|Juan Samaranch|Avery Brundage
+medium|Olimpiyat bayrağındaki halka sayısı kaçtır?|5|4|6|7
+medium|Olimpiyat halkaları neyi simgeler?|Kıtaları|Ülkeleri|Spor dallarını|Madalyaları
+medium|2020 Yaz Olimpiyatları hangi şehirde yapılmıştır?|Tokyo|Rio de Janeiro|Londra|Paris
+medium|2016 Yaz Olimpiyatları hangi şehirde yapılmıştır?|Rio de Janeiro|Londra|Tokyo|Pekin
+medium|2012 Yaz Olimpiyatları hangi şehirde yapılmıştır?|Londra|Pekin|Atina|Sidney
+medium|2008 Yaz Olimpiyatları hangi şehirde yapılmıştır?|Pekin|Atina|Londra|Sidney
+medium|2024 Yaz Olimpiyatları hangi şehirde yapılmıştır?|Paris|Los Angeles|Tokyo|Roma
+medium|Kış Olimpiyatları hangi mevsim sporlarını kapsar?|Kar ve buz sporları|Su sporları|Salon sporları|Atletizm
+hard|Paralimpik Oyunlar kimler için düzenlenir?|Engelli sporcular|Gençler|Amatörler|Emekliler
+hard|Türkiye'ye ilk olimpiyat altın madalyasını kazandıran spor dalı hangisidir?|Güreş|Halter|Atletizm|Okçuluk
+medium|Naim Süleymanoğlu hangi spor dalında olimpiyat şampiyonudur?|Halter|Güreş|Judo|Boks
+medium|Naim Süleymanoğlu'nun lakabı nedir?|Cep Herkülü|Kara Şimşek|Boğa|Şahin
+# --- Atletizm ve diğer ---
+medium|Maraton koşusunun uzunluğu yaklaşık kaç kilometredir?|42,195|21,1|32|50
+hard|Maraton adı hangi ülkedeki bir yer adından gelir?|Yunanistan|İtalya|Mısır|İran
+medium|Atletizmde 100 metre koşusu hangi tür yarıştır?|Sprint|Dayanıklılık|Engelli|Yürüyüş
+medium|Usain Bolt hangi ülkenin sporcusudur?|Jamaika|ABD|Kenya|Nijerya
+medium|Usain Bolt hangi branşta dünya rekortmenidir?|100 metre|Maraton|Uzun atlama|Cirit
+hard|Atletizmde on branştan oluşan erkek yarışmasına ne ad verilir?|Dekatlon|Heptatlon|Pentatlon|Triatlon
+hard|Yüzme, bisiklet ve koşudan oluşan yarışa ne ad verilir?|Triatlon|Dekatlon|Biatlon|Pentatlon
+medium|Tenis turnuvalarından Wimbledon hangi ülkede oynanır?|İngiltere|Fransa|ABD|Avustralya
+medium|Roland Garros turnuvası hangi ülkede oynanır?|Fransa|İngiltere|ABD|İspanya
+medium|Roland Garros hangi zeminde oynanır?|Toprak|Çim|Sert|Halı
+medium|Wimbledon hangi zeminde oynanır?|Çim|Toprak|Sert|Parke
+medium|Teniste bir sette kazanmak için genellikle kaç oyun gerekir?|6|4|5|7
+hard|Teniste servis atışında ağa çarpıp geçen topa ne denir?|Let|Ace|Deuce|Break
+hard|Teniste rakibin dokunamadığı servise ne ad verilir?|Ace|Let|Deuce|Volley
+medium|Formula 1'de bir yarışın kazananı nasıl belirlenir?|Bitiş çizgisini ilk geçen|En hızlı tur atan|En az duraklayan|En çok sollayan
+medium|Formula 1'de araçların lastik değişimi için girdiği alana ne ad verilir?|Pit|Grid|Şikan|Paddock
+hard|Formula 1'de yarış dizilişini belirleyen seansa ne ad verilir?|Sıralama turları|Isınma turu|Formasyon turu|Serbest antrenman
+medium|Bisiklette dünyanın en bilinen çok etaplı yarışı hangisidir?|Fransa Bisiklet Turu|Giro d'Italia|Vuelta|Paris-Roubaix
+medium|Yüzmede sırtüstü, kurbağalama ve kelebek dışındaki temel stil hangisidir?|Serbest|Dalış|Senkronize|Su topu
+medium|Judo hangi ülke kökenli bir spordur?|Japonya|Çin|Kore|Tayland
+medium|Taekwondo hangi ülke kökenli bir spordur?|Güney Kore|Japonya|Çin|Vietnam
+medium|Karate hangi ülke kökenli bir spordur?|Japonya|Çin|Kore|Tayland
+medium|Türkiye'nin millî sporu sayılan güreş türü hangisidir?|Yağlı güreş|Serbest güreş|Grekoromen|Sumo
+medium|Kırkpınar Yağlı Güreşleri hangi ilimizde yapılır?|Edirne|Kırklareli|Tekirdağ|Çanakkale
+hard|Kırkpınar'da üst üste üç kez başpehlivan olan sporcuya ne verilir?|Altın kemer|Gümüş kupa|Şeref madalyası|Onur plaketi
+medium|Boksta bir raund genellikle kaç dakikadır?|3|2|4|5
+medium|Boksta rakibin belirli süre ayağa kalkamamasına ne denir?|Nakavt|Diskalifiye|Sayı|Puan
+medium|Okçulukta hedefin merkezine ne ad verilir?|On puanlık halka|Dış halka|Yay|Kiriş
+hard|Mete Gazoz hangi spor dalında olimpiyat şampiyonu olmuştur?|Okçuluk|Atıcılık|Eskrim|Halter
+medium|Eskrimde kullanılan silahlardan biri hangisidir?|Flöre|Yay|Sopa|Disk
+medium|Golfte topun deliğe atılmasına ne denir?|Putt|Drive|Swing|Bunker
+medium|Amerikan futbolunun en büyük final maçının adı nedir?|Super Bowl|World Series|Stanley Cup|NBA Finals
+medium|Beyzbolda bir maç kaç devreden oluşur?|9|7|11|5
+medium|Buz hokeyinde takımlar sahada kaç oyuncuyla oynar?|6|5|7|4
+hard|Buz hokeyinde NHL'in şampiyonluk kupasının adı nedir?|Stanley Kupası|Super Bowl|Vince Lombardi|Larry O'Brien
+medium|Satrançta oyunun bitmesini sağlayan duruma ne ad verilir?|Şah mat|Pat|Rok|Terfi
+medium|Satrançta beraberlikle sonuçlanan kilit duruma ne ad verilir?|Pat|Şah mat|Rok|En passant
+medium|Satranç tahtası kaç kareden oluşur?|64|49|81|100
+hard|Satrançta şah ile kalenin birlikte yaptığı özel hamleye ne denir?|Rok|Pat|Terfi|Şah mat
+# --- Tamamlayıcı ---
+medium|Türkiye'de spordan sorumlu bakanlık hangisidir?|Gençlik ve Spor Bakanlığı|Kültür ve Turizm Bakanlığı|Milli Eğitim Bakanlığı|Sağlık Bakanlığı
+medium|Türkiye Futbol Federasyonu'nun kısaltması nedir?|TFF|TBF|TVF|TMOK
+medium|Türkiye Basketbol Federasyonu'nun kısaltması nedir?|TBF|TFF|TVF|TAF
+medium|Türkiye Voleybol Federasyonu'nun kısaltması nedir?|TVF|TFF|TBF|TAF
+hard|Türkiye Milli Olimpiyat Komitesi'nin kısaltması nedir?|TMOK|TFF|TBF|TVF
+medium|Uluslararası Olimpiyat Komitesi'nin kısaltması nedir?|IOC|FIFA|FIBA|UEFA
+medium|Dünya Atletizm Federasyonu'nun bugünkü adı nedir?|World Athletics|IAAF|FIVB|FINA
+medium|Uluslararası yüzme federasyonu hangi adla anılır?|World Aquatics|World Athletics|FIVB|FIBA
+medium|Futbolda bir maçta üç puan hangi sonuçla alınır?|Galibiyet|Beraberlik|Mağlubiyet|Hükmen yenilgi
+medium|Futbolda beraberlik kaç puan getirir?|1|0|2|3
+medium|Ligde takımların sıralandığı tabloya ne ad verilir?|Puan durumu|Fikstür|Kadro|Sezon
+medium|Bir ligde maçların tarih ve eşleşmelerini gösteren çizelgeye ne denir?|Fikstür|Puan durumu|Kadro|Transfer listesi
+medium|Futbolda oyuncunun kulüp değiştirmesine ne ad verilir?|Transfer|Kiralama|Bonservis|Lisans
+medium|Bir oyuncunun geçici olarak başka kulüpte oynamasına ne denir?|Kiralık|Transfer|Serbest|Bonservis
+medium|Futbolda maçın uzatma bölümü ne zaman oynanır?|Eşitlik bozulmadığında|Her maçta|Sadece ligde|Sadece kupada
+medium|Eşitlik uzatmada da bozulmazsa hangi yönteme geçilir?|Penaltı atışları|Kura|Yeniden maç|Sayı üstünlüğü
+medium|Futbolda deplasman ne demektir?|Rakip sahada oynamak|Kendi sahasında oynamak|Tarafsız sahada oynamak|Antrenman yapmak
+medium|Aynı şehirdeki iki takımın maçına genel olarak ne denir?|Derbi|Final|Playoff|Rövanş
+medium|İki maçlık eşleşmenin ikinci maçına ne ad verilir?|Rövanş|Derbi|Final|Eleme
+medium|Ligde ilk sıraları belirleyen eleme usulü maçlara ne denir?|Playoff|Derbi|Rövanş|Fikstür
+medium|Basketbolda maçın son anındaki uzun mesafeli atışa ne denir?|Buzer-beater|Alley-oop|Pick and roll|Fast break
+hard|Basketbolda perde kurup boşa çıkma hareketine ne ad verilir?|Pick and roll|Fast break|Zone|Full press
+hard|Basketbolda hızlı hücuma ne ad verilir?|Fast break|Pick and roll|Zone|Time-out
+medium|Basketbolda bölge savunmasına ne ad verilir?|Zone|Pick and roll|Fast break|Alley-oop
+medium|Basketbolda molaya ne ad verilir?|Time-out|Break|Half time|Overtime
+medium|Basketbolda uzatma bölümüne ne ad verilir?|Overtime|Time-out|Half time|Quarter
+medium|Basketbolda bir maç kaç periyottan oluşur?|4|2|3|5
+medium|Voleybolda topa ilk dokunan oyuncunun hareketine ne ad verilir?|Manşet|Smaç|Blok|Servis
+medium|Voleybolda filenin üstünde rakibin smacını kesme hareketine ne denir?|Blok|Manşet|Servis|Parmak pas
+medium|Voleybolda oyunu başlatan vuruşa ne ad verilir?|Servis|Smaç|Blok|Manşet
+medium|Voleybolda sayı getiren sert vuruşa ne ad verilir?|Smaç|Manşet|Blok|Servis
+medium|Hentbolda bir takım sahada kaç oyuncuyla oynar?|7|6|5|11
+medium|Hentbolun uluslararası üst kuruluşu hangisidir?|IHF|FIBA|FIVB|FIFA
+medium|Su topunda bir takım sahada kaç oyuncuyla oynar?|7|6|5|9
+medium|Ragbide takım sahada kaç oyuncuyla oynar?|15|11|13|7
+medium|Kriket hangi ülkede en yaygın sporlardan biridir?|Hindistan|Brezilya|Rusya|İsveç
+medium|Badmintonda kullanılan topa ne ad verilir?|Tüylü top|Raket topu|Sopa topu|Disk
+medium|Masa tenisinde bir set genellikle kaç sayıya oynanır?|11|15|21|25
+medium|Masa tenisi hangi ülkede en güçlü şekilde gelişmiştir?|Çin|Brezilya|Kanada|Mısır
+medium|Kayakta yokuş aşağı hız yarışına ne ad verilir?|İniş|Slalom|Atlama|Biatlon
+hard|Kayaklı koşu ile atıcılığı birleştiren kış sporu hangisidir?|Biatlon|Triatlon|Dekatlon|Pentatlon
+medium|Buz pateninde ikili yarışan çiftlerin dalına ne ad verilir?|Artistik patinaj|Kısa pist|Uzun pist|Curling
+medium|Taşları buz üzerinde kaydırarak oynanan kış sporu hangisidir?|Curling|Biatlon|Bobsleigh|Skeleton
+hard|Kızakla buz oluğunda inilen kış sporu hangisidir?|Bobsleigh|Curling|Biatlon|Slalom
+medium|Dağcılıkta dünyanın en yüksek zirvesi hangisidir?|Everest|K2|Kilimanjaro|Ağrı Dağı
+medium|Türkiye'de kış sporlarıyla öne çıkan merkezlerden biri hangi dağdadır?|Uludağ|Nemrut|Aladağlar|Ağrı Dağı
+medium|Yüzmede en hızlı kabul edilen stil hangisidir?|Serbest|Kurbağalama|Sırtüstü|Kelebek
+medium|Olimpik yüzme havuzunun uzunluğu kaç metredir?|50|25|33|100
+medium|Halterde sporcuların yarıştığı iki temel hareketten biri hangisidir?|Koparma|Şınav|Mekik|Barfiks
+medium|Halterde sporcular neye göre kategorilere ayrılır?|Vücut ağırlığı|Boy|Yaş|Deneyim
+medium|Güreşte grekoromen stilde hangi bölgeye müdahale yasaktır?|Belden aşağısı|Omuzlar|Kollar|Baş
+medium|Serbest güreşte belden aşağıya müdahale mümkün müdür?|Evet|Hayır|Sadece savunmada|Sadece hücumda
+medium|Boksta sporcular neye göre sıklet gruplarına ayrılır?|Ağırlık|Boy|Yaş|Kol açıklığı
+hard|Türk boksunun olimpiyat madalyası kazanan kadın sporcularından biri kimdir?|Busenaz Sürmeneli|Şeyma Öztürk|Elif Yıldırım|Selin Kaya
+medium|Formula 1'de takımların yarıştığı sezon sonu ödülü hangisidir?|Takımlar Şampiyonluğu|Pilotlar Şampiyonluğu|Pole ödülü|Hızlı tur ödülü
+medium|Motosiklet yarışlarının en üst seviyesi hangisidir?|MotoGP|Formula 1|WRC|NASCAR
+medium|Ralli dünya şampiyonasının kısaltması nedir?|WRC|MotoGP|NASCAR|IndyCar
+medium|Golfte 18 delikli sahada standart vuruş sayısına ne ad verilir?|Par|Birdie|Bogey|Eagle
+hard|Golfte par'ın bir altında bitirmeye ne denir?|Birdie|Bogey|Eagle|Albatros
+hard|Golfte par'ın bir üstünde bitirmeye ne denir?|Bogey|Birdie|Eagle|Par
+medium|Binicilikte atın engelleri aşarak yaptığı yarışa ne ad verilir?|Engel atlama|Dresaj|Konkur kros|Rodeo
+medium|Okçulukta yayın gerilmesini sağlayan ipe ne ad verilir?|Kiriş|Ok|Hedef|Tüy
+medium|Atıcılıkta olimpiyat branşlarından biri hangisidir?|Trap|Dart|Bilardo|Bowling
+medium|Bilardoda topları vurmak için kullanılan uzun sopaya ne denir?|Isteka|Raket|Sopa|Çubuk
+medium|Bowlingde bir atışta tüm lobutları devirmeye ne denir?|Strike|Spare|Split|Foul
+hard|Bowlingde iki atışta tüm lobutları devirmeye ne denir?|Spare|Strike|Split|Turkey
+medium|Dartta tahtanın merkezine ne ad verilir?|Bull|Ace|Strike|Par
+medium|Sörf sporu hangi doğal koşula bağlıdır?|Dalga|Kar|Rüzgârsızlık|Sis
+medium|Yelkenli sörfte tahtayı ilerleten temel doğal güç nedir?|Rüzgâr|Akıntı|Motor|Dalga
+medium|Teknede rüzgârı yakalayan bez bölüme ne ad verilir?|Yelken|Dümen|Omurga|Direk
+medium|Tekneyi insan gücüyle ilerleten uzun saplı araca ne ad verilir?|Kürek|Yelken|Pedal|Dümen
+medium|Aşağıdaki sporlardan hangisi suda yapılır?|Kano|Kayak|Snowboard|Kızak
+medium|Paten sporu hangi zeminde yapılır?|Buz veya sert zemin|Kum|Çim|Toprak
+medium|Jimnastikte kadınların yarıştığı aletlerden biri hangisidir?|Denge aleti|Halka|Kulplu beygir|Paralel bar
+medium|Jimnastikte erkeklerin yarıştığı aletlerden biri hangisidir?|Halka|Denge aleti|Asimetrik paralel|Kurdele
+medium|Ritmik jimnastikte kullanılan aletlerden biri hangisidir?|Kurdele|Halka aleti|Kulplu beygir|Paralel bar
+medium|Sporda doping ne anlama gelir?|Yasaklı performans artırıcı madde kullanmak|Fazla antrenman yapmak|Sakatlık geçirmek|Kadro dışı kalmak
+medium|Dopingle mücadele eden uluslararası kuruluşun kısaltması nedir?|WADA|FIFA|IOC|UEFA
+medium|Bir sporcunun yarışma öncesi ısınma yapmasının amacı nedir?|Sakatlanma riskini azaltmak|Kilo vermek|Puan kazanmak|Rakibi yormak
+medium|Sporcuların dayanıklılığını ölçen temel değerlerden biri hangisidir?|Maksimal oksijen tüketimi|Boy uzunluğu|Ayak numarası|Kol açıklığı
+medium|Kondisyon kavramı neyi ifade eder?|Fiziksel uygunluk düzeyi|Teknik beceri|Taktik bilgi|Takım ruhu
+medium|Takım sporlarında oyun düzenini belirleyen kişiye ne ad verilir?|Antrenör|Hakem|Menajer|Masör
+medium|Maçı yöneten ve kuralları uygulayan kişiye ne ad verilir?|Hakem|Antrenör|Menajer|Gözlemci
+medium|Futbolda yardımcı hakemler nerede görev yapar?|Taç çizgisi boyunca|Kale arkasında|Orta sahada|Yedek kulübesinde
+medium|Sporda fair play kavramı neyi anlatır?|Dürüst ve saygılı oyun|Hızlı oyun|Sert oyun|Savunma oyunu
+medium|Türkiye'de amatör sporcuların bağlı olduğu belge nedir?|Lisans|Bonservis|Transfer kâğıdı|Sözleşme
+medium|Bir kulübün renklerini taşıyan giysiye ne ad verilir?|Forma|Eşofman|Kaleci eldiveni|Antrenman yeleği
+medium|Futbolda kalecinin taktığı koruyucu ekipman hangisidir?|Eldiven|Dizlik|Ağızlık|Kask
+medium|Amerikan futbolunda oyuncuların taktığı temel koruyucu nedir?|Kask|Eldiven|Gözlük|Bileklik
+medium|Bisiklette sporcunun taktığı zorunlu koruyucu nedir?|Kask|Eldiven|Gözlük|Dizlik
+medium|Futbolda kaleciyi diğer oyunculardan ayıran kural nedir?|Ceza sahasında elle oynayabilmesi|Daha uzun süre oynaması|Kart görmemesi|Ofsayta düşmemesi
+medium|Sporcuların yarışma sonrası toparlanma sürecine ne ad verilir?|Soğuma|Isınma|Kondisyon|Taktik

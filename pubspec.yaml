@@ -39,31 +39,30 @@ flutter:
   assets:
     # Metro ağı: hatlar, istasyon sırası, durak arası süreler, hat renkleri.
     - assets/data/metro.json
-    # Elle yazılmış İstanbul / metro bilgi soruları (Metro Bilgi oyunu).
-    - assets/data/questions.json
+    # Küratörlü bilgi soruları (Metro Bilgi oyunu): 1.200 soru, altı kategori.
+    - assets/data/trivia.json
     # Sentezlenmiş arayüz sesleri.
     - assets/audio/
     # Hat Düşür arka plan sahnesi (tren içi + kutu).
     - assets/images/merge_drop_scene.png
     # Font lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.
     - assets/fonts/OFL-Bungee.txt
-    - assets/fonts/OFL-PlusJakartaSans.txt
+    - assets/fonts/OFL-MPLUSRounded1c.txt
 
   # Kısa büyük başlıklarda Bungee (Türkçe `i` için `cmap` düzeltmesi
-  # yapıldı), diğer her yerde Plus Jakarta Sans (değişken dosyadan sabit
-  # ağırlıklar üretildi). İkisi de SIL OFL 1.1.
+  # yapıldı), diğer her yerde M PLUS Rounded 1c. İkisi de SIL OFL 1.1.
   # Kullanım kuralları: `lib/app/theme.dart` → AppFonts.
   fonts:
     - family: Bungee
       fonts:
         - asset: assets/fonts/Bungee-Regular.ttf
-    - family: Plus Jakarta Sans
+    - family: M PLUS Rounded 1c
       fonts:
-        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/MPLUSRounded1c-Regular.ttf
           weight: 400
-        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+        - asset: assets/fonts/MPLUSRounded1c-Medium.ttf
           weight: 500
-        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+        - asset: assets/fonts/MPLUSRounded1c-Bold.ttf
           weight: 700
-        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+        - asset: assets/fonts/MPLUSRounded1c-ExtraBold.ttf
           weight: 800

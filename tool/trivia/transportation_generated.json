@@ -1,0 +1,1570 @@
+[
+ {
+  "id": "transportation_001",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M1A metro hattının bir ucu Yenikapı ise diğer ucu neresidir?",
+  "options": [
+   "Atatürk Havalimanı",
+   "Şişli-Mecidiyeköy",
+   "Pendik",
+   "Göztepe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_002",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M1B metro hattının bir ucu Yenikapı ise diğer ucu neresidir?",
+  "options": [
+   "Kirazlı-Bağcılar",
+   "Ataköy",
+   "Kayaşehir Merkez",
+   "Emniyet-Fatih"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_003",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M2 metro hattının bir ucu Yenikapı ise diğer ucu neresidir?",
+  "options": [
+   "Hacıosman",
+   "Levent",
+   "Ihlamurkuyu",
+   "Dudullu"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_004",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M3 metro hattının Bakırköy Sahil yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Kayaşehir Merkez",
+   "Yayalar-Şeyhli",
+   "Mevlana",
+   "Emin Ali Paşa"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_005",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M4 metro hattının Kadıköy yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Sabiha Gökçen Havalimanı",
+   "Kirazlı-Bağcılar",
+   "Yenimahalle",
+   "Veysel Karani-Akşemsettin"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_006",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M5 metro hattının Üsküdar yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Sultanbeyli",
+   "Dudullu",
+   "Sağmalcılar",
+   "Çarşı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_007",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M6 metro hattının Levent yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Boğaziçi Ü.-Hisarüstü",
+   "Merter",
+   "Gayrettepe",
+   "29 Ekim Cumhuriyet"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_008",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M7 metro hattının Yıldız yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Mahmutbey",
+   "Yenikapı",
+   "Maltepe",
+   "Kocatepe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_009",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M8 metro hattının Bostancı yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Parseller",
+   "Kazım Karabekir",
+   "Yenikapı",
+   "Kozyatağı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_010",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "easy",
+  "question": "M9 metro hattının Ataköy yönündeki diğer ucu hangi istasyondur?",
+  "options": [
+   "Olimpiyat",
+   "Sanayi Mahallesi",
+   "MASKO",
+   "Sabiha Gökçen Havalimanı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_011",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Yenikapı ile Atatürk Havalimanı arasında işler?",
+  "options": [
+   "M1A",
+   "M5",
+   "M4",
+   "M2"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_012",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Yenikapı ile Kirazlı-Bağcılar arasında işler?",
+  "options": [
+   "M1B",
+   "M7",
+   "M8",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_013",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Yenikapı ile Hacıosman arasında işler?",
+  "options": [
+   "M2",
+   "M4",
+   "M1A",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_014",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Bakırköy Sahil ile Kayaşehir Merkez arasında işler?",
+  "options": [
+   "M3",
+   "M9",
+   "M4",
+   "M1B"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_015",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Kadıköy ile Sabiha Gökçen Havalimanı arasında işler?",
+  "options": [
+   "M4",
+   "M6",
+   "M5",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_016",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Üsküdar ile Sultanbeyli arasında işler?",
+  "options": [
+   "M5",
+   "M1B",
+   "M8",
+   "M1A"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_017",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Levent ile Boğaziçi Ü.-Hisarüstü arasında işler?",
+  "options": [
+   "M6",
+   "M1B",
+   "M1A",
+   "M2"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_018",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Yıldız ile Mahmutbey arasında işler?",
+  "options": [
+   "M7",
+   "M1A",
+   "M4",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_019",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Bostancı ile Parseller arasında işler?",
+  "options": [
+   "M8",
+   "M9",
+   "M3",
+   "M7"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_020",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Hangi metro hattı Ataköy ile Olimpiyat arasında işler?",
+  "options": [
+   "M9",
+   "M7",
+   "M2",
+   "M5"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_021",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Kadıköy istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M5",
+   "M8",
+   "M1A"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_022",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Esenler istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M1B",
+   "M2",
+   "M3",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_023",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Menderes istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M1B",
+   "M7",
+   "M8",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_024",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Atatürk Mahallesi istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M9",
+   "M1A",
+   "M8",
+   "M3"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_025",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Boğaziçi Ü.-Hisarüstü istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M6",
+   "M2",
+   "M7",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_026",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Gayrettepe istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M2",
+   "M8",
+   "M3",
+   "M6"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_027",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Etiler istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M6",
+   "M2",
+   "M5",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_028",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Sabiha Gökçen Havalimanı istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M3",
+   "M5",
+   "M2"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_029",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Acıbadem istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M1B",
+   "M7",
+   "M1A"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_030",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Tavşantepe istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M9",
+   "M2",
+   "M6"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_031",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Yayalar-Şeyhli istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M6",
+   "M8",
+   "M2"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_032",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Şişli-Mecidiyeköy istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M2",
+   "M8",
+   "M4",
+   "M7"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_033",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Siteler istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M3",
+   "M7",
+   "M4",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_034",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Maltepe istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M4",
+   "M3",
+   "M1B",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_035",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Başak Konutları istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M3",
+   "M9",
+   "M7",
+   "M2"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_036",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Fıstıkağacı istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M5",
+   "M1B",
+   "M7",
+   "M4"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_037",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Yıldız istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M7",
+   "M2",
+   "M1A",
+   "M1B"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_038",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Emin Ali Paşa istasyonu hangi metro hattı üzerindedir?",
+  "options": [
+   "M8",
+   "M1A",
+   "M4",
+   "M9"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_039",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1A hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "18",
+   "23",
+   "14",
+   "20"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_040",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "13",
+   "16",
+   "18",
+   "15"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_041",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "15",
+   "18",
+   "13",
+   "12"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_042",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "20",
+   "22",
+   "18",
+   "23"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_043",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M4 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "23",
+   "26",
+   "27",
+   "25"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_044",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M5 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "24",
+   "27",
+   "29",
+   "20"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_045",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M6 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "4",
+   "9",
+   "0",
+   "6"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_046",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M7 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "17",
+   "21",
+   "13",
+   "19"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_047",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M8 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "13",
+   "16",
+   "18",
+   "15"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_048",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında toplam kaç istasyon bulunur?",
+  "options": [
+   "14",
+   "10",
+   "16",
+   "19"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_049",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M5 hattında Üsküdar istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Fıstıkağacı",
+   "Sancaktepe",
+   "Yamanevler",
+   "Çakmak"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_050",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Menderes istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Üçyüzlü",
+   "Topkapı-Ulubatlı",
+   "Emniyet-Fatih",
+   "Yenikapı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_051",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Bağcılar Meydan istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Kirazlı-Bağcılar",
+   "Topkapı-Ulubatlı",
+   "Esenler",
+   "Aksaray"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_052",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında Şişli-Mecidiyeköy istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Gayrettepe",
+   "Osmanbey",
+   "Levent",
+   "Vezneciler-İstanbul Ü."
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_053",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattında Onurkent istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Şehir Hastanesi",
+   "Yenimahalle",
+   "Başakşehir-Metrokent",
+   "Turgut Özal"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_054",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında Doğu Sanayi istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Mimar Sinan",
+   "Atatürk Mahallesi",
+   "MASKO",
+   "Ziya Gökalp Mahallesi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_055",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattında Siteler istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Başak Konutları",
+   "Kayaşehir Merkez",
+   "Yıldıztepe",
+   "Başakşehir-Metrokent"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_056",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında Ziya Gökalp Mahallesi istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Olimpiyat",
+   "İkitelli Sanayi",
+   "Halkalı Caddesi",
+   "Mimar Sinan"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_057",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1A hattında Emniyet-Fatih istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Topkapı-Ulubatlı",
+   "Sağmalcılar",
+   "Terazidere",
+   "Otogar"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_058",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M4 hattında Esenkent istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Hastane-Adliye",
+   "Yakacık-Adnan Kahveci",
+   "Kadıköy",
+   "Sabiha Gökçen Havalimanı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_059",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M5 hattında Altınşehir istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "İmam Hatip Lisesi",
+   "Ümraniye",
+   "Yamanevler",
+   "Dudullu"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_060",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattında Turgut Özal istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Siteler",
+   "İlkyuva",
+   "Özgürlük Meydanı",
+   "Kirazlı-Bağcılar"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_061",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında Darüşşafaka istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Hacıosman",
+   "İTÜ-Ayazağa",
+   "Vezneciler-İstanbul Ü.",
+   "Levent"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_062",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1A hattında Yenikapı istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Aksaray",
+   "Terazidere",
+   "Bayrampaşa-Maltepe",
+   "Kocatepe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_063",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M7 hattında Mecidiyeköy istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Çağlayan",
+   "Fulya",
+   "Mahmutbey",
+   "Oruç Reis"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_064",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında Levent istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "4. Levent",
+   "Sanayi Mahallesi",
+   "Şişli-Mecidiyeköy",
+   "Hacıosman"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_065",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında Gayrettepe istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Levent",
+   "Taksim",
+   "Sanayi Mahallesi",
+   "Şişli-Mecidiyeköy"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_066",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Üçyüzlü istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Bağcılar Meydan",
+   "Otogar",
+   "Sağmalcılar",
+   "Topkapı-Ulubatlı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_067",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında Atatürk Mahallesi istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Bahariye",
+   "İkitelli Sanayi",
+   "Halkalı Caddesi",
+   "Ziya Gökalp Mahallesi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_068",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1A hattında Aksaray istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Emniyet-Fatih",
+   "Davutpaşa-YTÜ",
+   "Yenibosna",
+   "Bahçelievler"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_069",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattında Toplu Konutlar istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Kayaşehir Merkez",
+   "Yıldıztepe",
+   "İncirli",
+   "Siteler"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_070",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattında İTÜ-Ayazağa istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Atatürk Oto Sanayi",
+   "4. Levent",
+   "Levent",
+   "Sanayi Mahallesi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_071",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M7 hattında Karadeniz Mahallesi istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Giyimkent-Tekstilkent",
+   "Nurtepe",
+   "Kağıthane",
+   "Çırçır Mahallesi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_072",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında Çobançeşme istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "29 Ekim Cumhuriyet",
+   "15 Temmuz",
+   "Yenibosna",
+   "Mimar Sinan"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_073",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Topkapı-Ulubatlı istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Bayrampaşa-Maltepe",
+   "Otogar",
+   "Emniyet-Fatih",
+   "Yenikapı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_074",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Sağmalcılar istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Kocatepe",
+   "Topkapı-Ulubatlı",
+   "Otogar",
+   "Emniyet-Fatih"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_075",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Otogar istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Esenler",
+   "Sağmalcılar",
+   "Kocatepe",
+   "Üçyüzlü"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_076",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattında Emniyet-Fatih istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Topkapı-Ulubatlı",
+   "Bayrampaşa-Maltepe",
+   "Aksaray",
+   "Yenikapı"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_077",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattında Yenibosna istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Çobançeşme",
+   "MASKO",
+   "Bahariye",
+   "29 Ekim Cumhuriyet"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_078",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M8 hattında Kozyatağı istasyonundan sonraki durak hangisidir?",
+  "options": [
+   "Küçükbakkalköy",
+   "İçerenköy",
+   "Parseller",
+   "Mevlana"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_079",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1A hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "35 dakika",
+   "47 dakika",
+   "26 dakika",
+   "28 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_080",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M1B hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "25 dakika",
+   "34 dakika",
+   "18 dakika",
+   "32 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_081",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M2 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "32 dakika",
+   "44 dakika",
+   "47 dakika",
+   "41 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_082",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M3 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "44 dakika",
+   "37 dakika",
+   "35 dakika",
+   "32 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_083",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M4 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "52 dakika",
+   "59 dakika",
+   "61 dakika",
+   "67 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_084",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M5 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "50 dakika",
+   "41 dakika",
+   "57 dakika",
+   "38 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_085",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M6 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "7 dakika",
+   "19 dakika",
+   "0 dakika",
+   "22 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_086",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M7 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "36 dakika",
+   "43 dakika",
+   "45 dakika",
+   "51 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_087",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M8 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "26 dakika",
+   "17 dakika",
+   "41 dakika",
+   "38 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_088",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "hard",
+  "question": "M9 hattının uçtan uca tek yön sefer süresi yaklaşık ne kadardır?",
+  "options": [
+   "26 dakika",
+   "14 dakika",
+   "38 dakika",
+   "33 dakika"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/Hatlarimiz/TumHatlarimiz",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_089",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M1A hattı hangi renkle gösterilir?",
+  "options": [
+   "kırmızı",
+   "açık mavi",
+   "turuncu",
+   "pembe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_090",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M1B hattı hangi renkle gösterilir?",
+  "options": [
+   "kırmızı",
+   "pembe",
+   "sarı",
+   "mavi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_091",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M2 hattı hangi renkle gösterilir?",
+  "options": [
+   "yeşil",
+   "mavi",
+   "kırmızı",
+   "kahverengi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_092",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M3 hattı hangi renkle gösterilir?",
+  "options": [
+   "açık mavi",
+   "bej",
+   "mor",
+   "kahverengi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_093",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M4 hattı hangi renkle gösterilir?",
+  "options": [
+   "pembe",
+   "kırmızı",
+   "kahverengi",
+   "mor"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_094",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M5 hattı hangi renkle gösterilir?",
+  "options": [
+   "mor",
+   "yeşil",
+   "kahverengi",
+   "pembe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_095",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M6 hattı hangi renkle gösterilir?",
+  "options": [
+   "bej",
+   "açık mavi",
+   "mavi",
+   "pembe"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_096",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M7 hattı hangi renkle gösterilir?",
+  "options": [
+   "açık pembe",
+   "yeşil",
+   "sarı",
+   "mavi"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_097",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M8 hattı hangi renkle gösterilir?",
+  "options": [
+   "mavi",
+   "açık mavi",
+   "pembe",
+   "mor"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ },
+ {
+  "id": "transportation_098",
+  "category": "transportation",
+  "categoryLabel": "Ulaşım",
+  "difficulty": "medium",
+  "question": "Resmi ağ haritasında M9 hattı hangi renkle gösterilir?",
+  "options": [
+   "sarı",
+   "turuncu",
+   "kırmızı",
+   "bej"
+  ],
+  "correctAnswerIndex": 0,
+  "source": "https://www.metro.istanbul/",
+  "verification": "metro_json"
+ }
+]

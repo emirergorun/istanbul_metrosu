@@ -19,6 +19,7 @@ import 'package:istanbul_metro_game/features/journey/services/route_service.dart
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/metro_fixture.dart';
+import '../helpers/trivia_fixture.dart';
 
 void main() {
   late LocalStore store;
@@ -46,6 +47,9 @@ void main() {
         store: store,
         audio: AudioService(),
         metro: metro,
+        // Metro Bilgi soru havuzu olmadan açılmaz: boş havuz ürün hatası,
+        // sessizce boş soru üretmek yerine hata verir.
+        questions: TriviaFixture.repository(perCategory: 4),
         routeService: RouteService(metro),
         child: MaterialApp(
           theme: AppTheme.dark(),

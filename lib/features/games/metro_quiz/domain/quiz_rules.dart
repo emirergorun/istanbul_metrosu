@@ -9,7 +9,7 @@ class QuizRules {
 
   /// Oyuncunun **yanlış cevap** hakkı. Dördüncü yanlışta yolculuk biter.
   ///
-  /// Süre aşımı bu hakkı yemez; yalnızca seriyi bozar. Gerekçesi
+  /// Süre aşımı da bu hakkı yer: cevap vermemek bir cevaptır. Gerekçesi
   /// `MetroQuizController.onTick` içinde.
   ///
   /// Tek yanlışta bitirmek denenmedi bile: 32 dakikalık bir yolculukta

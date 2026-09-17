@@ -1,0 +1,208 @@
+# Tarih — 200 soru. Hepsi model_knowledge: bağımsız kaynakla doğrulanmadı.
+# Biçim: zorluk | soru | doğru | çeldirici | çeldirici | çeldirici
+easy|İstanbul'u 1453'te fetheden Osmanlı padişahı kimdir?|II. Mehmed|I. Selim|II. Bayezid|I. Süleyman
+easy|İstanbul hangi yılda Osmanlı egemenliğine girmiştir?|1453|1402|1517|1571
+medium|Fatih Sultan Mehmet fetih sırasında kaç yaşındaydı?|21|17|29|35
+medium|1453'te Konstantinopolis'i savunan son Bizans imparatoru kimdir?|XI. Konstantinos|I. Justinianos|I. Konstantinos|II. Theodosios
+hard|Fetih sırasında Osmanlı donanmasının karadan yürütüldüğü koy hangisidir?|Haliç|Boğaziçi|Marmara|Karadeniz
+medium|Osmanlı Devleti'nin kurucusu kimdir?|Osman Bey|Orhan Bey|Ertuğrul Gazi|Alâeddin Bey
+easy|Osmanlı Devleti yaklaşık hangi yılda kurulmuştur?|1299|1071|1453|1517
+medium|Osmanlı Devleti'nin ilk başkenti neresidir?|Söğüt|Bursa|Edirne|İznik
+medium|Bursa'yı Osmanlı topraklarına katan padişah kimdir?|Orhan Bey|Osman Bey|I. Murad|Yıldırım Bayezid
+medium|Edirne hangi padişah döneminde başkent olmuştur?|I. Murad|Orhan Bey|Yıldırım Bayezid|II. Mehmed
+hard|Ankara Savaşı hangi yılda yapılmıştır?|1402|1389|1444|1473
+hard|Ankara Savaşı'nda Yıldırım Bayezid'i yenen hükümdar kimdir?|Timur|Uzun Hasan|Şah İsmail|Cengiz Han
+medium|Kosova Savaşı'nda şehit düşen Osmanlı padişahı kimdir?|I. Murad|Orhan Bey|Yıldırım Bayezid|II. Murad
+hard|Osmanlı'da Fetret Devri hangi savaştan sonra başlamıştır?|Ankara Savaşı|Kosova Savaşı|Niğbolu Savaşı|Varna Savaşı
+medium|Yavuz Sultan Selim hangi savaşla Memlûk Devleti'ne son vermiştir?|Ridaniye|Çaldıran|Mercidabık|Preveze
+medium|Çaldıran Savaşı hangi devletle yapılmıştır?|Safevi Devleti|Memlûk Devleti|Venedik|Macaristan
+hard|Çaldıran Savaşı hangi yılda yapılmıştır?|1514|1473|1526|1538
+medium|Halifelik hangi padişah döneminde Osmanlı'ya geçmiştir?|I. Selim|II. Mehmed|I. Süleyman|II. Bayezid
+easy|Kanuni lakabıyla anılan Osmanlı padişahı kimdir?|I. Süleyman|I. Selim|II. Mehmed|III. Murad
+medium|Mohaç Meydan Savaşı hangi yılda yapılmıştır?|1526|1514|1571|1596
+medium|Mohaç Savaşı hangi ülkeye karşı kazanılmıştır?|Macaristan|Avusturya|Polonya|Venedik
+hard|Preveze Deniz Zaferi'ni kazanan Osmanlı amirali kimdir?|Barbaros Hayreddin Paşa|Turgut Reis|Piri Reis|Kılıç Ali Paşa
+hard|Preveze Deniz Savaşı hangi yılda kazanılmıştır?|1538|1499|1571|1645
+medium|İnebahtı Deniz Savaşı Osmanlı için nasıl sonuçlanmıştır?|Yenilgi|Zafer|Beraberlik|Savaş yapılmadı
+hard|Piri Reis hangi eseriyle tanınır?|Kitab-ı Bahriye|Seyahatname|Siyasetname|Divanü Lügati't-Türk
+medium|Evliya Çelebi hangi eseriyle bilinir?|Seyahatname|Kitab-ı Bahriye|Kutadgu Bilig|Mesnevi
+medium|Osmanlı'da ilk matbaayı kuran kişi kimdir?|İbrahim Müteferrika|Katip Çelebi|Evliya Çelebi|Piri Reis
+hard|İbrahim Müteferrika matbaasını hangi yüzyılda kurmuştur?|18. yüzyıl|16. yüzyıl|17. yüzyıl|19. yüzyıl
+medium|Lale Devri hangi padişah döneminde yaşanmıştır?|III. Ahmed|II. Mahmud|I. Abdülhamid|III. Selim
+hard|Lale Devri hangi olayla sona ermiştir?|Patrona Halil İsyanı|Kabakçı Mustafa İsyanı|Vaka-i Hayriye|31 Mart Olayı
+medium|Yeniçeri Ocağı'nı kaldıran padişah kimdir?|II. Mahmud|III. Selim|Abdülmecid|Abdülaziz
+hard|Yeniçeri Ocağı hangi yılda kaldırılmıştır?|1826|1789|1839|1876
+medium|Tanzimat Fermanı hangi yılda ilan edilmiştir?|1839|1826|1856|1876
+medium|Islahat Fermanı hangi yılda ilan edilmiştir?|1856|1839|1876|1908
+medium|I. Meşrutiyet hangi yılda ilan edilmiştir?|1876|1856|1908|1918
+medium|II. Meşrutiyet hangi yılda ilan edilmiştir?|1908|1876|1913|1918
+hard|Kanun-i Esasi hangi padişah döneminde ilan edilmiştir?|II. Abdülhamid|Abdülaziz|Abdülmecid|V. Mehmed
+medium|Osmanlı Devleti Birinci Dünya Savaşı'na hangi yıl girmiştir?|1914|1912|1915|1918
+medium|Çanakkale Savaşları hangi yıl yoğunlaşmıştır?|1915|1912|1917|1919
+medium|Mondros Ateşkes Antlaşması hangi yılda imzalanmıştır?|1918|1914|1920|1923
+medium|Sevr Antlaşması hangi yılda imzalanmıştır?|1920|1918|1921|1923
+easy|Türkiye Cumhuriyeti hangi yılda ilan edilmiştir?|1923|1919|1920|1921
+easy|Cumhuriyet hangi ayın hangi gününde ilan edilmiştir?|29 Ekim|23 Nisan|19 Mayıs|30 Ağustos
+easy|Türkiye Cumhuriyeti'nin ilk cumhurbaşkanı kimdir?|Mustafa Kemal Atatürk|İsmet İnönü|Celâl Bayar|Fevzi Çakmak
+medium|Türkiye'nin ikinci cumhurbaşkanı kimdir?|İsmet İnönü|Celâl Bayar|Cemal Gürsel|Mahmut Celâleddin
+easy|TBMM hangi yılda açılmıştır?|1920|1919|1921|1923
+easy|TBMM'nin açılış tarihi hangi gündür?|23 Nisan|29 Ekim|19 Mayıs|30 Ağustos
+easy|Kurtuluş Savaşı'nın başlangıcı sayılan çıkarma hangi tarihtedir?|19 Mayıs 1919|23 Nisan 1920|30 Ağustos 1922|29 Ekim 1923
+medium|Mustafa Kemal 19 Mayıs 1919'da hangi şehre çıkmıştır?|Samsun|Trabzon|Sinop|Amasya
+medium|Erzurum Kongresi hangi yılda toplanmıştır?|1919|1918|1920|1921
+medium|Sivas Kongresi hangi yılda toplanmıştır?|1919|1918|1920|1922
+medium|Büyük Taarruz hangi yılda başlamıştır?|1922|1920|1921|1923
+medium|30 Ağustos hangi zaferin yıl dönümüdür?|Başkomutanlık Meydan Muharebesi|Sakarya Meydan Muharebesi|İnönü Muharebesi|Dumlupınar Kongresi
+medium|Sakarya Meydan Muharebesi hangi yılda yapılmıştır?|1921|1919|1920|1922
+medium|Lozan Antlaşması hangi yılda imzalanmıştır?|1923|1920|1921|1922
+medium|Lozan Antlaşması hangi ülkede imzalanmıştır?|İsviçre|Fransa|İtalya|Belçika
+medium|Saltanat hangi yılda kaldırılmıştır?|1922|1920|1923|1924
+medium|Halifelik hangi yılda kaldırılmıştır?|1924|1922|1923|1928
+medium|Ankara hangi yılda başkent olmuştur?|1923|1920|1922|1924
+medium|Harf İnkılabı hangi yılda yapılmıştır?|1928|1924|1926|1934
+medium|Türk kadınlarına milletvekili seçme ve seçilme hakkı hangi yıl verilmiştir?|1934|1926|1930|1945
+medium|Soyadı Kanunu hangi yılda kabul edilmiştir?|1934|1924|1928|1937
+hard|Medeni Kanun hangi yılda kabul edilmiştir?|1926|1924|1928|1934
+hard|Türk Dil Kurumu hangi yılda kurulmuştur?|1932|1924|1928|1936
+hard|Türk Tarih Kurumu hangi yılda kurulmuştur?|1931|1925|1928|1935
+medium|Montrö Boğazlar Sözleşmesi hangi yılda imzalanmıştır?|1936|1923|1930|1945
+medium|Hatay'ın Türkiye'ye katılması hangi yılda gerçekleşmiştir?|1939|1936|1945|1950
+medium|Türkiye çok partili hayata hangi yılda geçmiştir?|1946|1938|1950|1960
+medium|Türkiye NATO'ya hangi yılda üye olmuştur?|1952|1945|1949|1960
+easy|Atatürk hangi yılda vefat etmiştir?|1938|1935|1940|1945
+medium|Atatürk'ün doğum yeri neresidir?|Selanik|İstanbul|Manastır|Edirne
+hard|Nutuk hangi yılda okunmuştur?|1927|1923|1925|1930
+# --- Dünya tarihi ---
+easy|Birinci Dünya Savaşı hangi yılda başlamıştır?|1914|1912|1918|1939
+easy|İkinci Dünya Savaşı hangi yılda başlamıştır?|1939|1914|1941|1945
+medium|İkinci Dünya Savaşı hangi yılda sona ermiştir?|1945|1939|1943|1948
+medium|Fransız İhtilali hangi yılda başlamıştır?|1789|1776|1815|1848
+medium|Amerika Birleşik Devletleri bağımsızlığını hangi yıl ilan etmiştir?|1776|1789|1812|1861
+hard|Magna Carta hangi yılda imzalanmıştır?|1215|1066|1453|1517
+medium|Roma İmparatorluğu'nun geleneksel kuruluş yılı hangisidir?|MÖ 753|MÖ 509|MÖ 44|MS 476
+hard|Batı Roma İmparatorluğu hangi yılda yıkılmıştır?|476|395|1204|1453
+medium|Kavimler Göçü hangi yüzyılda başlamıştır?|4. yüzyıl|2. yüzyıl|6. yüzyıl|8. yüzyıl
+medium|Malazgirt Savaşı hangi yılda yapılmıştır?|1071|1048|1176|1243
+medium|Malazgirt Savaşı'nı kazanan Selçuklu hükümdarı kimdir?|Alparslan|Tuğrul Bey|Melikşah|Çağrı Bey
+hard|Miryokefalon Savaşı hangi yılda yapılmıştır?|1176|1071|1243|1299
+hard|Kösedağ Savaşı hangi devletle yapılmıştır?|Moğollar|Bizans|Haçlılar|Memlûkler
+medium|Haçlı Seferleri hangi yüzyılda başlamıştır?|11. yüzyıl|9. yüzyıl|13. yüzyıl|15. yüzyıl
+hard|Dördüncü Haçlı Seferi hangi şehri yağmalamıştır?|Konstantinopolis|Kudüs|Antakya|Şam
+medium|Sanayi Devrimi ilk olarak hangi ülkede başlamıştır?|İngiltere|Fransa|Almanya|ABD
+medium|Sanayi Devrimi hangi yüzyılda başlamıştır?|18. yüzyıl|16. yüzyıl|17. yüzyıl|19. yüzyıl
+medium|Rönesans hangi ülkede başlamıştır?|İtalya|Fransa|İngiltere|Almanya
+medium|Reform hareketini başlatan kişi kimdir?|Martin Luther|Jean Calvin|Erasmus|Thomas More
+hard|Coğrafi Keşifler'de Amerika kıtasına ulaşan denizci kimdir?|Kristof Kolomb|Macellan|Vasco da Gama|Amerigo Vespucci
+medium|Ümit Burnu'nu dolaşarak Hindistan'a ulaşan denizci kimdir?|Vasco da Gama|Kristof Kolomb|Macellan|Bartolomeu Dias
+medium|Dünya çevresini ilk dolaşan sefer kimin adıyla anılır?|Macellan|Kolomb|Drake|Cook
+medium|Ekim Devrimi hangi ülkede gerçekleşmiştir?|Rusya|Almanya|Çin|Fransa
+medium|Ekim Devrimi hangi yılda gerçekleşmiştir?|1917|1905|1921|1936
+medium|Berlin Duvarı hangi yılda yıkılmıştır?|1989|1961|1991|1993
+medium|Berlin Duvarı hangi yılda örülmüştür?|1961|1949|1972|1989
+medium|Sovyetler Birliği hangi yılda dağılmıştır?|1991|1985|1989|1993
+medium|Birleşmiş Milletler hangi yılda kurulmuştur?|1945|1919|1939|1950
+hard|Milletler Cemiyeti hangi yılda kurulmuştur?|1920|1914|1930|1945
+hard|Hiroşima'ya atom bombası hangi yılda atılmıştır?|1945|1941|1943|1949
+# --- Osmanlı devamı ---
+medium|Osmanlı'da devşirme sistemiyle yetiştirilen askerî sınıf hangisidir?|Yeniçeriler|Sipahiler|Akıncılar|Azaplar
+hard|Osmanlı'da tımar sisteminin temel amacı neydi?|Asker beslemek|Vergi toplamak|Ticaret yapmak|Cami yaptırmak
+medium|Osmanlı'da padişah çocuklarının yönetim öğrendiği uygulama hangisidir?|Sancağa çıkma|Devşirme|Müsadere|Şehzade hapsi
+hard|Osmanlı'da divan toplantılarına başkanlık eden görevli kimdir?|Sadrazam|Şeyhülislam|Defterdar|Nişancı
+hard|Osmanlı'da hukuk işlerinden sorumlu en yüksek dinî makam hangisidir?|Şeyhülislam|Sadrazam|Kazasker|Defterdar
+hard|Osmanlı'da maliyeden sorumlu divan üyesi kimdir?|Defterdar|Nişancı|Kazasker|Reisülküttap
+medium|Kapıkulu ordusunun yaya sınıfı hangisidir?|Yeniçeriler|Sipahiler|Akıncılar|Yayalar
+medium|Osmanlı'da fethedilen yerlere Türk nüfus yerleştirme politikasının adı nedir?|İskân|Devşirme|Müsadere|Tımar
+hard|Osmanlı'da Karlofça Antlaşması hangi yılda imzalanmıştır?|1699|1606|1718|1774
+hard|Küçük Kaynarca Antlaşması hangi yılda imzalanmıştır?|1774|1699|1739|1829
+medium|Osmanlı Devleti'nde ilk kez toprak kaybedilen antlaşma hangisidir?|Karlofça|Zitvatorok|Pasarofça|Belgrad
+hard|Pasarofça Antlaşması hangi dönemin başlangıcı sayılır?|Lale Devri|Tanzimat|Meşrutiyet|Duraklama
+medium|II. Viyana Kuşatması hangi yılda yapılmıştır?|1683|1529|1596|1699
+medium|I. Viyana Kuşatması hangi padişah döneminde yapılmıştır?|I. Süleyman|II. Mehmed|IV. Mehmed|I. Selim
+hard|Nizam-ı Cedid ordusunu kuran padişah kimdir?|III. Selim|II. Mahmud|I. Abdülhamid|Abdülmecid
+hard|Sened-i İttifak hangi yılda imzalanmıştır?|1808|1789|1826|1839
+medium|Osmanlı'da ilk özel Türkçe gazete hangisidir?|Tercüman-ı Ahval|Takvim-i Vekayi|Ceride-i Havadis|Servet-i Fünun
+hard|Osmanlı'nın ilk resmî gazetesi hangisidir?|Takvim-i Vekayi|Tercüman-ı Ahval|Tasvir-i Efkâr|Muhbir
+medium|Osmanlı Bankası hangi yüzyılda kurulmuştur?|19. yüzyıl|17. yüzyıl|18. yüzyıl|20. yüzyıl
+hard|Duyun-u Umumiye idaresi hangi yılda kurulmuştur?|1881|1854|1876|1908
+medium|Kırım Savaşı hangi yıllarda yaşanmıştır?|1853-1856|1828-1829|1877-1878|1911-1912
+medium|93 Harbi olarak bilinen savaş hangi ülkeyle yapılmıştır?|Rusya|Avusturya|İngiltere|İran
+medium|Trablusgarp Savaşı hangi ülkeyle yapılmıştır?|İtalya|Fransa|Yunanistan|Bulgaristan
+medium|Balkan Savaşları hangi yıllarda yaşanmıştır?|1912-1913|1897-1898|1908-1909|1918-1919
+hard|31 Mart Olayı hangi yılda yaşanmıştır?|1909|1876|1908|1913
+# --- Türkiye Cumhuriyeti devamı ---
+medium|Şapka Kanunu hangi yılda kabul edilmiştir?|1925|1923|1928|1934
+medium|Tekke ve zaviyeler hangi yılda kapatılmıştır?|1925|1923|1928|1930
+hard|Miladi takvim Türkiye'de hangi yılda kabul edilmiştir?|1926|1923|1928|1931
+hard|Ölçü birimlerinde metrik sisteme hangi yılda geçilmiştir?|1931|1925|1928|1934
+medium|Türkiye'de ilk nüfus sayımı hangi yılda yapılmıştır?|1927|1923|1930|1935
+hard|Menemen Olayı hangi yılda yaşanmıştır?|1930|1925|1926|1933
+hard|Serbest Cumhuriyet Fırkası hangi yılda kurulmuştur?|1930|1924|1926|1935
+medium|Terakkiperver Cumhuriyet Fırkası hangi yılda kurulmuştur?|1924|1920|1927|1930
+medium|Türkiye'de ilk serbest ve çok partili genel seçim hangi yılda yapılmıştır?|1950|1946|1954|1961
+medium|1950 seçimlerini kazanan parti hangisidir?|Demokrat Parti|Cumhuriyet Halk Partisi|Millet Partisi|Adalet Partisi
+medium|Türkiye'de kadınlara belediye seçimlerinde oy hakkı hangi yıl verilmiştir?|1930|1924|1934|1945
+hard|Köy Enstitüleri hangi yılda kurulmuştur?|1940|1928|1935|1946
+medium|Türkiye'nin Avrupa Konseyi'ne katılımı hangi yılda gerçekleşmiştir?|1949|1945|1952|1963
+hard|Türkiye ile Avrupa Ekonomik Topluluğu arasındaki Ankara Anlaşması hangi yıl imzalanmıştır?|1963|1952|1959|1970
+# --- Uygarlıklar ---
+medium|Yazıyı ilk kullanan uygarlık olarak hangisi kabul edilir?|Sümerler|Hititler|Mısırlılar|Fenikeliler
+medium|Bilinen ilk yazılı antlaşma hangisidir?|Kadeş Antlaşması|Hammurabi Kanunları|Magna Carta|Milano Fermanı
+medium|Kadeş Antlaşması hangi iki devlet arasında imzalanmıştır?|Hititler ve Mısır|Sümerler ve Akadlar|Persler ve Yunanlar|Roma ve Kartaca
+medium|Bilinen ilk yazılı kanunları düzenleyen hükümdar kimdir?|Hammurabi|Sargon|Keyhüsrev|Solon
+medium|Alfabenin gelişiminde öncü sayılan uygarlık hangisidir?|Fenikeliler|Lidyalılar|Urartular|Frigler
+medium|Parayı ilk kullanan uygarlık olarak hangisi anılır?|Lidyalılar|Fenikeliler|Sümerler|İyonlar
+medium|Anadolu'da Hitit Devleti'nin başkenti neresidir?|Hattuşa|Gordion|Sardes|Tuşpa
+hard|Urartu Devleti'nin başkenti neresidir?|Tuşpa|Hattuşa|Gordion|Sardes
+hard|Frigya'nın başkenti neresidir?|Gordion|Sardes|Tuşpa|Hattuşa
+hard|Lidya'nın başkenti neresidir?|Sardes|Gordion|Hattuşa|Milet
+medium|Göbeklitepe hangi ilimizde bulunur?|Şanlıurfa|Diyarbakır|Mardin|Gaziantep
+medium|Çatalhöyük hangi ilimizde bulunur?|Konya|Ankara|Çorum|Niğde
+hard|Truva antik kenti hangi ilimizde bulunur?|Çanakkale|İzmir|Balıkesir|Aydın
+medium|Efes antik kenti hangi ilimizde bulunur?|İzmir|Aydın|Muğla|Denizli
+hard|Nemrut Dağı'ndaki dev heykeller hangi ilimizdedir?|Adıyaman|Malatya|Şanlıurfa|Kahramanmaraş
+# --- Orta Asya ve Türk tarihi ---
+medium|Bilinen ilk Türk devleti hangisidir?|Asya Hun Devleti|Göktürk Devleti|Uygur Devleti|Avar Devleti
+medium|Orhun Yazıtları hangi Türk devletine aittir?|Göktürkler|Uygurlar|Hunlar|Karahanlılar
+medium|Orhun Yazıtları hangi yüzyıla tarihlenir?|8. yüzyıl|5. yüzyıl|11. yüzyıl|13. yüzyıl
+medium|Türk adının ilk kez devlet adı olarak kullanıldığı devlet hangisidir?|Göktürkler|Hunlar|Uygurlar|Avarlar
+hard|İlk Türk-İslam devletlerinden Karahanlılar hangi yüzyılda kurulmuştur?|10. yüzyıl|8. yüzyıl|12. yüzyıl|14. yüzyıl
+medium|Büyük Selçuklu Devleti'nin kurucusu kimdir?|Tuğrul Bey|Alparslan|Melikşah|Çağrı Bey
+hard|Nizamülmülk hangi eseriyle tanınır?|Siyasetname|Kutadgu Bilig|Divanü Lügati't-Türk|Seyahatname
+hard|Kutadgu Bilig'in yazarı kimdir?|Yusuf Has Hacib|Kaşgarlı Mahmud|Ahmet Yesevi|Edip Ahmet
+hard|Divanü Lügati't-Türk'ün yazarı kimdir?|Kaşgarlı Mahmud|Yusuf Has Hacib|Ali Şir Nevai|Farabi
+medium|Anadolu Selçuklu Devleti'nin başkenti neresidir?|Konya|Kayseri|Sivas|Erzurum
+hard|Moğol İmparatorluğu'nun kurucusu kimdir?|Cengiz Han|Timur|Kubilay Han|Batu Han
+hard|Timur İmparatorluğu'nun başkenti neresidir?|Semerkant|Buhara|Kaşgar|Herat
+# --- Tamamlayıcı ---
+easy|Cumhuriyet'in ilanından önce Türkiye'nin yönetim biçimi neydi?|Saltanat|Cumhuriyet|Federasyon|Meşruti cumhuriyet
+medium|Kurtuluş Savaşı'nda Batı Cephesi komutanı kimdir?|İsmet İnönü|Kâzım Karabekir|Fevzi Çakmak|Ali Fuat Cebesoy
+medium|Doğu Cephesi'nde Ermenistan'a karşı savaşan komutan kimdir?|Kâzım Karabekir|İsmet İnönü|Refet Bele|Rauf Orbay
+hard|Gümrü Antlaşması hangi devletle imzalanmıştır?|Ermenistan|Gürcistan|Rusya|İran
+hard|Moskova Antlaşması hangi yılda imzalanmıştır?|1921|1919|1920|1922
+hard|Kars Antlaşması hangi yılda imzalanmıştır?|1921|1920|1922|1923
+medium|Mudanya Ateşkes Antlaşması hangi yılda imzalanmıştır?|1922|1918|1920|1923
+medium|Amasya Genelgesi hangi yılda yayımlanmıştır?|1919|1918|1920|1921
+hard|Misak-ı Millî hangi yılda kabul edilmiştir?|1920|1918|1919|1921
+medium|Türkiye'de ilk anayasa hangi yılda kabul edilmiştir?|1921|1923|1924|1961
+medium|1924 Anayasası'ndan sonraki anayasa hangi yılda yapılmıştır?|1961|1945|1971|1982
+medium|Türkiye'nin yürürlükteki anayasası hangi yılda kabul edilmiştir?|1982|1961|1971|1995
+hard|Atatürk'ün Samsun'a çıkarken kullandığı geminin adı nedir?|Bandırma|Hamidiye|Yavuz|Turgutreis
+medium|Atatürk'e Gazi unvanı hangi savaştan sonra verilmiştir?|Sakarya|Dumlupınar|İnönü|Çanakkale
+medium|Atatürk'ün naaşının bulunduğu anıt mezar hangisidir?|Anıtkabir|Dolmabahçe|Topkapı|Ata Anıtı
+easy|Anıtkabir hangi şehirdedir?|Ankara|İstanbul|İzmir|Bursa
+medium|Dolmabahçe Sarayı hangi padişah döneminde yapılmıştır?|Abdülmecid|II. Mahmud|Abdülaziz|II. Abdülhamid
+medium|Topkapı Sarayı'nı yaptıran padişah kimdir?|II. Mehmed|I. Süleyman|I. Selim|II. Bayezid
+hard|Topkapı Sarayı kaç yüzyıl boyunca Osmanlı'nın yönetim merkezi olmuştur?|Yaklaşık dört yüzyıl|Yaklaşık iki yüzyıl|Yaklaşık altı yüzyıl|Yaklaşık bir yüzyıl
+medium|Yıldız Sarayı hangi padişahın uzun süre ikamet ettiği yerdir?|II. Abdülhamid|Abdülmecid|Abdülaziz|V. Mehmed
+medium|Ayasofya ilk olarak hangi imparator döneminde bugünkü biçimiyle yapılmıştır?|I. Justinianos|I. Konstantinos|II. Theodosios|Herakleios
+medium|Sultanahmet Camii'ni yaptıran padişah kimdir?|I. Ahmed|II. Selim|III. Murad|I. Mahmud
+hard|Mimar Sinan'ın ustalık eseri saydığı cami hangisidir?|Selimiye|Süleymaniye|Şehzade|Mihrimah Sultan
+hard|Mimar Sinan'ın çıraklık eseri saydığı cami hangisidir?|Şehzade|Süleymaniye|Selimiye|Rüstem Paşa
+medium|Süleymaniye Camii hangi padişah için yapılmıştır?|I. Süleyman|II. Selim|I. Ahmed|II. Mehmed
+hard|Selimiye Camii hangi şehirdedir?|Edirne|İstanbul|Bursa|Konya
+medium|Kapalıçarşı hangi padişah döneminde kurulmuştur?|II. Mehmed|I. Süleyman|I. Ahmed|III. Ahmed
+hard|Galata Kulesi'ni bugünkü biçimiyle yapan topluluk hangisidir?|Cenevizliler|Venedikliler|Bizanslılar|Osmanlılar
+medium|Rumeli Hisarı'nı yaptıran padişah kimdir?|II. Mehmed|I. Bayezid|I. Süleyman|II. Bayezid
+hard|Anadolu Hisarı'nı yaptıran padişah kimdir?|Yıldırım Bayezid|II. Mehmed|I. Murad|Orhan Bey
+medium|Bizans İmparatorluğu'nun başkenti neresiydi?|Konstantinopolis|Roma|Selanik|İzmit
+hard|Bizans'ın Latin işgalinden sonra başkenti geri alması hangi yılda olmuştur?|1261|1204|1282|1299

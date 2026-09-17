@@ -4,28 +4,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/data/questions/question_repository.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_quiz_controller.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/application/quiz_pool.dart';
-import 'package:istanbul_metro_game/features/games/metro_quiz/domain/quiz_generator.dart';
-import 'package:istanbul_metro_game/features/games/metro_quiz/domain/quiz_question.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/domain/quiz_rules.dart';
+import 'package:istanbul_metro_game/features/games/metro_quiz/domain/trivia_category.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:istanbul_metro_game/features/session/journey_status.dart';
 
 import '../helpers/metro_fixture.dart';
+import '../helpers/trivia_fixture.dart';
 
 void main() {
   final metro = MetroFixture.load();
   final routeService = RouteService(metro);
 
   MetroQuizController controllerFor({
-    List<TriviaQuestion> trivia = const <TriviaQuestion>[],
+    QuestionRepository? repository,
     int seed = 5,
   }) {
     return MetroQuizController(
       journey: routeService.estimate('m2_taksim', 'm2_levent').journey!,
       recordToBeat: 0,
       pool: QuizPool(
-        generator: QuizGenerator(metro: metro, random: Random(seed)),
-        trivia: trivia,
+        repository: repository ?? TriviaFixture.repository(),
         random: Random(seed),
       ),
       tick: const Duration(days: 1),
@@ -44,59 +43,98 @@ void main() {
     controller.debugAdvanceReveal();
   }
 
-  group('soru üretimi', () {
+  group('soru akışı', () {
     test('her soru 4 şıklı ve doğru cevap şıklar içinde', () {
-      final generator = QuizGenerator(metro: metro, random: Random(1));
-      for (var i = 0; i < 300; i++) {
-        final q = generator.next(hard: i.isEven);
-        expect(q.options, hasLength(4), reason: q.prompt);
-        expect(q.answerIndex, inInclusiveRange(0, 3), reason: q.prompt);
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < 100; i++) {
+        final q = controller.question;
+        expect(q.options, hasLength(4), reason: q.id);
+        expect(q.answerIndex, inInclusiveRange(0, 3), reason: q.id);
+        expect(q.options.toSet(), hasLength(4), reason: q.id);
+        expect(q.prompt.trim(), isNotEmpty, reason: q.id);
+        answerCorrectly(controller);
+      }
+    });
+
+    test('aynı soru bir yolculukta iki kez sorulmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final seen = <String>{controller.question.id};
+      for (var i = 0; i < 150; i++) {
+        answerCorrectly(controller);
         expect(
-          q.options.toSet(),
-          hasLength(4),
-          reason: 'şıklar tekrar etmemeli: ${q.prompt}',
+          seen.add(controller.question.id),
+          isTrue,
+          reason: 'tekrar eden soru: ${controller.question.id}',
         );
-        expect(q.prompt.trim(), isNotEmpty);
       }
     });
 
-    test('önceki/sonraki durak sorusunun cevabı gerçekten komşu durak', () {
-      final generator = QuizGenerator(metro: metro, random: Random(9));
-      var checked = 0;
+    test('üst üste aynı kategoriden ikiden fazla soru gelmez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
 
-      for (var i = 0; i < 400 && checked < 40; i++) {
-        final q = generator.next(hard: true);
-        if (!q.id.startsWith('nb_')) continue;
-
-        // id: nb_<istasyon id>_<next|prev>
-        final parts = q.id.split('_');
-        final direction = parts.last;
-        final stationId = parts.sublist(1, parts.length - 1).join('_');
-        final subject = metro.stationById(stationId)!;
-        final line = metro.stationsOfLine(subject.lineId);
-        final index = line.indexWhere((s) => s.id == subject.id);
-        final expected = direction == 'next'
-            ? line[index + 1].name
-            : line[index - 1].name;
-
-        expect(q.answer, expected, reason: q.prompt);
-        checked++;
+      var streak = 1;
+      var previous = controller.question.category;
+      for (var i = 0; i < 200; i++) {
+        answerCorrectly(controller);
+        final current = controller.question.category;
+        streak = current == previous ? streak + 1 : 1;
+        previous = current;
+        expect(
+          streak,
+          lessThanOrEqualTo(QuizPool.maxSameCategoryStreak),
+          reason: '$streak kez üst üste ${current.id}',
+        );
       }
-
-      expect(checked, greaterThan(0), reason: 'komşu durak sorusu üretilmedi');
     });
 
-    test('aynı soru arka arkaya sorulmaz', () {
-      final pool = QuizPool(
-        generator: QuizGenerator(metro: metro, random: Random(3)),
-        random: Random(3),
+    test('her sorunun kategorisi taşınıyor', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < 20; i++) {
+        expect(TriviaCategory.values, contains(controller.question.category));
+        answerCorrectly(controller);
+      }
+    });
+
+    test('ilk sorular kolay havuzdan gelir', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < QuizPool.warmupQuestions - 1; i++) {
+        expect(
+          controller.question.difficulty,
+          TriviaDifficulty.easy,
+          reason: '$i. soru ısınma havuzunda olmalı',
+        );
+        answerCorrectly(controller);
+      }
+    });
+
+    test('havuz tükenirse oyun durmaz', () {
+      // Üç soruluk bir havuzda dördüncü soru da gelmeli.
+      final controller = controllerFor(
+        repository: TriviaFixture.repository(perCategory: 1),
+      )..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < 30; i++) {
+        expect(controller.question.options, hasLength(4));
+        answerCorrectly(controller);
+      }
+    });
+
+    test('havuz boşsa oyun açılmaz yerine boş soruyla çökmez', () {
+      expect(
+        () => controllerFor(repository: const EmptyQuestionRepository()),
+        throwsA(anything),
+        reason: 'boş havuz sessizce boş soru üretmemeli; hata görünür olmalı',
       );
-      final seen = <String>{};
-      for (var i = 0; i < 60; i++) {
-        final q = pool.next(hard: false);
-        expect(seen.contains(q.id), isFalse, reason: 'tekrar: ${q.prompt}');
-        seen.add(q.id);
-      }
     });
   });
 
@@ -146,14 +184,42 @@ void main() {
   });
 
   group('yanlış hakkı', () {
-    test('üç yanlışta oyun biter, ikisinde bitmez', () {
+    test('oyun üç hakla başlar', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(QuizRules.mistakeAllowance, 3);
+      expect(controller.livesLeft, 3);
+      expect(controller.mistakes, 0);
+    });
+
+    test('doğru cevap can götürmez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < 10; i++) {
+        answerCorrectly(controller);
+      }
+      expect(controller.livesLeft, 3);
+      expect(controller.status, GameStatus.playing);
+    });
+
+    test('her yanlış bir can götürür', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      answerWrongly(controller);
+      expect(controller.livesLeft, 2);
+      answerWrongly(controller);
+      expect(controller.livesLeft, 1);
+    });
+
+    test('canlar bitince oyun biter', () {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
       answerWrongly(controller);
       answerWrongly(controller);
-
-      expect(controller.livesLeft, 1);
       expect(controller.status, GameStatus.playing);
 
       controller.answer((controller.question.answerIndex + 1) % 4);
@@ -162,7 +228,57 @@ void main() {
       expect(controller.livesLeft, 0);
     });
 
-    test('süre dolması seriyi bozar ama can götürmez', () {
+    test('aynı soruya ikinci dokunuş ne can götürür ne puan ekler', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final correct = controller.question.answerIndex;
+      final wrong = (correct + 1) % 4;
+
+      expect(controller.answer(correct), isTrue);
+      final scoreAfterFirst = controller.score;
+
+      // Çift dokunuş: doğru şıktan hemen sonra yanlış şıkka basmak.
+      expect(controller.answer(wrong), isFalse);
+      expect(controller.answer(correct), isFalse);
+
+      expect(
+        controller.score,
+        scoreAfterFirst,
+        reason: 'puan iki kez eklenmemeli',
+      );
+      expect(controller.livesLeft, 3, reason: 'can gitmemeli');
+      expect(controller.streak, 1, reason: 'seri bir kez artmalı');
+    });
+
+    test('yanlış cevaba ikinci dokunuş ikinci canı götürmez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final wrong = (controller.question.answerIndex + 1) % 4;
+      expect(controller.answer(wrong), isTrue);
+      expect(controller.livesLeft, 2);
+
+      expect(controller.answer(wrong), isFalse);
+      expect(controller.answer((wrong + 1) % 4), isFalse);
+      expect(controller.livesLeft, 2);
+    });
+
+    test('cevap gösterilirken soru atlanmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final first = controller.question.id;
+      controller.answer(controller.question.answerIndex);
+      // İkinci dokunuş sıradaki soruya geçmemeli.
+      controller.answer(controller.question.answerIndex);
+      expect(controller.question.id, first);
+
+      controller.debugAdvanceReveal();
+      expect(controller.question.id, isNot(first));
+    });
+
+    test('süre dolması hem seriyi bozar hem can götürür', () {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
@@ -175,59 +291,70 @@ void main() {
       expect(controller.streak, 0, reason: 'seri bozulmalı');
       expect(
         controller.mistakes,
-        0,
-        reason: 'gözünü kaldıran oyuncu can kaybetmemeli',
+        1,
+        reason: 'cevap vermemek de bir cevap: hak gitmeli',
       );
-      expect(controller.livesLeft, QuizRules.mistakeAllowance);
+      expect(controller.livesLeft, QuizRules.mistakeAllowance - 1);
       expect(controller.isRevealing, isTrue);
-      expect(controller.chosenIndex, -1, reason: 'seçim yapılmadı');
+      expect(
+        controller.chosenIndex,
+        -1,
+        reason: 'seçim yapılmadı; doğru şık yine de gösterilir',
+      );
     });
 
-    test('süre dolması oyunu bitirmez, üç yanlış bitirir', () {
+    test('üç kez süre dolunca oyun biter', () {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
-      for (var i = 0; i < 5; i++) {
+      for (var i = 0; i < 2; i++) {
         controller.debugAdvance(QuizRules.answerTime.inSeconds.toDouble() + 1);
         controller.debugAdvanceReveal();
       }
-
+      expect(controller.livesLeft, 1);
       expect(controller.status, GameStatus.playing);
-      expect(controller.mistakes, 0);
+
+      controller.debugAdvance(QuizRules.answerTime.inSeconds.toDouble() + 1);
+
+      expect(controller.mistakes, QuizRules.mistakeAllowance);
+      expect(controller.livesLeft, 0);
+    });
+
+    test('süre dolması ile yanlış cevap aynı bedele sahip', () {
+      final timeout = controllerFor()..start();
+      addTearDown(timeout.dispose);
+      final wrong = controllerFor()..start();
+      addTearDown(wrong.dispose);
+
+      timeout.debugAdvance(QuizRules.answerTime.inSeconds.toDouble() + 1);
+      wrong.answer((wrong.question.answerIndex + 1) % 4);
+
+      expect(timeout.livesLeft, wrong.livesLeft);
+      expect(timeout.streak, wrong.streak);
+      expect(timeout.score, wrong.score);
     });
   });
 
-  group('yazılı sorular', () {
-    test('havuzdaki soru şıkları karıştırılır ama cevap doğru kalır', () {
-      const trivia = TriviaQuestion(
-        id: 't1',
-        prompt: 'Marmaray hangi yıl açıldı?',
-        options: <String>['2013', '2009', '2016', '2004'],
-        answerIndex: 0,
-      );
-      final pool = QuizPool(
-        generator: QuizGenerator(metro: metro, random: Random(2)),
-        trivia: const <TriviaQuestion>[trivia],
-        random: Random(2),
-      );
-
-      QuizQuestion? asked;
-      for (var i = 0; i < 40 && asked == null; i++) {
-        final q = pool.next(hard: false);
-        if (q.topic == QuizTopic.trivia) asked = q;
-      }
-
-      expect(asked, isNotNull, reason: 'yazılı soru hiç sorulmadı');
-      expect(asked!.options.toSet(), trivia.options.toSet());
-      expect(asked.answer, '2013');
-    });
-
+  group('veri ayrıştırma', () {
     test('bozuk kayıtlar havuza girmez, dosya çökertmez', () {
       final dataset = QuestionDataset.parse('''
-      { "version": 1, "questions": [
-        { "id": "ok", "text": "Soru?", "options": ["a","b","c","d"], "answer": 2 },
-        { "id": "az_sik", "text": "Soru?", "options": ["a","b"], "answer": 0 },
-        { "id": "kotu_cevap", "text": "Soru?", "options": ["a","b","c","d"], "answer": 9 }
+      { "schemaVersion": 2, "questions": [
+        { "id": "ok", "category": "history", "difficulty": "easy",
+          "question": "Soru?", "options": ["a","b","c","d"],
+          "correctAnswerIndex": 2, "source": "https://x/",
+          "verification": "model_knowledge" },
+        { "id": "az_sik", "category": "history", "difficulty": "easy",
+          "question": "Soru?", "options": ["a","b"],
+          "correctAnswerIndex": 0, "source": "https://x/",
+          "verification": "model_knowledge" },
+        { "id": "kotu_cevap", "category": "history", "difficulty": "easy",
+          "question": "Soru?", "options": ["a","b","c","d"],
+          "correctAnswerIndex": 9, "source": "https://x/",
+          "verification": "model_knowledge" },
+        { "id": "bilinmeyen_kategori", "category": "uzay", "difficulty": "easy",
+          "question": "Soru?", "options": ["a","b","c","d"],
+          "correctAnswerIndex": 0, "source": "https://x/",
+          "verification": "model_knowledge" }
       ]}
       ''');
 

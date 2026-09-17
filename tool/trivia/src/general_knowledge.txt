@@ -1,0 +1,208 @@
+# Genel Kültür — 200 soru (model_knowledge).
+# --- Fen ---
+easy|Suyun kimyasal formülü nedir?|H2O|CO2|NaCl|O2
+easy|Karbondioksitin kimyasal formülü nedir?|CO2|H2O|NH3|CH4
+medium|Yemek tuzunun kimyasal adı nedir?|Sodyum klorür|Kalsiyum karbonat|Potasyum nitrat|Magnezyum oksit
+medium|Altının kimyasal sembolü nedir?|Au|Ag|Fe|Al
+medium|Gümüşün kimyasal sembolü nedir?|Ag|Au|Al|Zn
+medium|Demirin kimyasal sembolü nedir?|Fe|Pb|Cu|Sn
+medium|Bakırın kimyasal sembolü nedir?|Cu|Co|Ca|Cr
+medium|Oksijenin kimyasal sembolü nedir?|O|Os|Om|Ox
+medium|Azotun kimyasal sembolü nedir?|N|Na|Ne|Ni
+medium|Periyodik tablodaki ilk element hangisidir?|Hidrojen|Helyum|Lityum|Oksijen
+medium|Atomun çekirdeğinde bulunan yüklü parçacık hangisidir?|Proton|Elektron|Foton|Nötrino
+medium|Atomun çekirdeğinde bulunan yüksüz parçacık hangisidir?|Nötron|Elektron|Proton|Foton
+medium|Atomun çekirdeği çevresinde dolanan parçacık hangisidir?|Elektron|Proton|Nötron|Kuark
+medium|Bir maddenin katıdan sıvıya geçmesine ne ad verilir?|Erime|Donma|Buharlaşma|Yoğuşma
+medium|Bir maddenin sıvıdan gaza geçmesine ne ad verilir?|Buharlaşma|Erime|Donma|Süblimleşme
+medium|Bir maddenin gazdan sıvıya geçmesine ne ad verilir?|Yoğuşma|Buharlaşma|Erime|Donma
+hard|Bir maddenin katıdan doğrudan gaza geçmesine ne ad verilir?|Süblimleşme|Yoğuşma|Erime|Donma
+medium|Suyun normal koşullarda kaynama sıcaklığı kaç derecedir?|100|90|80|120
+medium|Suyun normal koşullarda donma sıcaklığı kaç derecedir?|0|-10|4|10
+medium|Işığın boşluktaki hızı yaklaşık kaç kilometre/saniyedir?|300.000|150.000|30.000|3.000
+medium|Sesin havadaki hızı yaklaşık kaç metre/saniyedir?|340|150|1.000|3.000
+medium|Yer çekimi ivmesi yaklaşık kaç metre/saniye karedir?|9,8|5,2|12,4|1,6
+medium|Kuvvetin birimi nedir?|Newton|Joule|Watt|Pascal
+medium|Enerjinin birimi nedir?|Joule|Newton|Watt|Amper
+medium|Gücün birimi nedir?|Watt|Joule|Newton|Volt
+medium|Elektrik akımının birimi nedir?|Amper|Volt|Ohm|Watt
+medium|Elektriksel direncin birimi nedir?|Ohm|Amper|Volt|Watt
+medium|Basıncın birimi nedir?|Pascal|Newton|Joule|Watt
+medium|Frekansın birimi nedir?|Hertz|Watt|Joule|Ohm
+hard|Sıcaklığın SI birimi nedir?|Kelvin|Santigrat|Fahrenhayt|Joule
+# --- Biyoloji ---
+easy|İnsan vücudunda kanı pompalayan organ hangisidir?|Kalp|Karaciğer|Akciğer|Böbrek
+easy|Solunumu sağlayan organ hangisidir?|Akciğer|Kalp|Mide|Böbrek
+medium|Kanı süzerek idrar oluşturan organ hangisidir?|Böbrek|Karaciğer|Dalak|Pankreas
+medium|İnsan vücudunun en büyük iç organı hangisidir?|Karaciğer|Kalp|Böbrek|Akciğer
+medium|İnsan vücudunun en büyük organı olarak hangisi kabul edilir?|Deri|Karaciğer|Kalp|Bağırsak
+medium|İnsanda normal kromozom sayısı kaçtır?|46|23|48|44
+medium|Kalıtım bilgisini taşıyan molekül hangisidir?|DNA|ATP|RNA dışı protein|Lipit
+medium|Hücrenin enerji üreten organeli hangisidir?|Mitokondri|Ribozom|Golgi|Lizozom
+medium|Protein sentezinin yapıldığı organel hangisidir?|Ribozom|Mitokondri|Golgi|Kloroplast
+medium|Bitki hücresinde fotosentezin gerçekleştiği organel hangisidir?|Kloroplast|Mitokondri|Ribozom|Lizozom
+medium|Fotosentezde bitkilerin aldığı gaz hangisidir?|Karbondioksit|Oksijen|Azot|Hidrojen
+medium|Fotosentez sonucu açığa çıkan gaz hangisidir?|Oksijen|Karbondioksit|Azot|Metan
+medium|Bitkilere yeşil rengini veren pigment hangisidir?|Klorofil|Hemoglobin|Melanin|Karoten
+medium|Kana kırmızı rengini veren molekül hangisidir?|Hemoglobin|Klorofil|Melanin|İnsülin
+medium|Kan şekerini düzenleyen hormon hangisidir?|İnsülin|Adrenalin|Tiroksin|Östrojen
+medium|İnsan vücudunda kaç çeşit ana kan grubu sistemi yaygın kullanılır?|AB0|XY|RH tek başına|MN
+medium|Omurgalı hayvan gruplarından biri hangisidir?|Memeliler|Böcekler|Örümcekler|Yumuşakçalar
+medium|Kurbağa hangi hayvan grubuna girer?|İki yaşamlılar|Sürüngenler|Balıklar|Memeliler
+medium|Yarasa hangi hayvan grubuna girer?|Memeliler|Kuşlar|Sürüngenler|Böcekler
+medium|Yunus hangi hayvan grubuna girer?|Memeliler|Balıklar|Sürüngenler|İki yaşamlılar
+medium|Bitkilerin kökle aldığı temel madde nedir?|Su ve mineral|Oksijen|Karbondioksit|Işık
+medium|Besin zincirinin ilk halkasında genellikle kim bulunur?|Üreticiler|Tüketiciler|Ayrıştırıcılar|Etçiller
+medium|Ölü canlıları parçalayarak doğaya kazandıran canlılara ne denir?|Ayrıştırıcılar|Üreticiler|Otçullar|Etçiller
+medium|Aynı türden canlıların bir arada yaşadığı topluluğa ne ad verilir?|Popülasyon|Ekosistem|Komünite|Biyom
+medium|Canlılar ve cansız çevrenin oluşturduğu bütüne ne ad verilir?|Ekosistem|Popülasyon|Tür|Biyom
+# --- Astronomi ---
+easy|Güneş sistemindeki gezegen sayısı kaçtır?|8|9|7|10
+easy|Güneşe en yakın gezegen hangisidir?|Merkür|Venüs|Dünya|Mars
+medium|Güneş sistemindeki en büyük gezegen hangisidir?|Jüpiter|Satürn|Neptün|Dünya
+medium|Halkalarıyla bilinen gezegen hangisidir?|Satürn|Jüpiter|Mars|Venüs
+medium|Kızıl Gezegen olarak bilinen gezegen hangisidir?|Mars|Venüs|Merkür|Jüpiter
+medium|Dünya'nın doğal uydusu hangisidir?|Ay|Europa|Titan|Phobos
+medium|Güneş bir gök cismi olarak nedir?|Yıldız|Gezegen|Uydu|Kuyruklu yıldız
+medium|Dünya'nın bulunduğu galaksinin adı nedir?|Samanyolu|Andromeda|Üçgen|Girdap
+medium|Ay tutulması nasıl oluşur?|Dünya Güneş ile Ay arasına girdiğinde|Ay Güneş ile Dünya arasına girdiğinde|Güneş söndüğünde|Ay küçüldüğünde
+medium|Güneş tutulması nasıl oluşur?|Ay Güneş ile Dünya arasına girdiğinde|Dünya Güneş ile Ay arasına girdiğinde|Ay büyüdüğünde|Güneş döndüğünde
+medium|Uzaya çıkan ilk insan kimdir?|Yuri Gagarin|Neil Armstrong|Buzz Aldrin|Alan Shepard
+medium|Ay'a ayak basan ilk insan kimdir?|Neil Armstrong|Yuri Gagarin|Buzz Aldrin|Michael Collins
+medium|Apollo 11 görevi hangi yılda gerçekleşmiştir?|1969|1961|1972|1975
+medium|Türkiye'nin uzaya giden ilk astronotu kimdir?|Alper Gezeravcı|Tuva Cihangir Atasever|Ersin Tatar|Aziz Sancar
+hard|Bir yıldızın ömrünü tamamlayarak patlamasına ne ad verilir?|Süpernova|Kara delik|Nebula|Pulsar
+hard|Işığın bile kaçamadığı gök cismine ne ad verilir?|Kara delik|Süpernova|Nebula|Kuyruklu yıldız
+# --- Matematik ---
+easy|Bir üçgenin iç açıları toplamı kaç derecedir?|180|90|270|360
+easy|Bir karenin kaç kenarı vardır?|4|3|5|6
+medium|Bir dörtgenin iç açıları toplamı kaç derecedir?|360|180|270|540
+medium|Pi sayısı yaklaşık olarak kaçtır?|3,14|2,71|1,41|1,61
+hard|Euler sayısı yaklaşık olarak kaçtır?|2,71|3,14|1,41|1,61
+hard|Altın oran yaklaşık olarak kaçtır?|1,61|3,14|2,71|1,41
+medium|Karekök 2 yaklaşık olarak kaçtır?|1,41|1,73|2,23|1,61
+medium|Dik üçgende hipotenüs hangi kenardır?|Dik açının karşısındaki|En kısa kenar|Taban|Yükseklik
+medium|Pisagor teoremi hangi üçgen türü için geçerlidir?|Dik üçgen|Eşkenar üçgen|İkizkenar üçgen|Geniş açılı üçgen
+medium|Bir sayının kendisiyle çarpımına ne ad verilir?|Kare|Küp|Kök|Faktöriyel
+medium|Bir sayının üç kez kendisiyle çarpımına ne ad verilir?|Küp|Kare|Kök|Logaritma
+medium|Yalnızca 1 ve kendisine bölünebilen sayılara ne ad verilir?|Asal sayı|Tek sayı|Çift sayı|Tam sayı
+medium|En küçük asal sayı hangisidir?|2|1|3|0
+medium|Bir veri kümesindeki değerlerin ortalamasına ne ad verilir?|Aritmetik ortalama|Medyan|Mod|Ranj
+medium|Bir veri kümesinde en çok tekrar eden değere ne ad verilir?|Mod|Medyan|Ortalama|Ranj
+medium|Sıralı bir veri kümesinin ortasındaki değere ne ad verilir?|Medyan|Mod|Ortalama|Ranj
+# --- Kurumlar ve kavramlar ---
+medium|Birleşmiş Milletler'in kısaltması nedir?|BM|NATO|AB|DSÖ
+medium|Dünya Sağlık Örgütü'nün kısaltması nedir?|DSÖ|BM|UNICEF|UNESCO
+medium|UNICEF hangi alanda çalışır?|Çocuk hakları|Ticaret|Savunma|Enerji
+medium|NATO ne tür bir örgüttür?|Askerî ittifak|Ticaret birliği|Sağlık örgütü|Kültür kurumu
+medium|Avrupa Birliği'nin ortak para birimi nedir?|Avro|Dolar|Frank|Mark
+medium|Türkiye'nin para birimi nedir?|Türk lirası|Avro|Dolar|Dinar
+medium|Japonya'nın para birimi nedir?|Yen|Yuan|Won|Rupi
+medium|Birleşik Krallık'ın para birimi nedir?|Sterlin|Avro|Dolar|Frank
+medium|Rusya'nın para birimi nedir?|Ruble|Grivna|Zloti|Leva
+medium|Hindistan'ın para birimi nedir?|Rupi|Yen|Yuan|Riyal
+medium|Dünyada en çok konuşulan dillerden biri hangisidir?|Çince|Fince|Letonca|İzlandaca
+medium|Türkçe hangi dil ailesine girer?|Ural-Altay|Hint-Avrupa|Sami|Bantu
+medium|İngilizce hangi dil ailesine girer?|Hint-Avrupa|Ural-Altay|Sami|Bantu
+medium|Arapça hangi dil ailesine girer?|Sami|Hint-Avrupa|Ural-Altay|Bantu
+medium|Bir ülkenin en yüksek hukuk metni hangisidir?|Anayasa|Yönetmelik|Tüzük|Genelge
+medium|Türkiye'de yasama yetkisi hangi organdadır?|TBMM|Cumhurbaşkanlığı|Yargıtay|Danıştay
+medium|Türkiye'de en yüksek adli yargı mercii hangisidir?|Yargıtay|Danıştay|Sayıştay|Anayasa Mahkemesi
+medium|Türkiye'de idari yargının en yüksek mercii hangisidir?|Danıştay|Yargıtay|Sayıştay|Yüksek Seçim Kurulu
+medium|Türkiye'de seçimleri yöneten kurul hangisidir?|YSK|TBMM|Danıştay|Sayıştay
+medium|Merkez bankasının temel görevlerinden biri nedir?|Fiyat istikrarını sağlamak|Vergi toplamak|Okul açmak|Yol yapmak
+medium|Enflasyon ne anlama gelir?|Genel fiyat düzeyindeki sürekli artış|Faiz düşüşü|İşsizlik artışı|Üretim artışı
+medium|Bir ülkenin belirli sürede ürettiği mal ve hizmet değerine ne ad verilir?|Gayrisafi yurt içi hasıla|Enflasyon|Bütçe|Cari açık
+medium|İthalat ne anlama gelir?|Yurt dışından mal alımı|Yurt dışına mal satımı|Üretim artışı|Vergi indirimi
+medium|İhracat ne anlama gelir?|Yurt dışına mal satımı|Yurt dışından mal alımı|Vergi toplama|Borçlanma
+medium|Arz ve talep dengesi neyi belirler?|Fiyatı|Vergiyi|Faizi tek başına|Nüfusu
+# --- Günlük kültür ---
+easy|Bir yılda kaç ay vardır?|12|10|11|13
+easy|Bir haftada kaç gün vardır?|7|5|6|8
+medium|Artık yıl kaç gün sürer?|366|365|364|367
+medium|Artık yıl kaç yılda bir gelir?|4|2|3|5
+medium|Türkiye'de 19 Mayıs hangi bayram olarak kutlanır?|Gençlik ve Spor Bayramı|Cumhuriyet Bayramı|Ulusal Egemenlik Bayramı|Zafer Bayramı
+medium|Türkiye'de 23 Nisan hangi bayram olarak kutlanır?|Ulusal Egemenlik ve Çocuk Bayramı|Gençlik ve Spor Bayramı|Cumhuriyet Bayramı|Zafer Bayramı
+medium|Türkiye'de 30 Ağustos hangi bayram olarak kutlanır?|Zafer Bayramı|Cumhuriyet Bayramı|Gençlik ve Spor Bayramı|Çocuk Bayramı
+medium|Türkiye'de 29 Ekim hangi bayram olarak kutlanır?|Cumhuriyet Bayramı|Zafer Bayramı|Çocuk Bayramı|Gençlik Bayramı
+medium|Dünya Kadınlar Günü hangi tarihte kutlanır?|8 Mart|1 Mayıs|23 Nisan|21 Mart
+medium|Emek ve Dayanışma Günü hangi tarihtedir?|1 Mayıs|8 Mart|19 Mayıs|29 Ekim
+medium|Nevruz hangi mevsimin başlangıcında kutlanır?|İlkbahar|Yaz|Sonbahar|Kış
+medium|Bilgisayarda verinin en küçük birimi hangisidir?|Bit|Bayt|Kilobayt|Megabayt
+medium|Bir bayt kaç bitten oluşur?|8|4|16|32
+medium|İnternet adreslerinde kullanılan protokolün kısaltması nedir?|HTTP|SMTP|FTP tek başına|DNS
+medium|Web sitelerinin adresini IP'ye çeviren sistem hangisidir?|DNS|HTTP|FTP|VPN
+medium|Bilgisayarın merkezi işlem birimi hangisidir?|İşlemci|Ekran kartı|Sabit disk|Bellek
+medium|Geçici veri saklayan bilgisayar bileşeni hangisidir?|RAM|Sabit disk|İşlemci|Ekran kartı
+medium|Açık kaynaklı bir işletim sistemi çekirdeği hangisidir?|Linux|Windows|macOS|iOS
+medium|Yapay zekâ alanında verilerden öğrenen yönteme genel olarak ne denir?|Makine öğrenmesi|Veri tabanı|Derleyici|İşletim sistemi
+medium|Şifreleme ne amaçla kullanılır?|Bilgiyi yetkisiz erişimden korumak|Veriyi silmek|Hızı artırmak|Depolamayı azaltmak
+medium|E-posta adreslerinde kullanıcı adını alan adından ayıran işaret nedir?|@|#|&|%
+# --- Tamamlayıcı ---
+medium|Kalbin vücuda kan pompaladığı damar türü hangisidir?|Atardamar|Toplardamar|Kılcal damar|Lenf damarı
+medium|Vücuttan kalbe kan taşıyan damar türü hangisidir?|Toplardamar|Atardamar|Kılcal damar|Lenf damarı
+medium|Kemiklerin birleştiği yerlere ne ad verilir?|Eklem|Kas|Kıkırdak|Tendon
+medium|Kasları kemiğe bağlayan yapıya ne ad verilir?|Tendon|Eklem|Kıkırdak|Bağ doku
+medium|İnsan iskeletinde yaklaşık kaç kemik bulunur?|206|150|300|180
+medium|Beynin denge ve koordinasyondan sorumlu bölümü hangisidir?|Beyincik|Omurilik|Beyin sapı|Hipofiz
+medium|Vücudun savunma sistemine ne ad verilir?|Bağışıklık sistemi|Sindirim sistemi|Dolaşım sistemi|Boşaltım sistemi
+medium|Aşı hangi amaçla uygulanır?|Bağışıklık kazandırmak|Ateşi düşürmek|Ağrıyı kesmek|Kan vermek
+medium|Antibiyotikler hangi tür etkenlere karşı kullanılır?|Bakteriler|Virüsler|Mantarlar dışı|Alerjenler
+medium|Vitamin D'nin oluşumunda etkili olan doğal kaynak nedir?|Güneş ışığı|Deniz suyu|Rüzgâr|Toprak
+medium|C vitamini en çok hangi besinlerde bulunur?|Turunçgiller|Kırmızı et|Ekmek|Pirinç
+medium|Kalsiyum en çok hangi besin grubunda bulunur?|Süt ürünleri|Tahıllar|Etler|Yağlar
+medium|Demir eksikliğinde en çok görülen durum nedir?|Kansızlık|Şeker hastalığı|Yüksek tansiyon|Alerji
+medium|Vücudun temel enerji kaynağı hangi besin grubudur?|Karbonhidratlar|Vitaminler|Mineraller|Su
+medium|Proteinlerin yapı taşı nedir?|Amino asit|Glikoz|Yağ asidi|Nükleotit
+medium|Karbonhidratların temel yapı taşı nedir?|Glikoz|Amino asit|Yağ asidi|Gliserol
+medium|Türkiye'de acil çağrı numarası kaçtır?|112|155|110|156
+medium|Türkiye'de itfaiye çağrı numarası kaçtır?|110|112|155|156
+medium|Yangın söndürücüde en yaygın kullanılan maddelerden biri nedir?|Kuru kimyevi toz|Benzin|Alkol|Gazyağı
+medium|Elektrik kaynaklı yangında ilk yapılması gereken nedir?|Elektriği kesmek|Su dökmek|Pencereyi açmak|Beklemek
+medium|Depremde en güvenli davranış olarak hangisi önerilir?|Çök-kapan-tutun|Koşarak çıkmak|Asansöre binmek|Balkona çıkmak
+medium|İlk yardımda temel amaç nedir?|Durumun kötüleşmesini önlemek|Teşhis koymak|İlaç vermek|Ameliyat yapmak
+medium|Boğulma riskinde uygulanan ilk yardım tekniği hangisidir?|Heimlich manevrası|Suni teneffüs tek başına|Sıcak kompres|Masaj
+medium|Trafikte kırmızı ışık ne anlama gelir?|Dur|Geç|Yavaşla|Dikkat
+medium|Trafikte sarı ışık ne anlama gelir?|Hazırlan ve yavaşla|Hızlan|Dur ve bekleme|Serbest geçiş
+medium|Emniyet kemeri hangi amaçla kullanılır?|Çarpmada savrulmayı önlemek|Konfor sağlamak|Isınmak|Gürültüyü azaltmak
+medium|Türkiye'de sürücü belgesi almak için asgari yaş genellikle kaçtır?|18|16|20|21
+medium|Karbonmonoksit zehirlenmesinin başlıca kaynağı nedir?|Eksik yanma|Fazla oksijen|Su buharı|Toz
+medium|Geri dönüşümün temel amacı nedir?|Atıkları yeniden kullanmak|Üretimi durdurmak|Enerjiyi artırmak|Nüfusu azaltmak
+medium|Sera etkisine en çok katkı yapan gazlardan biri hangisidir?|Karbondioksit|Azot gazı|Helyum|Neon
+medium|Küresel ısınmanın başlıca sonuçlarından biri nedir?|Buzulların erimesi|Denizlerin çekilmesi|Yağışın durması|Rüzgârın kesilmesi
+medium|Yenilenebilir enerji kaynaklarından biri hangisidir?|Rüzgâr|Kömür|Petrol|Doğal gaz
+medium|Fosil yakıtlardan biri hangisidir?|Kömür|Rüzgâr|Güneş|Jeotermal
+medium|Ozon tabakasının temel işlevi nedir?|Zararlı ışınları süzmek|Yağmur yağdırmak|Rüzgâr oluşturmak|Isı üretmek
+medium|Kâğıdın geri dönüşümü hangi doğal kaynağı korur?|Ormanları|Denizleri|Madenleri|Petrolü
+medium|Su tasarrufu için önerilen davranışlardan biri nedir?|Musluğu açık bırakmamak|Daha sık duş almak|Havuz doldurmak|Bahçeyi öğlen sulamak
+medium|Türkiye'de zorunlu eğitim süresi kaç yıldır?|12|8|10|5
+medium|Türkiye'de yükseköğretimi düzenleyen kurul hangisidir?|YÖK|MEB|TÜBİTAK|TSE
+medium|TÜBİTAK hangi alanda çalışır?|Bilimsel ve teknolojik araştırma|Sağlık hizmeti|Spor|Turizm
+medium|TSE hangi alanda çalışır?|Standartlar|Eğitim|Ulaşım|Tarım
+medium|Bir sözcüğün anlamını açıklayan başvuru kaynağı hangisidir?|Sözlük|Ansiklopedi|Atlas|Almanak
+medium|Konuları geniş biçimde açıklayan başvuru kaynağı hangisidir?|Ansiklopedi|Sözlük|Atlas|Takvim
+medium|Haritaların toplandığı başvuru kaynağı hangisidir?|Atlas|Sözlük|Ansiklopedi|Almanak
+medium|Türkçede sözcüklerin doğru yazımını gösteren kaynak hangisidir?|Yazım kılavuzu|Atlas|Almanak|Katalog
+medium|Bir çalışmanın başında içeriği kısaca tanıtan bölüme ne ad verilir?|Özet|Dipnot|Kaynakça|Ek
+medium|Bir çalışmada yararlanılan eserlerin listesine ne ad verilir?|Kaynakça|Özet|Dipnot|İçindekiler
+medium|Metin içinde açıklama için sayfa altına konan nota ne denir?|Dipnot|Kaynakça|Özet|Ek
+medium|Telif hakkı neyi korur?|Eser sahibinin haklarını|Ticari markayı|Patenti|Sınır güvenliğini
+medium|Patent neyi korur?|Buluşu|Marka adını|Eseri|Alan adını
+medium|Marka tescili neyi korur?|Ticari adı ve işareti|Buluşu|Romanı|Şarkı sözünü
+medium|Açık kaynak yazılımın temel özelliği nedir?|Kaynak kodunun erişilebilir olması|Ücretli olması|Kapalı olması|Tek kişilik olması
+medium|İnternette güvenli bağlantıyı gösteren protokol hangisidir?|HTTPS|HTTP|FTP|SMTP
+medium|Güçlü bir parolanın temel özelliği nedir?|Uzun ve tahmin edilmesi zor olması|Kısa olması|Ad soyad içermesi|Doğum yılı olması
+medium|Kimlik avı saldırısı neyi hedefler?|Kullanıcı bilgilerini ele geçirmeyi|Donanımı bozmayı|İnterneti hızlandırmayı|Yazılım güncellemeyi
+medium|Yedekleme neden önemlidir?|Veri kaybına karşı koruma sağlar|Hızı artırır|Ekranı büyütür|Pili uzatır
+medium|Bir belgeyi taşınabilir biçimde paylaşmak için yaygın dosya biçimi hangisidir?|PDF|EXE|ZIP tek başına|ISO
+medium|Görüntü dosyası biçimlerinden biri hangisidir?|PNG|MP3|DOCX|CSV
+medium|Ses dosyası biçimlerinden biri hangisidir?|MP3|PNG|PDF|CSV
+medium|Tablo verisi için yaygın kullanılan sade dosya biçimi hangisidir?|CSV|PNG|MP3|MP4
+medium|Video dosyası biçimlerinden biri hangisidir?|MP4|CSV|DOCX|PNG
+medium|Bulut depolama ne anlama gelir?|Verinin uzaktaki sunucularda saklanması|Verinin silinmesi|Verinin şifrelenmesi|Verinin yazdırılması
+medium|Bir cihazın internete kablosuz bağlanmasını sağlayan teknoloji hangisidir?|Wi-Fi|USB|HDMI|SATA
+medium|Kısa mesafede kablosuz veri aktarımı sağlayan teknoloji hangisidir?|Bluetooth|Wi-Fi|GPS|NFC dışı
+medium|Konum belirlemede kullanılan uydu sistemi hangisidir?|GPS|Wi-Fi|Bluetooth|NFC
+medium|Bir ağın dışarıya karşı korunmasını sağlayan yazılıma ne ad verilir?|Güvenlik duvarı|Tarayıcı|Derleyici|Sürücü
+medium|Yazılımın kaynak kodunu makine diline çeviren araca ne ad verilir?|Derleyici|Tarayıcı|Güvenlik duvarı|Yönlendirici
+medium|Ev ve iş yerlerinde ağ trafiğini yönlendiren cihaz hangisidir?|Yönlendirici|Yazıcı|Tarayıcı|Klavye

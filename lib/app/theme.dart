@@ -2,21 +2,26 @@ import 'package:flutter/material.dart';
 
 /// Tipografi.
 ///
-/// Kısa, büyük başlıklarda **Bungee**; diğer her yerde
-/// **Plus Jakarta Sans**. İkisi de SIL OFL 1.1.
+/// Kısa, büyük başlıklarda **Bungee**; diğer her yerde **M PLUS Rounded
+/// 1c**. İkisi de SIL OFL 1.1.
 ///
 /// Bungee iri, tabela karakterli bir yazı tipidir: yalnızca ~20 punto ve
 /// üstündeki, **tek satıra sığan** başlıklarda okunur. İki satıra taşan
 /// cümleler (onay penceresi başlıkları gibi) bu fontta ağır duruyordu; onlar
-/// Plus Jakarta Sans ExtraBold'dadır. Tek ağırlığı var (400); daha kalın
+/// M PLUS Rounded 1c ExtraBold'dadır. Tek ağırlığı var (400); daha kalın
 /// istenirse Flutter sahte kalınlaştırma yapıp harfleri bozar. Skor, rozet ve
-/// etiket gibi küçük ya da sık değişen metinler de Plus Jakarta Sans'tadır.
+/// etiket gibi küçük ya da sık değişen metinler de M PLUS Rounded 1c'dedir.
 ///
 /// Bungee Türkçe için değiştirildi: özgün dosya küçük `i`'yi noktasız
 /// `I` çiziyor ve Türkçe `locl` kuralı yok, "girdin" ekranda "GIRDIN"
 /// okunuyordu. `cmap` içinde `i` → `İ` eşlendi; metinler değişmeden doğru
-/// görünür. Plus Jakarta Sans'ın google/fonts'taki değişken dosyasından
-/// 400 / 500 / 700 / 800 sabit ağırlıkları üretildi.
+/// görünür.
+///
+/// M PLUS Rounded 1c yuvarlak uçlu bir gotik: metro tabelası diliyle
+/// (Bungee) aynı ailede değil ama aynı karakterde — geometrik, tok, küçük
+/// puntoda da kapanmayan sayaçlara sahip. Türkçe'nin tamamını kapsar
+/// (Ç ç Ğ ğ İ ı Ö ö Ş ş Ü ü doğrulandı); 400 / 500 / 700 / 800 ağırlıkları
+/// paketlenir.
 class AppFonts {
   const AppFonts._();
 
@@ -25,7 +30,7 @@ class AppFonts {
 
   /// Gövde, düğme, skor, etiketler ve uzun başlıklar.
   /// Ağırlıklar: 400, 500, 700, 800.
-  static const String body = 'Plus Jakarta Sans';
+  static const String body = 'M PLUS Rounded 1c';
 }
 
 /// Uygulama renk paleti.
@@ -344,7 +349,7 @@ class AppText {
   /// Açılış tabelası. Bungee, sıkı satır arası.
   static const TextStyle display = TextStyle(
     fontFamily: AppFonts.display,
-    fontSize: 28,
+    fontSize: 38,
     fontWeight: FontWeight.w400,
     height: 1.12,
     color: AppColors.textPrimary,
@@ -362,7 +367,7 @@ class AppText {
   /// Ekran başlığı (AppBar, panel başlığı).
   static const TextStyle title = TextStyle(
     fontFamily: AppFonts.display,
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
   );
@@ -380,15 +385,20 @@ class AppText {
 
   /// Gövde metni.
   static const TextStyle body = TextStyle(
-    fontSize: 15,
-    height: 1.3,
+    fontSize: 14,
+    height: 1.35,
     color: AppColors.textSecondary,
   );
 
-  /// Vurgulu gövde.
+  /// Vurgulu gövde — şık kutusu, listede seçilebilir satır.
+  ///
+  /// Gövdeden **hem punto hem ağırlıkla** ayrılır. İkisi 15 punto ve yalnız
+  /// ağırlıkla ayrışırken fark M PLUS Rounded 1c'de kayboluyordu: yuvarlak
+  /// uçlar kalınlık farkını yutuyor. w700 yerine w500, çünkü 17 puntoda
+  /// kalınlığa ihtiyaç kalmıyor ve w700 şık kutusunu bağırtıyordu.
   static const TextStyle bodyStrong = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w700,
+    fontSize: 17,
+    fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
   );
 
@@ -408,15 +418,15 @@ class AppText {
 
   /// Büyük harf bölüm etiketi. Metro tabelası dili: harf arası açık.
   static const TextStyle label = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w800,
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
     letterSpacing: 1.0,
     color: AppColors.textMuted,
   );
 
   /// Rozet ve minik sayaç etiketi.
   static const TextStyle micro = TextStyle(
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: FontWeight.w800,
     letterSpacing: 0.8,
     color: AppColors.textMuted,
@@ -441,7 +451,7 @@ class AppText {
 
 /// Değişen sayılar için ortak stil parçası.
 ///
-/// Plus Jakarta Sans'ta rakam genişlikleri eşit değildir: skor 1'den 2'ye geçerken
+/// M PLUS Rounded 1c'de rakam genişlikleri eşit değildir: skor 1'den 2'ye geçerken
 /// metnin kapladığı yer değişir ve satır oynar. Saniyede bir güncellenen
 /// sayaçta ve her hamlede artan skorda bu titreme sürekli görünür.
 /// [FontFeature.tabularFigures] rakamları sabit genişliğe sabitler.

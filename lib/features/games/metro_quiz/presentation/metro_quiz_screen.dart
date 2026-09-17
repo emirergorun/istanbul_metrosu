@@ -5,6 +5,7 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/widgets/metro_train.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
@@ -17,17 +18,36 @@ import '../../../session/widgets/result_overlay.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../application/metro_quiz_controller.dart';
 import '../application/quiz_pool.dart';
-import '../domain/quiz_generator.dart';
-import '../domain/quiz_question.dart';
 import '../domain/quiz_rules.dart';
+import '../domain/trivia_category.dart';
 
 /// Metro Bilgi: dört şıklı soru, seri çarpanı, üç yanlış hakkı.
 ///
-/// Düzen başparmağa göre: soru üstte **okunur**, şıklar altta **dokunulur**.
-/// Hareket eden vagonda tek elle oynanacağı için dört şık da alt yarıda ve
-/// her biri tam genişlikte.
+/// **Okuma sırası** yukarıdan aşağı tek bir çizgi: skor ve kalan hak →
+/// kategori → soru → dört şık. Kategori sorunun üstünde durur, çünkü
+/// oyuncunun ilk kararı "bu neyle ilgili" — sorunun içinde saklı bir
+/// etiket bu işi görmüyordu.
+///
+/// **Soru kartı ekranın gövdesidir.** Blok Metro'da tahta ne ise burada
+/// kart odur: HUD ile şıklar arasında kalan alanın tamamını kaplar, metin
+/// kendi içinde dikey ortalanır. Artan boşluk kartın *içinde* kalır ve
+/// tabelanın nefesi gibi okunur; kartın *dışında* bırakılırsa ekranın
+/// üçte biri boş bir leke oluyordu.
+///
+/// **Katman merdiveni** üç basamak: zemin ([AppColors.background]) en
+/// koyu, dokunulacak şıklar ([AppColors.surface]) bir üstü, okunacak kart
+/// ([AppColors.surfaceHigh]) en açık. Önce kart şıklardan koyuydu; soru
+/// geride, şıklar önde duruyor ve hiyerarşi tersine dönüyordu.
 class MetroQuizScreen extends StatefulWidget {
   const MetroQuizScreen({super.key, required this.journey});
+
+  /// Soru kartı. Kart ile şıklar arasındaki boşluğu ölçen test bunu kullanır.
+  @visibleForTesting
+  static const Key questionCardKey = ValueKey<String>('quiz_question_card');
+
+  /// Dört şıkkı taşıyan sütun.
+  @visibleForTesting
+  static const Key optionsKey = ValueKey<String>('quiz_options');
 
   final Journey journey;
 
@@ -60,10 +80,7 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     final controller = MetroQuizController(
       journey: widget.journey,
       store: scope.store,
-      pool: QuizPool(
-        generator: QuizGenerator(metro: scope.metro),
-        trivia: scope.questions.questions(),
-      ),
+      pool: QuizPool(repository: scope.questions),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: MetroQuizController.id,
         originId: widget.journey.origin.id,
@@ -138,6 +155,13 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
 
   void _sound(GameSound sound) => AppScope.of(context).audio.play(sound);
 
+  /// Şıkka dokunuldu.
+  ///
+  /// Çift dokunuş buradan geçmez: [MetroQuizController.answer] ikinci
+  /// çağrıda `false` döner (soru artık cevap bekleme evresinde değil), bu
+  /// yüzden ikinci dokunuş ne can götürür ne puan ekler. Ekran ayrıca
+  /// cevaptan sonra [Pressable.onTap]'i boşaltır; iki koruma da gerekli,
+  /// çünkü dokunuş ile yeniden çizim arasında bir kare geçebiliyor.
   void _answer(int index) {
     final controller = _controller;
     if (controller == null) return;
@@ -194,41 +218,31 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                       onPause: controller.pause,
                       chips: <Widget>[
                         if (controller.multiplier > 1)
-                          _MultiplierChip(
+                          _MultiplierReadout(
                             multiplier: controller.multiplier,
                             accent: accent,
                           ),
-                        _LivesChip(left: controller.livesLeft),
+                        _LivesIndicator(left: controller.livesLeft),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Expanded(
-                      // Kart yukarı yaslı: göz HUD → soru → şıklar sırasını
-                      // takip etsin. Ortalanınca kısa sorularda kart ekranın
-                      // ortasında asılı kalıyor, uzun sorularda aşağı
-                      // kayıyordu; okuma sırası her soruda değişiyordu.
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Flexible(
-                            child: SingleChildScrollView(
-                              child: _QuestionCard(controller: controller),
-                            ),
-                          ),
-                          // Kart ile şıklar arasındaki boşluk seriye ayrıldı:
-                          // oyunun asıl gerilimi bu, ama sayı olarak hiçbir
-                          // yerde durmuyordu.
                           Expanded(
-                            child: Center(
-                              child: _StreakMeter(
-                                controller: controller,
-                                accent: accent,
-                              ),
-                            ),
+                            child: _QuestionCard(controller: controller),
                           ),
+                          if (controller.streak > 0) ...<Widget>[
+                            const SizedBox(height: AppSpacing.sm),
+                            _StreakLine(controller: controller, accent: accent),
+                          ],
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    // Sorudan şıklara tek sabit adım. Bu boşluk düzenin
+                    // artığı değil, bilinçli bir değer.
+                    const SizedBox(height: AppSpacing.lg),
                     _Options(controller: controller, onAnswer: _answer),
                     const SizedBox(height: AppSpacing.md),
                     JourneyStatusBar(
@@ -300,7 +314,12 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
   }
 }
 
-/// Soru kartı: bağlam etiketi, soru metni ve süre çubuğu.
+/// Soru kartı: süre çubuğu, kategori, soru metni.
+///
+/// Kart verilen alanın tamamını kaplar ve metni **dikey ortalar**. Kısa
+/// soruda metin kartın ortasında durur, uzun soruda kart dolar ve içeriği
+/// kendi içinde kayar — iki durumda da şıkların yeri değişmez, başparmak
+/// her soruda aynı yeri bulur.
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({required this.controller});
 
@@ -311,56 +330,116 @@ class _QuestionCard extends StatelessWidget {
     final question = controller.question;
 
     return Container(
-      width: double.infinity,
+      key: MetroQuizScreen.questionCardKey,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        // Katman merdiveninin en üst basamağı: okunacak yüzey, dokunulacak
+        // yüzeyden açık. Kenarlık yok — üç ton zaten ayırıyor, çerçeve
+        // eklemek kartı kutuya çevirirdi.
+        color: AppColors.surfaceHigh,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.surfaceHigh, width: 1.6),
       ),
-      // Kart **içeriği kadar** yer kaplar; artan boşluk kartın üstüne ve
-      // altına eşit dağılır. Kartı ekrana yaydığımızda üç satırlık soru
-      // devasa bir boş kutunun ortasında kalıyordu.
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           // Süre çubuğu kartın tepesinde: sayı okumak gerekmeden, göz ucuyla
           // "ne kadar kaldı" görülüyor.
           _TimerBar(progress: controller.questionProgress),
+          // Kategori kartın **tepesinde sabit**, metro tabelasındaki künye
+          // gibi. Soruyla birlikte ortalanınca ikisi tek blok oluyor ve
+          // kartın üstü yine boş kalıyordu.
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    if (question.context != null)
-                      Text(
-                        question.context!.toUpperCase(),
-                        style: AppText.micro.copyWith(
-                          color: AppColors.textSecondary,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              0,
+            ),
+            child: _CategoryTag(category: question.category),
+          ),
+          Expanded(
+            child: CustomScrollView(
+              slivers: <Widget>[
+                SliverFillRemaining(
+                  // Kısa soru ortalanır, uzun soru büyür ve kayar.
+                  hasScrollBody: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        question.prompt,
+                        // Satır sayısı serbest: kesilen soru cevaplanamaz.
+                        style: AppText.lead.copyWith(
+                          fontSize: 21,
+                          height: 1.3,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                    const Spacer(),
-                    Text(
-                      question.topic == QuizTopic.trivia
-                          ? 'BİLGİ'
-                          : 'AĞ BİLGİSİ',
-                      style: AppText.micro,
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  question.prompt,
-                  style: AppText.lead.copyWith(fontSize: 20, height: 1.25),
+                  ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sorunun kategorisi — üç harfli rozet ve tam adı.
+///
+/// Rozet dili metro hat rozetiyle aynı (`M4`, `TAR`), ama **rengi hat rengi
+/// değil**: hat rengi bu oyunda da kimlik taşıyor, kategori ondan bağımsız
+/// bir eksen. İkisini aynı renge boyamak "Tarih sorusu M4'e ait" gibi
+/// okunurdu.
+class _CategoryTag extends StatelessWidget {
+  const _CategoryTag({required this.category});
+
+  final TriviaCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Kategori: ${category.label}',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                // Kart artık surfaceHigh; rozet bir basamak aşağıdan.
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                category.badge,
+                style: AppText.micro.copyWith(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: Text(
+                category.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.captionStrong.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -388,7 +467,7 @@ class _TimerBar extends StatelessWidget {
           ),
           Expanded(
             flex: 1000 - (progress * 1000).round().clamp(0, 1000),
-            child: const ColoredBox(color: AppColors.surfaceHigh),
+            child: const ColoredBox(color: AppColors.surface),
           ),
         ],
       ),
@@ -409,6 +488,7 @@ class _Options extends StatelessWidget {
     final revealing = controller.isRevealing;
 
     return Column(
+      key: MetroQuizScreen.optionsKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         for (var i = 0; i < question.options.length; i++) ...<Widget>[
@@ -452,7 +532,7 @@ class _OptionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final (Color background, Color border, Color text) = switch (state) {
       _OptionState.idle => (
-        AppColors.surfaceHigh,
+        AppColors.surface,
         AppColors.outline,
         AppColors.textPrimary,
       ),
@@ -467,8 +547,8 @@ class _OptionButton extends StatelessWidget {
         AppColors.textPrimary,
       ),
       _OptionState.dimmed => (
+        AppColors.background,
         AppColors.surface,
-        AppColors.surfaceHigh,
         AppColors.textMuted,
       ),
     };
@@ -480,9 +560,13 @@ class _OptionButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         // Şık yüksekliği 56: hareket eden vagonda 48 bile ıskalanıyor.
+        // Uzun şıkta kutu büyür; şık kesilirse doğru cevap seçilemez.
         constraints: const BoxConstraints(minHeight: 56),
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
@@ -490,7 +574,7 @@ class _OptionButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          maxLines: 2,
+          maxLines: 3,
           overflow: TextOverflow.ellipsis,
           style: AppText.bodyStrong.copyWith(color: text),
         ),
@@ -499,12 +583,13 @@ class _OptionButton extends StatelessWidget {
   }
 }
 
-/// Seri göstergesi: kaç doğru gitti, bir sonraki çarpana kaç kaldı.
+/// Seri satırı: kaç doğru gitti, bir sonraki çarpana kaç kaldı.
 ///
-/// Seri sıfırken hiçbir şey çizmez — oyunun sessiz hâli, boş bir kutu
-/// göstermekten iyidir.
-class _StreakMeter extends StatelessWidget {
-  const _StreakMeter({required this.controller, required this.accent});
+/// Kartın hemen altında **tek satır**. Eskiden nokta dizisi + iki satır
+/// metindi ve düzende kendine ayrılmış esnek bir alanda duruyordu; o alan
+/// soruyla şıkları birbirinden koparan boşluğun ta kendisiydi.
+class _StreakLine extends StatelessWidget {
+  const _StreakLine({required this.controller, required this.accent});
 
   final MetroQuizController controller;
   final Color accent;
@@ -512,45 +597,32 @@ class _StreakMeter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final streak = controller.streak;
-    if (streak == 0) return const SizedBox.shrink();
-
     final remaining = controller.answersToNextMultiplier;
     final multiplier = controller.multiplier;
+
+    final tail = remaining == null
+        ? 'en üst basamak'
+        : multiplier > 1
+        ? '$remaining doğru sonra ×${multiplier + 1}'
+        : '$remaining doğru sonra ×2';
 
     return Semantics(
       label: remaining == null
           ? 'Seri $streak, çarpan $multiplier kat, en üst basamak'
           : 'Seri $streak, $remaining doğru sonra çarpan artıyor',
       child: ExcludeSemantics(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                for (var i = 0; i < streak.clamp(0, 10); i++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              remaining == null
-                  ? 'SERİ $streak · ×$multiplier'
-                  : multiplier > 1
-                  ? 'SERİ $streak · ×$multiplier · $remaining doğru sonra artıyor'
-                  : 'SERİ $streak · $remaining doğru sonra ×2',
-              textAlign: TextAlign.center,
-              style: AppText.micro.copyWith(color: AppColors.textSecondary),
+            Text('SERİ $streak', style: AppText.micro.copyWith(color: accent)),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: Text(
+                tail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.caption.copyWith(fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -559,9 +631,12 @@ class _StreakMeter extends StatelessWidget {
   }
 }
 
-/// Seri çarpanı rozeti.
-class _MultiplierChip extends StatelessWidget {
-  const _MultiplierChip({required this.multiplier, required this.accent});
+/// Seri çarpanı — skorun yanında sade bir okuma.
+///
+/// Kutusuz ve ikonsuz: rozet çerçevesi ile stok şimşek ikonu HUD'u
+/// kalabalık gösteriyordu. Blok Metro'daki combo okuması da aynı dilde.
+class _MultiplierReadout extends StatelessWidget {
+  const _MultiplierReadout({required this.multiplier, required this.accent});
 
   final int multiplier;
   final Color accent;
@@ -569,25 +644,17 @@ class _MultiplierChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Seri çarpanı $multiplier kat',
+      label: 'Puan çarpanı $multiplier kat',
       child: ExcludeSemantics(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: accent.withValues(alpha: 0.5)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.bolt_rounded, size: 15, color: accent),
-              const SizedBox(width: 2),
-              Text(
-                'x$multiplier',
-                style: AppText.statSmall.copyWith(color: accent),
-              ),
-            ],
+        child: Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.md),
+          child: Text(
+            '×$multiplier',
+            style: AppText.stat.copyWith(
+              fontSize: 22,
+              letterSpacing: -0.5,
+              color: accent,
+            ),
           ),
         ),
       ),
@@ -595,41 +662,74 @@ class _MultiplierChip extends StatelessWidget {
   }
 }
 
-/// Kalan yanlış hakkı.
-class _LivesChip extends StatelessWidget {
-  const _LivesChip({required this.left});
+/// Kalan yanlış hakkı — üç metro treni.
+///
+/// Nokta dizisi yerine trenler: oyunun her yerinde aynı çizim var
+/// ([MetroTrain]), yani gösterge oyunun diline ait.
+class _LivesIndicator extends StatelessWidget {
+  const _LivesIndicator({required this.left});
 
   final int left;
 
   @override
   Widget build(BuildContext context) {
+    // Tek hak kalınca uyarı rengi: sayıyı okumadan da fark edilsin. Hata
+    // rengi (`danger`) bilinçli olarak kullanılmıyor — o renk yalnızca
+    // gerçekleşmiş hatanın rengi, burada henüz hata yok.
+    final color = left <= 1 ? AppColors.warning : AppColors.textSecondary;
+
     return Semantics(
-      label: 'Kalan yanlış hakkı $left',
+      label: 'Kalan yanlış hakkı $left / ${QuizRules.mistakeAllowance}',
       child: ExcludeSemantics(
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             for (var i = 0; i < QuizRules.mistakeAllowance; i++)
               Padding(
-                padding: const EdgeInsets.only(left: 3),
-                child: Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: i < left
-                        ? AppColors.textSecondary
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: i < left
-                          ? AppColors.textSecondary
-                          : AppColors.outline,
-                      width: 1.4,
-                    ),
-                  ),
-                ),
+                padding: EdgeInsets.only(left: i == 0 ? 0 : AppSpacing.xs),
+                child: MetroQuizLifeIcon(spent: i >= left, color: color),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tek bir yanlış hakkı.
+///
+/// Harcanan hak **boş konturla** çizilir; ayrım renkle değil doluluk
+/// farkıyla kurulur, böylece renk körlüğünde ve küçük ölçekte de okunur.
+class MetroQuizLifeIcon extends StatelessWidget {
+  const MetroQuizLifeIcon({
+    super.key,
+    required this.spent,
+    required this.color,
+  });
+
+  /// Bu hak kullanıldı mı?
+  final bool spent;
+
+  /// Dolu trenin gövde rengi.
+  final Color color;
+
+  /// Üç tren + aralar ≈ 56 px. HUD'da skoru sıkıştırmayacak kadar dar.
+  static const double height = 14;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!spent) {
+      return MetroTrain(color: color, height: height, wagons: 1);
+    }
+    return SizedBox(
+      width: MetroTrain.widthFor(height: height, wagons: 1),
+      height: height,
+      child: const CustomPaint(
+        painter: MetroTrainPainter(
+          // Gövde boş: kontur ve pencereler soluk kalır, siluet durur.
+          color: Colors.transparent,
+          wagons: 1,
+          opacity: 0.3,
         ),
       ),
     );

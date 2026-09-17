@@ -1,0 +1,47 @@
+# Ulaşım — elle yazılan ek sorular (model_knowledge).
+easy|İstanbul'da metro istasyonlarında turnikeden geçmek için kullanılan kart hangisidir?|İstanbulkart|Akbil|Şehirkart|Ulaşımkart
+medium|Bir metro hattının iki ucu arasındaki toplam mesafeye ne ad verilir?|Hat uzunluğu|Sefer aralığı|Peron boyu|Ray açıklığı
+medium|İki ray arasındaki mesafeye teknik olarak ne ad verilir?|Ray açıklığı|Balast|Katener|Gabari
+hard|Dünyada yaygın kullanılan standart ray açıklığı yaklaşık kaç milimetredir?|1435|1000|1524|1668
+medium|Tramvay ile metro arasındaki temel fark aşağıdakilerden hangisidir?|Tramvayın karayoluyla aynı düzlemi paylaşabilmesi|Tramvayın elektrikle çalışması|Metronun raylı olması|Metronun yolcu taşıması
+medium|Füniküler sistemlerin temel çalışma ilkesi nedir?|Halatla çekilmesi|Pervaneyle itilmesi|Mıknatısla kaldırılması|Basınçla sürülmesi
+hard|Manyetik kaldırma ilkesiyle çalışan tren teknolojisinin adı nedir?|Maglev|Monoray|Füniküler|Teleferik
+medium|Tek ray üzerinde ilerleyen toplu taşıma sistemine ne ad verilir?|Monoray|Tramvay|Füniküler|Teleferik
+medium|Havaray olarak da bilinen, askıda ilerleyen sistem hangisidir?|Teleferik|Füniküler|Monoray|Metrobüs
+medium|Şehir merkezini banliyölere bağlayan demiryolu hattına ne ad verilir?|Banliyö hattı|Metro hattı|Tramvay hattı|Hafif raylı sistem
+hard|Otobüslere ayrılmış özel yol üzerinde işleyen hızlı sisteme ne ad verilir?|Metrobüs|Troleybüs|Dolmuş|Minibüs
+hard|Elektriği havai hattan alan lastik tekerlekli otobüs türü hangisidir?|Troleybüs|Metrobüs|Otobüs|Tramvay
+easy|İstanbul'da iki yaka arasında yolcu taşıyan klasik deniz aracına ne ad verilir?|Vapur|Feribot|Yat|Tanker
+medium|Araç taşıyan deniz aracına genel olarak ne ad verilir?|Feribot|Vapur|Yelkenli|Römorkör
+medium|İstanbul'da hızlı deniz ulaşımı sağlayan araç türü hangisidir?|Deniz otobüsü|Feribot|Römorkör|Şilep
+easy|Havalimanlarının üç harfli uluslararası kodunu veren kuruluş hangisidir?|IATA|ICAO|IMO|UIC
+hard|İstanbul Havalimanı'nın IATA kodu nedir?|IST|SAW|ESB|ADB
+hard|Sabiha Gökçen Havalimanı'nın IATA kodu nedir?|SAW|IST|ESB|ADB
+medium|Ankara Esenboğa Havalimanı'nın IATA kodu nedir?|ESB|IST|SAW|ADB
+medium|Türkiye'de demiryolu işletmesinden sorumlu kuruluşun kısaltması nedir?|TCDD|IETT|KGM|DHMİ
+medium|Türkiye'de karayollarından sorumlu genel müdürlüğün kısaltması nedir?|KGM|TCDD|DHMİ|IETT
+hard|Türkiye'de havalimanlarını işleten devlet kuruluşunun kısaltması nedir?|DHMİ|TCDD|KGM|IETT
+medium|Boğaziçi Köprüsü'nün bugünkü resmî adı nedir?|15 Temmuz Şehitler Köprüsü|Fatih Sultan Mehmet Köprüsü|Yavuz Sultan Selim Köprüsü|Haliç Köprüsü
+medium|İzmit Körfezi'ni geçen asma köprünün adı nedir?|Osmangazi Köprüsü|Yavuz Sultan Selim Köprüsü|1915 Çanakkale Köprüsü|Fatih Sultan Mehmet Köprüsü
+medium|Çanakkale Boğazı'nı geçen asma köprünün adı nedir?|1915 Çanakkale Köprüsü|Osmangazi Köprüsü|Yavuz Sultan Selim Köprüsü|Boğaziçi Köprüsü
+hard|1915 Çanakkale Köprüsü hangi yılda açılmıştır?|2022|2016|2019|2024
+hard|Osmangazi Köprüsü hangi yılda açılmıştır?|2016|2011|2013|2020
+medium|Yavuz Sultan Selim Köprüsü'nün diğer köprülerden farkı nedir?|Üzerinden demiryolu geçmesi|Yaya geçişine açık olması|Tek katlı olması|Ücretsiz olması
+medium|İstanbul'da Haliç'i geçen tarihî açılır köprünün adı nedir?|Galata Köprüsü|Atatürk Köprüsü|Haliç Köprüsü|Unkapanı Köprüsü
+hard|Metro istasyonlarında peronu raydan ayıran güvenlik sistemine ne ad verilir?|Peron kapısı|Turnike|Bariyer|Makas
+medium|Bir aracın dolu koltuk oranını anlatan kavram hangisidir?|Doluluk oranı|Sefer aralığı|Hat kapasitesi|Hat uzunluğu
+medium|Sabah ve akşam yoğun saatlere ulaşımda ne ad verilir?|Zirve saat|Ölü saat|Ara saat|Gece hattı
+hard|Bir hatta iki sefer arasında geçen süreye ne ad verilir?|Sefer aralığı|Hat uzunluğu|Ray açıklığı|Peron boyu
+medium|Metro araçlarının hareketini merkezden yöneten birime ne ad verilir?|Kumanda merkezi|Depo|Atölye|Gişe
+hard|Raylı sistemde trenin duracağı mesafeyi belirleyen güvenlik sistemine ne denir?|Sinyalizasyon|Katener|Balast|Makas
+medium|Bisiklet ve yaya ulaşımını kapsayan ulaşım türüne ne ad verilir?|Aktif ulaşım|Toplu ulaşım|Bireysel ulaşım|Yük ulaşımı
+medium|Aynı araca birden çok kişinin birlikte binmesine dayanan modele ne denir?|Araç paylaşımı|Özel ulaşım|Toplu taşıma|Servis
+hard|Uçakların kalkış ve inişte kullandığı yüzeye ne ad verilir?|Pist|Apron|Taksi yolu|Terminal
+hard|Havalimanında uçakların park ettiği alana ne ad verilir?|Apron|Pist|Terminal|Kule
+medium|Gemilerin yanaştığı kıyı yapısına ne ad verilir?|İskele|Apron|Peron|Fener
+medium|Limanda gemileri yönlendiren küçük güçlü tekneye ne ad verilir?|Römorkör|Feribot|Şilep|Tanker
+hard|Deniz taşımacılığında yük gemisi türü olarak hangisi anılır?|Şilep|Vapur|Yelkenli|Römorkör
+medium|Bir şehirde farklı ulaşım türlerinin birbirine bağlandığı noktaya ne denir?|Aktarma merkezi|Son durak|Depo|Gişe
+medium|Toplu taşımada engelli erişimi için istasyonlarda bulunması gereken düzenek nedir?|Asansör|Turnike|Gişe|Bariyer
+medium|Metro istasyonlarında görme engelliler için zeminde bulunan yüzeye ne ad verilir?|Hissedilebilir yüzey|Peron kapısı|Katener|Balast
+easy|Toplu taşımada yaşlı ve engelliler için ayrılan oturma yerlerine ne denir?|Öncelikli koltuk|Standart koltuk|Katlanır koltuk|Ayakta bölüm

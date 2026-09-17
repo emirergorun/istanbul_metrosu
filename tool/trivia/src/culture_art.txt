@@ -1,0 +1,208 @@
+# Kültür & Sanat — 200 soru (model_knowledge).
+# --- Resim ---
+easy|Mona Lisa tablosunun ressamı kimdir?|Leonardo da Vinci|Michelangelo|Raffaello|Donatello
+medium|Mona Lisa hangi müzede sergilenmektedir?|Louvre|Prado|Uffizi|Ermitaj
+easy|Yıldızlı Gece tablosunun ressamı kimdir?|Vincent van Gogh|Claude Monet|Paul Cézanne|Edvard Munch
+medium|Çığlık tablosunun ressamı kimdir?|Edvard Munch|Vincent van Gogh|Salvador Dalí|Gustav Klimt
+medium|Guernica tablosunun ressamı kimdir?|Pablo Picasso|Salvador Dalí|Joan Miró|Henri Matisse
+medium|Belleğin Azmi adlı erimiş saatler tablosunun ressamı kimdir?|Salvador Dalí|René Magritte|Pablo Picasso|Max Ernst
+medium|Öpücük adlı altın yaldızlı tablonun ressamı kimdir?|Gustav Klimt|Egon Schiele|Edvard Munch|Marc Chagall
+medium|Son Akşam Yemeği duvar resminin sanatçısı kimdir?|Leonardo da Vinci|Michelangelo|Botticelli|Raffaello
+medium|Venüs'ün Doğuşu tablosunun ressamı kimdir?|Sandro Botticelli|Leonardo da Vinci|Tiziano|Raffaello
+medium|Gece Devriyesi tablosunun ressamı kimdir?|Rembrandt|Vermeer|Rubens|Van Dyck
+medium|İnci Küpeli Kız tablosunun ressamı kimdir?|Johannes Vermeer|Rembrandt|Frans Hals|Jan van Eyck
+hard|Nilüferler serisinin ressamı kimdir?|Claude Monet|Edgar Degas|Auguste Renoir|Camille Pissarro
+hard|İzlenimcilik akımına adını veren tablo hangi ressama aittir?|Claude Monet|Édouard Manet|Paul Gauguin|Alfred Sisley
+medium|Kaplumbağa Terbiyecisi tablosunun ressamı kimdir?|Osman Hamdi Bey|İbrahim Çallı|Şeker Ahmed Paşa|Fikret Mualla
+medium|Osman Hamdi Bey hangi müzenin kurucusu sayılır?|İstanbul Arkeoloji Müzeleri|Topkapı Sarayı Müzesi|Pera Müzesi|Sakıp Sabancı Müzesi
+hard|Sistine Şapeli tavan freskolarını yapan sanatçı kimdir?|Michelangelo|Leonardo da Vinci|Raffaello|Caravaggio
+hard|Davut heykelinin sanatçısı kimdir?|Michelangelo|Donatello|Bernini|Cellini
+hard|Düşünen Adam heykelinin sanatçısı kimdir?|Auguste Rodin|Michelangelo|Antonio Canova|Henry Moore
+medium|Kübizm akımının öncülerinden sayılan ressam kimdir?|Pablo Picasso|Claude Monet|Gustav Klimt|Edvard Munch
+medium|Sürrealizm akımıyla anılan ressam kimdir?|Salvador Dalí|Claude Monet|Edgar Degas|Auguste Renoir
+# --- Edebiyat ---
+easy|İstiklal Marşı'nın şairi kimdir?|Mehmet Akif Ersoy|Namık Kemal|Tevfik Fikret|Yahya Kemal Beyatlı
+medium|İstiklal Marşı hangi yılda kabul edilmiştir?|1921|1919|1923|1925
+medium|Safahat adlı eserin şairi kimdir?|Mehmet Akif Ersoy|Necip Fazıl Kısakürek|Yahya Kemal Beyatlı|Ahmet Haşim
+medium|Nobel Edebiyat Ödülü kazanan ilk Türk yazar kimdir?|Orhan Pamuk|Yaşar Kemal|Nâzım Hikmet|Sabahattin Ali
+medium|Orhan Pamuk Nobel Edebiyat Ödülü'nü hangi yılda almıştır?|2006|1998|2002|2011
+medium|İnce Memed romanının yazarı kimdir?|Yaşar Kemal|Orhan Kemal|Kemal Tahir|Fakir Baykurt
+medium|Kürk Mantolu Madonna romanının yazarı kimdir?|Sabahattin Ali|Sait Faik|Peyami Safa|Halit Ziya
+medium|Çalıkuşu romanının yazarı kimdir?|Reşat Nuri Güntekin|Halide Edib Adıvar|Yakup Kadri|Refik Halid
+medium|Ateşten Gömlek romanının yazarı kimdir?|Halide Edib Adıvar|Reşat Nuri Güntekin|Yakup Kadri|Peyami Safa
+medium|Yaban romanının yazarı kimdir?|Yakup Kadri Karaosmanoğlu|Reşat Nuri Güntekin|Halide Edib Adıvar|Memduh Şevket
+medium|Aşk-ı Memnu romanının yazarı kimdir?|Halit Ziya Uşaklıgil|Mehmet Rauf|Recaizade Ekrem|Namık Kemal
+medium|Araba Sevdası romanının yazarı kimdir?|Recaizade Mahmut Ekrem|Namık Kemal|Ahmet Mithat Efendi|Şemsettin Sami
+hard|Türk edebiyatının ilk yerli romanı sayılan eser hangisidir?|Taaşşuk-ı Talat ve Fitnat|İntibah|Araba Sevdası|Mai ve Siyah
+medium|Memleketim şiirleriyle tanınan ve Türkiye dışında yaşamış şair kimdir?|Nâzım Hikmet|Orhan Veli|Cahit Sıtkı|Attila İlhan
+medium|Garip akımının öncülerinden olan şair kimdir?|Orhan Veli Kanık|Nâzım Hikmet|Cemal Süreya|Fazıl Hüsnü
+medium|İkinci Yeni akımıyla anılan şair kimdir?|Cemal Süreya|Orhan Veli|Mehmet Akif|Yahya Kemal
+medium|Sis şiiriyle tanınan şair kimdir?|Tevfik Fikret|Namık Kemal|Ahmet Haşim|Yahya Kemal
+hard|Otuz Beş Yaş şiirinin şairi kimdir?|Cahit Sıtkı Tarancı|Orhan Veli|Necip Fazıl|Ahmet Muhip
+medium|Tutunamayanlar romanının yazarı kimdir?|Oğuz Atay|Yusuf Atılgan|Bilge Karasu|Adalet Ağaoğlu
+medium|Anayurt Oteli romanının yazarı kimdir?|Yusuf Atılgan|Oğuz Atay|Orhan Pamuk|Vüs'at O. Bener
+medium|Kar romanının yazarı kimdir?|Orhan Pamuk|Elif Şafak|Ahmet Ümit|Yaşar Kemal
+medium|Şu Çılgın Türkler kitabının yazarı kimdir?|Turgut Özakman|İlber Ortaylı|Halil İnalcık|Murat Bardakçı
+easy|Don Kişot romanının yazarı kimdir?|Miguel de Cervantes|Victor Hugo|Charles Dickens|Lev Tolstoy
+medium|Suç ve Ceza romanının yazarı kimdir?|Fyodor Dostoyevski|Lev Tolstoy|Anton Çehov|İvan Turgenyev
+medium|Savaş ve Barış romanının yazarı kimdir?|Lev Tolstoy|Fyodor Dostoyevski|Nikolay Gogol|Maksim Gorki
+medium|Sefiller romanının yazarı kimdir?|Victor Hugo|Émile Zola|Honoré de Balzac|Gustave Flaubert
+medium|Madam Bovary romanının yazarı kimdir?|Gustave Flaubert|Victor Hugo|Stendhal|Guy de Maupassant
+medium|1984 romanının yazarı kimdir?|George Orwell|Aldous Huxley|Ray Bradbury|H. G. Wells
+medium|Cesur Yeni Dünya romanının yazarı kimdir?|Aldous Huxley|George Orwell|Kurt Vonnegut|Philip K. Dick
+medium|Dönüşüm adlı uzun öykünün yazarı kimdir?|Franz Kafka|Albert Camus|Thomas Mann|Hermann Hesse
+medium|Yabancı romanının yazarı kimdir?|Albert Camus|Jean-Paul Sartre|Franz Kafka|André Gide
+medium|Yüzüklerin Efendisi serisinin yazarı kimdir?|J. R. R. Tolkien|C. S. Lewis|George R. R. Martin|Ursula K. Le Guin
+medium|Harry Potter serisinin yazarı kimdir?|J. K. Rowling|Roald Dahl|Philip Pullman|Suzanne Collins
+medium|Yüzyıllık Yalnızlık romanının yazarı kimdir?|Gabriel García Márquez|Mario Vargas Llosa|Jorge Luis Borges|Julio Cortázar
+medium|Simyacı romanının yazarı kimdir?|Paulo Coelho|Gabriel García Márquez|Isabel Allende|José Saramago
+hard|İlyada ve Odysseia destanlarının yazarı olarak kim anılır?|Homeros|Hesiodos|Vergilius|Sofokles
+hard|İlahi Komedya'nın yazarı kimdir?|Dante Alighieri|Petrarca|Boccaccio|Ariosto
+medium|Hamlet oyununun yazarı kimdir?|William Shakespeare|Christopher Marlowe|Ben Jonson|Molière
+medium|Romeo ve Juliet oyununun yazarı kimdir?|William Shakespeare|Molière|Henrik Ibsen|Anton Çehov
+hard|Dede Korkut Hikâyeleri hangi Türk topluluğuna aittir?|Oğuzlar|Kırgızlar|Uygurlar|Tatarlar
+hard|Mesnevi adlı eserin yazarı kimdir?|Mevlânâ Celâleddîn-i Rûmî|Yunus Emre|Hacı Bektaş Veli|Ahmet Yesevi
+medium|Yunus Emre hangi tür şiirleriyle tanınır?|Tasavvuf şiiri|Divan şiiri|Servet-i Fünun şiiri|Garip şiiri
+# --- Müzik ---
+easy|Beşinci Senfoni'nin bestecisi kimdir?|Ludwig van Beethoven|Wolfgang Amadeus Mozart|Johann Sebastian Bach|Franz Schubert
+medium|Küçük Bir Gece Müziği eserinin bestecisi kimdir?|Wolfgang Amadeus Mozart|Ludwig van Beethoven|Joseph Haydn|Antonio Vivaldi
+medium|Dört Mevsim adlı keman konçertolarının bestecisi kimdir?|Antonio Vivaldi|Johann Sebastian Bach|Georg Friedrich Händel|Arcangelo Corelli
+medium|Sağır olduktan sonra da beste yapmayı sürdüren ünlü besteci kimdir?|Ludwig van Beethoven|Wolfgang Amadeus Mozart|Frédéric Chopin|Franz Liszt
+medium|Kuğu Gölü balesinin bestecisi kimdir?|Pyotr İlyiç Çaykovski|Igor Stravinski|Sergey Prokofyev|Modest Mussorgski
+hard|Bahar Ayini balesinin bestecisi kimdir?|Igor Stravinski|Pyotr İlyiç Çaykovski|Claude Debussy|Maurice Ravel
+medium|Türk Beşleri arasında sayılan besteci kimdir?|Ahmed Adnan Saygun|Zeki Müren|Münir Nurettin Selçuk|Barış Manço
+hard|Yunus Emre Oratoryosu'nun bestecisi kimdir?|Ahmed Adnan Saygun|Ulvi Cemal Erkin|Cemal Reşit Rey|Necil Kâzım Akses
+medium|Türk sanat müziğinde Sanat Güneşi olarak anılan sanatçı kimdir?|Zeki Müren|Müzeyyen Senar|Bülent Ersoy|Münir Nurettin Selçuk
+medium|Anadolu rock akımının öncülerinden sayılan sanatçı kimdir?|Barış Manço|Zeki Müren|Sezen Aksu|Ajda Pekkan
+medium|Minik Serçe lakabıyla anılan sanatçı kimdir?|Sezen Aksu|Ajda Pekkan|Nilüfer|Muazzez Abacı
+hard|Türkiye'ye Eurovision birinciliğini getiren şarkıcı kimdir?|Sertab Erener|Sezen Aksu|Ajda Pekkan|Hadise
+hard|Türkiye Eurovision'u hangi yılda kazanmıştır?|2003|1997|2000|2007
+medium|Bağlama hangi çalgı ailesine girer?|Telli çalgılar|Üflemeli çalgılar|Vurmalı çalgılar|Yaylı çalgılar
+medium|Ney hangi çalgı ailesine girer?|Üflemeli çalgılar|Telli çalgılar|Vurmalı çalgılar|Klavyeli çalgılar
+medium|Kanun hangi çalgı ailesine girer?|Telli çalgılar|Üflemeli çalgılar|Vurmalı çalgılar|Yaylı çalgılar
+medium|Darbuka hangi çalgı ailesine girer?|Vurmalı çalgılar|Telli çalgılar|Üflemeli çalgılar|Yaylı çalgılar
+medium|Keman hangi çalgı ailesine girer?|Yaylı çalgılar|Üflemeli çalgılar|Vurmalı çalgılar|Klavyeli çalgılar
+medium|Bir orkestrayı yöneten kişiye ne ad verilir?|Şef|Solist|Konzertmeister|Besteci
+medium|Tek kişinin seslendirdiği bölüme müzikte ne ad verilir?|Solo|Koro|Düet|Tutti
+medium|Operada ana kadın rolünü seslendiren sese ne ad verilir?|Soprano|Alto|Tenor|Bariton
+medium|Erkek seslerinin en tizine ne ad verilir?|Tenor|Bas|Bariton|Alto
+hard|Türk müziğinde makam kavramı neyi ifade eder?|Ezgi dizisi ve seyir kuralları|Ritim kalıbı|Çalgı türü|Söz biçimi
+hard|Türk müziğinde usul kavramı neyi ifade eder?|Ritim kalıbı|Ezgi dizisi|Ses genişliği|Çalgı düzeni
+# --- Sinema ve tiyatro ---
+medium|Türkiye'de en çok bilinen uluslararası film festivali hangi şehirde düzenlenir?|Antalya|İzmir|Bursa|Adana
+medium|Altın Portakal Film Festivali hangi şehirde düzenlenir?|Antalya|İstanbul|Ankara|İzmir
+medium|Cannes Film Festivali hangi ülkede düzenlenir?|Fransa|İtalya|İspanya|Almanya
+medium|Berlin Film Festivali'nin büyük ödülü hangisidir?|Altın Ayı|Altın Palmiye|Altın Aslan|Altın Küre
+medium|Cannes Film Festivali'nin büyük ödülü hangisidir?|Altın Palmiye|Altın Ayı|Altın Aslan|Oscar
+medium|Venedik Film Festivali'nin büyük ödülü hangisidir?|Altın Aslan|Altın Palmiye|Altın Ayı|Sezar
+medium|Kış Uykusu filmiyle Altın Palmiye kazanan Türk yönetmen kimdir?|Nuri Bilge Ceylan|Zeki Demirkubuz|Yılmaz Güney|Ferzan Özpetek
+medium|Yol filmiyle Altın Palmiye kazanan Türk yönetmen kimdir?|Yılmaz Güney|Nuri Bilge Ceylan|Metin Erksan|Atıf Yılmaz
+hard|Susuz Yaz filmiyle Altın Ayı kazanan Türk yönetmen kimdir?|Metin Erksan|Yılmaz Güney|Lütfi Ö. Akad|Halit Refiğ
+medium|Türk sinemasında Yeşilçam adı neyi anlatır?|Sinema sektörünün toplandığı dönem ve çevre|Bir film ödülü|Bir sinema salonu zinciri|Bir yönetmen kuşağı
+medium|Kemal Sunal'ın en çok bilindiği film türü hangisidir?|Komedi|Korku|Belgesel|Bilim kurgu
+medium|Şener Şen'in başrolde olduğu Eşkıya filminin yönetmeni kimdir?|Yavuz Turgul|Nuri Bilge Ceylan|Zeki Demirkubuz|Ömer Kavur
+hard|Türkiye'nin ilk sesli filmi hangi dönemde çekilmiştir?|1930'lar|1910'lar|1950'ler|1960'lar
+medium|Oscar ödüllerini veren kurumun kısaltması nedir?|AMPAS|BAFTA|MPAA|SAG
+medium|Baba filminin yönetmeni kimdir?|Francis Ford Coppola|Martin Scorsese|Stanley Kubrick|Sidney Lumet
+medium|Yüzüklerin Efendisi üçlemesinin yönetmeni kimdir?|Peter Jackson|Steven Spielberg|James Cameron|Ridley Scott
+medium|Titanic filminin yönetmeni kimdir?|James Cameron|Steven Spielberg|Ridley Scott|Michael Bay
+medium|Jurassic Park filminin yönetmeni kimdir?|Steven Spielberg|James Cameron|George Lucas|Robert Zemeckis
+medium|Yıldız Savaşları serisinin yaratıcısı kimdir?|George Lucas|Steven Spielberg|Gene Roddenberry|Ridley Scott
+hard|2001: Bir Uzay Destanı filminin yönetmeni kimdir?|Stanley Kubrick|Andrei Tarkovski|Ridley Scott|Alfred Hitchcock
+medium|Sinemada bir sahnenin kesintisiz çekilen bölümüne ne ad verilir?|Plan|Kurgu|Senaryo|Dekor
+medium|Filmde çekilen görüntülerin sıralanmasına ne ad verilir?|Kurgu|Senaryo|Plan|Dekor
+medium|Tiyatroda oyuncuların sahne üzerindeki konuşmasına ne ad verilir?|Diyalog|Kurgu|Dekor|Suflör
+hard|Tiyatroda tek kişinin uzun konuşmasına ne ad verilir?|Monolog|Diyalog|Replik|Prolog
+hard|Karagöz ve Hacivat hangi geleneksel gösteri türüdür?|Gölge oyunu|Orta oyunu|Meddahlık|Kukla
+hard|Tek kişilik anlatı geleneğine dayanan Türk gösteri sanatı hangisidir?|Meddahlık|Karagöz|Orta oyunu|Kukla
+# --- Mimari ve müzeler ---
+medium|Ayasofya hangi şehirdedir?|İstanbul|İzmir|Bursa|Edirne
+medium|Topkapı Sarayı hangi şehirdedir?|İstanbul|Ankara|Edirne|Bursa
+medium|Louvre Müzesi hangi şehirdedir?|Paris|Londra|Roma|Madrid
+medium|British Museum hangi şehirdedir?|Londra|Paris|Berlin|Viyana
+medium|Prado Müzesi hangi şehirdedir?|Madrid|Barselona|Lizbon|Roma
+medium|Uffizi Galerisi hangi şehirdedir?|Floransa|Roma|Venedik|Milano
+medium|Ermitaj Müzesi hangi şehirdedir?|Sankt Peterburg|Moskova|Kiev|Varşova
+medium|Vatikan Müzeleri hangi şehirde yer alır?|Roma|Floransa|Napoli|Milano
+hard|Guggenheim Müzesi'nin spiral yapısıyla ünlü binası hangi şehirdedir?|New York|Bilbao|Berlin|Venedik
+medium|Eyfel Kulesi hangi şehirdedir?|Paris|Londra|Brüksel|Viyana
+medium|Kolezyum hangi şehirdedir?|Roma|Atina|İstanbul|Kartaca
+medium|Akropolis hangi şehirdedir?|Atina|Roma|İskenderiye|Efes
+medium|Tac Mahal hangi ülkededir?|Hindistan|Pakistan|İran|Nepal
+medium|Machu Picchu hangi ülkededir?|Peru|Meksika|Bolivya|Şili
+medium|Çin Seddi hangi ülkededir?|Çin Halk Cumhuriyeti|Japonya|Moğolistan|Güney Kore
+medium|Petra antik kenti hangi ülkededir?|Ürdün|Mısır|Suriye|Lübnan
+medium|Piramitler hangi ülkenin simgesi sayılır?|Mısır|Sudan|Libya|Irak
+hard|Sagrada Familia'nın mimarı kimdir?|Antoni Gaudí|Le Corbusier|Frank Lloyd Wright|Norman Foster
+hard|Şelale Evi'nin mimarı kimdir?|Frank Lloyd Wright|Antoni Gaudí|Mies van der Rohe|Alvar Aalto
+hard|Anıtkabir'in mimarları arasında yer alan isim kimdir?|Emin Onat|Sedad Hakkı Eldem|Mimar Kemaleddin|Vedat Tek
+# --- Genel kültür-sanat kavramları ---
+medium|Bir eserin ilk kez sergilenmesine ne ad verilir?|Vernisaj|Retrospektif|Bienal|Koleksiyon
+hard|İki yılda bir düzenlenen sanat sergisine ne ad verilir?|Bienal|Vernisaj|Trienal|Festival
+medium|İstanbul Bienali'ni düzenleyen kurum hangisidir?|İKSV|TÜSİAD|TRT|Kültür Bakanlığı
+medium|Bir sanatçının tüm dönemlerini kapsayan sergiye ne ad verilir?|Retrospektif|Vernisaj|Bienal|Enstalasyon
+hard|Mekâna özgü kurulan üç boyutlu sanat işine ne ad verilir?|Enstalasyon|Gravür|Kolaj|Rölyef
+medium|Kâğıt parçalarının yapıştırılmasıyla oluşturulan tekniğe ne ad verilir?|Kolaj|Gravür|Füzen|Suluboya
+hard|Metal ya da ahşap kalıptan baskı alma tekniğine ne ad verilir?|Gravür|Kolaj|Fresk|Mozaik
+hard|Islak sıvaya boyanan duvar resmi tekniğine ne ad verilir?|Fresk|Gravür|Kolaj|Vitray
+medium|Küçük renkli taş ya da camlarla yapılan bezemeye ne ad verilir?|Mozaik|Fresk|Vitray|Gravür
+medium|Renkli camlarla yapılan pencere bezemesine ne ad verilir?|Vitray|Mozaik|Fresk|Rölyef
+hard|Kâğıt üzerine yapılan geleneksel Türk süsleme sanatı hangisidir?|Tezhip|Ebru|Hat|Minyatür
+hard|Suyun üzerinde boya ile yapılan geleneksel Türk sanatı hangisidir?|Ebru|Tezhip|Hat|Çini
+medium|Güzel yazı sanatına ne ad verilir?|Hat|Ebru|Tezhip|Minyatür
+medium|El yazması kitaplardaki küçük resimlere ne ad verilir?|Minyatür|Tezhip|Hat|Gravür
+medium|Sırlı seramik karo sanatına ne ad verilir?|Çini|Ebru|Tezhip|Hat
+hard|Çini sanatıyla ünlenen Anadolu şehri hangisidir?|Kütahya|Kayseri|Trabzon|Erzurum
+hard|Halıcılığıyla ünlenen Anadolu ilçelerinden biri hangisidir?|Hereke|Şile|Bodrum|Foça
+medium|Bir müzikal eserin sözlerini yazan kişiye ne ad verilir?|Söz yazarı|Besteci|Aranjör|Orkestra şefi
+medium|Bir eserin farklı bir düzenlemesini yapan kişiye ne ad verilir?|Aranjör|Besteci|Söz yazarı|Şef
+medium|Bir kitabın ilk basımına ne ad verilir?|İlk baskı|Tıpkıbasım|Ciltli baskı|Cep baskısı
+# --- Tamamlayıcı ---
+medium|Nutuk'un yazarı kimdir?|Mustafa Kemal Atatürk|İsmet İnönü|Falih Rıfkı Atay|Yakup Kadri
+medium|Çankaya adlı anı kitabının yazarı kimdir?|Falih Rıfkı Atay|Yakup Kadri|Halide Edib|Ruşen Eşref
+medium|Türk Dil Kurumu'nun kuruluş amacı nedir?|Türkçeyi araştırmak ve geliştirmek|Tarih yazmak|Müze kurmak|Tiyatro açmak
+medium|Devlet Tiyatroları hangi bakanlığa bağlıdır?|Kültür ve Turizm Bakanlığı|Milli Eğitim Bakanlığı|İçişleri Bakanlığı|Gençlik ve Spor Bakanlığı
+medium|Türkiye'nin ulusal kütüphanesi hangi şehirdedir?|Ankara|İstanbul|İzmir|Bursa
+hard|UNESCO'nun açılımındaki alanlar arasında hangisi vardır?|Eğitim, bilim ve kültür|Sağlık ve spor|Ticaret ve sanayi|Tarım ve gıda
+medium|UNESCO Dünya Mirası Listesi neyi korur?|Kültürel ve doğal miras alanlarını|Nesli tükenen hayvanları|Uluslararası sınırları|Deniz yollarını
+medium|Türkiye'den UNESCO listesindeki alanlardan biri hangisidir?|Göreme ve Kapadokya|Kaz Dağları|Uludağ|Beşparmak Dağları
+medium|Pamukkale travertenleri hangi ilimizdedir?|Denizli|Muğla|Aydın|Burdur
+medium|Kapadokya bölgesi ağırlıklı olarak hangi ilimizdedir?|Nevşehir|Kayseri|Niğde|Aksaray
+medium|Sümela Manastırı hangi doğal oluşuma oyulmuştur?|Kayalık yamaç|Mağara girişi|Deniz kıyısı|Göl adası
+medium|Safranbolu evleriyle ünlü ilimiz hangisidir?|Karabük|Kastamonu|Bartın|Zonguldak
+medium|Mevlana Müzesi hangi şehirdedir?|Konya|Kayseri|Sivas|Afyon
+medium|Mevlevi geleneğinde dönerek yapılan törenin adı nedir?|Sema|Zeybek|Halay|Horon
+medium|Ege yöresine özgü halk oyunu hangisidir?|Zeybek|Horon|Halay|Bar
+medium|Karadeniz yöresine özgü halk oyunu hangisidir?|Horon|Zeybek|Halay|Kaşık oyunu
+medium|Güneydoğu yöresinde yaygın halk oyunu hangisidir?|Halay|Horon|Zeybek|Bar
+hard|Âşıkların saz eşliğinde karşılıklı söylemesine ne ad verilir?|Atışma|Mani|Destan|Koşma
+medium|Dört dizeli, hece ölçüsüyle yazılan kısa halk şiiri türü hangisidir?|Mani|Koşma|Gazel|Kaside
+hard|Divan edebiyatında beyitlerle yazılan ve aşk konulu nazım biçimi hangisidir?|Gazel|Mani|Koşma|Türkü
+hard|Divan edebiyatında övgü amaçlı yazılan nazım biçimi hangisidir?|Kaside|Gazel|Mesnevi|Rubai
+hard|Dört dizelik ve özlü söz niteliğindeki divan nazım biçimi hangisidir?|Rubai|Gazel|Kaside|Mesnevi
+medium|Halk edebiyatında saz şairlerinin kullandığı nazım biçimi hangisidir?|Koşma|Gazel|Kaside|Sone
+hard|On dört dizeden oluşan Batı kökenli nazım biçimi hangisidir?|Sone|Koşma|Gazel|Mani
+medium|Bir romanda olayların geçtiği yer ve zamana ne ad verilir?|Mekân ve zaman|Olay örgüsü|Bakış açısı|Tema
+medium|Bir anlatıda olayların sıralanışına ne ad verilir?|Olay örgüsü|Tema|Mekân|Karakter
+medium|Bir eserde işlenen temel düşünceye ne ad verilir?|Tema|Olay örgüsü|Mekân|Üslup
+medium|Yazarın dili kullanış biçimine ne ad verilir?|Üslup|Tema|Olay örgüsü|Bakış açısı
+hard|Anlatıcının olayları kendi ağzından anlattığı bakış açısı hangisidir?|Birinci kişi|Üçüncü kişi|İlahi bakış|Gözlemci bakış
+medium|Bir oyunun sahnelenmesinden sorumlu kişiye ne ad verilir?|Yönetmen|Oyuncu|Suflör|Dramaturg
+hard|Tiyatroda oyunculara replik hatırlatan kişiye ne ad verilir?|Suflör|Dramaturg|Yönetmen|Işıkçı
+medium|Operanın sözlü metnine ne ad verilir?|Libretto|Partisyon|Senaryo|Replik
+medium|Bir müzik eserinin nota yazısına ne ad verilir?|Partisyon|Libretto|Senaryo|Kurgu
+medium|Klasik müzikte üç bölümlü büyük çalgı eserine genel olarak ne denir?|Senfoni|Sonat|Konçerto|Uvertür
+medium|Bir solo çalgı ile orkestranın birlikte çaldığı esere ne ad verilir?|Konçerto|Senfoni|Sonat|Füg
+hard|Bir temanın sesler arasında sırayla işlendiği çok sesli biçime ne denir?|Füg|Sonat|Uvertür|Konçerto
+medium|Operanın başındaki orkestra girişine ne ad verilir?|Uvertür|Aria|Libretto|Final
+medium|Operada solistin söylediği ezgili bölüme ne ad verilir?|Arya|Uvertür|Koro|Resitatif
+medium|Türk halk müziğinde yöresel ezgilere genel olarak ne ad verilir?|Türkü|Şarkı|Gazel|Kaside
+medium|Türk sanat müziğinde sözlü eser biçimlerinden biri hangisidir?|Şarkı|Türkü|Mani|Destan
+hard|Bir müzik eserinin hızını belirten terime ne ad verilir?|Tempo|Nüans|Tonalite|Armoni
+hard|Bir eserdeki yüksek ve alçak ses değişimlerine ne ad verilir?|Nüans|Tempo|Armoni|Ritim
+medium|Aynı anda çalan farklı seslerin uyumuna ne ad verilir?|Armoni|Ritim|Tempo|Melodi
+medium|Bir müzik parçasının akılda kalan ezgisine ne ad verilir?|Melodi|Armoni|Ritim|Tempo
+medium|Fotoğrafta ışığı sınırlayan diyafram neyi denetler?|Işık miktarını|Odak uzaklığını|Renk sıcaklığını|Kare hızını
+hard|Fotoğrafta öndeki ve arkadaki nesnelerin ne kadarının net çıktığını belirten kavram nedir?|Alan derinliği|Poz süresi|Diyafram|Beyaz dengesi
+medium|Türkiye'de sinemanın en bilinen ödüllerinden biri hangisidir?|Altın Portakal|Altın Koza|Altın Lale|Altın Küre
+medium|Adana'da düzenlenen film festivalinin adı nedir?|Altın Koza|Altın Portakal|Altın Lale|Altın Palmiye

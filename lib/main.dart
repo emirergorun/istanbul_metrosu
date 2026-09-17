@@ -75,7 +75,7 @@ void _registerFontLicenses() {
       'Bungee',
     ], await rootBundle.loadString('assets/fonts/OFL-Bungee.txt'));
     yield LicenseEntryWithLineBreaks(const <String>[
-      'Plus Jakarta Sans',
-    ], await rootBundle.loadString('assets/fonts/OFL-PlusJakartaSans.txt'));
+      'M PLUS Rounded 1c',
+    ], await rootBundle.loadString('assets/fonts/OFL-MPLUSRounded1c.txt'));
   });
 }

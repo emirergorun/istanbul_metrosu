@@ -115,16 +115,18 @@ class MetroQuizController extends JourneyGameController {
     _questionRemaining -= dt;
     if (_questionRemaining > 0) return;
 
-    // Süre dolması **seriyi bozar ama can götürmez.**
+    // Süre dolması **yanlış cevapla aynı bedele sahip**: seri bozulur ve
+    // bir hak gider.
     //
-    // Yanlış şıkka dokunmak bir karardır; süreyi kaçırmak çoğu zaman
-    // "gözümü kaldırdım" demektir ve bu oyun hareket eden bir vagonda
-    // oynanıyor. İkisini aynı kefeye koymak, pencereden bakan oyuncuyu
-    // yanlış cevap verenle aynı şekilde cezalandırırdı. Boş beklemek yine
-    // de bir strateji değil: cevap vermeyen puan da kazanmıyor.
+    // Önce cezasızdı, gerekçe "hareket eden vagonda gözünü kaldıran
+    // oyuncu cezalandırılmasın" idi. Oynayınca iki sorun çıktı: sayaç
+    // dolmasını beklemek bilmediği soruyu bedelsiz atlamanın yolu oluyor
+    // ve on iki saniyelik sayaç hiçbir gerilim taşımıyordu. Doğru cevap
+    // yine de gösterilir; oyuncu bedelini ödediği soruyu öğrenmeden
+    // geçmemeli.
     _questionRemaining = 0;
     _chosenIndex = -1;
-    _resolve(correct: false, costsLife: false);
+    _resolve(correct: false, costsLife: true);
   }
 
   @override
@@ -213,11 +215,10 @@ class MetroQuizController extends JourneyGameController {
 
   /// Sıradaki soru.
   ///
-  /// Zorluk **seriye** bağlı, yolculuk uzunluğuna değil: seri uzadıkça
-  /// çeldiriciler aynı hattın komşu duraklarından seçilir. Uzun yolculuğu
-  /// baştan zorlaştırmak bu projede bir kez denendi ve varış oranını
-  /// sıfıra indirdi.
-  QuizQuestion _nextQuestion() => _pool.next(hard: _streak >= 3);
+  /// Zorluk ilerlemesi havuzun kendi işi: ilk sorular kolay havuzdan
+  /// gelir, sonrakiler açılır. Uzun yolculuğu baştan zorlaştırmak bu
+  /// projede bir kez denendi ve varış oranını sıfıra indirdi.
+  QuizQuestion _nextQuestion() => _pool.next();
 
   @visibleForTesting
   void debugAdvanceReveal() => _advance();

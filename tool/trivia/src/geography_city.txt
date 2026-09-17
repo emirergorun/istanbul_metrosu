@@ -1,0 +1,206 @@
+# Coğrafya & Şehir — 200 soru (model_knowledge).
+# --- İstanbul ---
+easy|İstanbul hangi iki kıta üzerinde yer alır?|Asya ve Avrupa|Avrupa ve Afrika|Asya ve Afrika|Avrupa ve Okyanusya
+easy|İstanbul'u iki yakaya ayıran su yolu hangisidir?|İstanbul Boğazı|Çanakkale Boğazı|Süveyş Kanalı|Haliç
+medium|İstanbul Boğazı hangi iki denizi birbirine bağlar?|Karadeniz ve Marmara|Ege ve Akdeniz|Marmara ve Ege|Karadeniz ve Ege
+medium|Haliç hangi denize açılır?|Marmara|Karadeniz|Ege|Akdeniz
+medium|İstanbul'un Anadolu yakasındaki ilçelerinden biri hangisidir?|Kadıköy|Beyoğlu|Fatih|Beşiktaş
+medium|İstanbul'un Avrupa yakasındaki ilçelerinden biri hangisidir?|Beyoğlu|Üsküdar|Maltepe|Pendik
+medium|İstanbul'un tarihi yarımadasında yer alan ilçe hangisidir?|Fatih|Kadıköy|Ataşehir|Sancaktepe
+medium|Adalar ilçesi hangi denizde yer alır?|Marmara|Karadeniz|Ege|Akdeniz
+medium|Büyükada hangi ilçeye bağlıdır?|Adalar|Kartal|Maltepe|Tuzla
+medium|İstanbul'un en kalabalık ilçelerinden biri hangisidir?|Esenyurt|Adalar|Şile|Çatalca
+medium|Şile İstanbul'un hangi kıyısındadır?|Karadeniz|Marmara|Ege|Haliç
+medium|Silivri İstanbul'un hangi kıyısındadır?|Marmara|Karadeniz|Ege|Akdeniz
+hard|İstanbul'un yüzölçümü bakımından en büyük ilçelerinden biri hangisidir?|Çatalca|Bayrampaşa|Güngören|Zeytinburnu
+medium|Belgrad Ormanı İstanbul'un hangi yönünde yer alır?|Kuzey|Güney|Doğu|Batı
+medium|İstanbul'un su ihtiyacını karşılayan barajlardan biri hangisidir?|Ömerli Barajı|Atatürk Barajı|Keban Barajı|Hirfanlı Barajı
+medium|Çamlıca Tepesi İstanbul'un hangi yakasındadır?|Anadolu|Avrupa|Adalar|Trakya
+medium|Pierre Loti Tepesi hangi ilçededir?|Eyüpsultan|Beyoğlu|Üsküdar|Kadıköy
+medium|Kız Kulesi hangi su alanında bulunur?|İstanbul Boğazı|Haliç|Marmara açıkları|Karadeniz
+medium|Galata Kulesi hangi ilçededir?|Beyoğlu|Fatih|Beşiktaş|Şişli
+medium|Sultanahmet Meydanı hangi ilçededir?|Fatih|Beyoğlu|Üsküdar|Beşiktaş
+medium|Taksim Meydanı hangi ilçededir?|Beyoğlu|Şişli|Fatih|Beşiktaş
+medium|Dolmabahçe Sarayı hangi ilçededir?|Beşiktaş|Fatih|Üsküdar|Beyoğlu
+medium|Beylerbeyi Sarayı hangi yakadadır?|Anadolu|Avrupa|Adalar|Trakya
+hard|İstanbul'un tarihi surları hangi imparator döneminde yapılmıştır?|II. Theodosios|I. Konstantinos|I. Justinianos|Herakleios
+hard|İstanbul'un antik dönemdeki ilk adı olarak hangisi anılır?|Byzantion|Konstantinopolis|Nova Roma|Stambul
+# --- Türkiye ---
+easy|Türkiye'nin yönetim merkezi hangi şehirdir?|Ankara|İstanbul|İzmir|Bursa
+easy|Türkiye'nin en kalabalık şehri hangisidir?|İstanbul|Ankara|İzmir|Bursa
+medium|Türkiye kaç coğrafi bölgeye ayrılır?|7|5|6|8
+medium|Türkiye'nin en büyük yüzölçümlü ili hangisidir?|Konya|Sivas|Ankara|Erzurum
+medium|Türkiye'nin en yüksek dağı hangisidir?|Ağrı Dağı|Erciyes|Kaçkar|Uludağ
+medium|Türkiye'nin en uzun nehri hangisidir?|Kızılırmak|Fırat|Sakarya|Yeşilırmak
+medium|Türkiye'nin en büyük gölü hangisidir?|Van Gölü|Tuz Gölü|Beyşehir Gölü|Eğirdir Gölü
+medium|Tuz Gölü hangi bölgededir?|İç Anadolu|Doğu Anadolu|Marmara|Ege
+medium|Türkiye'nin en büyük barajı olarak hangisi anılır?|Atatürk Barajı|Keban Barajı|Karakaya Barajı|Hirfanlı Barajı
+medium|Atatürk Barajı hangi nehir üzerindedir?|Fırat|Dicle|Kızılırmak|Sakarya
+medium|Dicle ve Fırat nehirleri hangi denize dökülür?|Basra Körfezi|Karadeniz|Akdeniz|Marmara
+medium|Kızılırmak hangi denize dökülür?|Karadeniz|Akdeniz|Ege|Marmara
+medium|Türkiye'nin en batı noktası hangi ilimizdedir?|Çanakkale|İzmir|Edirne|Balıkesir
+medium|Türkiye'nin en doğu noktası hangi ilimizdedir?|Iğdır|Van|Hakkâri|Ağrı
+medium|Türkiye'nin en kuzey noktası hangi ilimizdedir?|Sinop|Samsun|Kastamonu|Zonguldak
+medium|Türkiye'nin en güney noktası hangi ilimizdedir?|Hatay|Mersin|Adana|Şanlıurfa
+medium|Kapadokya hangi coğrafi bölgededir?|İç Anadolu|Akdeniz|Ege|Karadeniz
+medium|Pamukkale hangi coğrafi bölgededir?|Ege|Akdeniz|İç Anadolu|Marmara
+medium|Uludağ hangi ilimizdedir?|Bursa|Balıkesir|Kütahya|Bilecik
+medium|Erciyes Dağı hangi ilimizdedir?|Kayseri|Niğde|Nevşehir|Sivas
+medium|Kaçkar Dağları hangi bölgededir?|Karadeniz|Doğu Anadolu|İç Anadolu|Akdeniz
+medium|Toros Dağları hangi bölge boyunca uzanır?|Akdeniz|Karadeniz|Marmara|Trakya
+medium|Türkiye'nin en yağışlı ili olarak hangisi anılır?|Rize|Antalya|Muğla|Trabzon
+medium|Türkiye'de fındık üretimiyle öne çıkan bölge hangisidir?|Karadeniz|Ege|Akdeniz|İç Anadolu
+medium|Türkiye'de çay üretimiyle öne çıkan il hangisidir?|Rize|Ordu|Samsun|Sinop
+medium|Türkiye'de zeytin üretimiyle öne çıkan bölgelerden biri hangisidir?|Ege|Doğu Anadolu|İç Anadolu|Güneydoğu Anadolu
+medium|Türkiye'de pamuk üretimiyle öne çıkan ovalardan biri hangisidir?|Çukurova|Konya Ovası|Erzurum Ovası|Muş Ovası
+medium|Konya Ovası hangi tarım ürünüyle öne çıkar?|Tahıl|Çay|Fındık|Muz
+medium|Türkiye'nin turizmde öne çıkan Akdeniz ili hangisidir?|Antalya|Ordu|Kars|Bolu
+medium|Efes Antik Kenti hangi ilimizdedir?|İzmir|Aydın|Manisa|Muğla
+medium|Truva Antik Kenti hangi ilimizdedir?|Çanakkale|Balıkesir|İzmir|Edirne
+medium|Göbeklitepe hangi ilimizdedir?|Şanlıurfa|Diyarbakır|Mardin|Adıyaman
+medium|Nemrut Dağı Milli Parkı hangi ilimizdedir?|Adıyaman|Malatya|Elazığ|Şanlıurfa
+medium|Sümela Manastırı hangi ilimizdedir?|Trabzon|Rize|Artvin|Giresun
+medium|Ani Harabeleri hangi ilimizdedir?|Kars|Ardahan|Iğdır|Ağrı
+medium|Safranbolu hangi ilimizdedir?|Karabük|Bartın|Kastamonu|Zonguldak
+medium|Mardin hangi coğrafi bölgededir?|Güneydoğu Anadolu|Doğu Anadolu|İç Anadolu|Akdeniz
+medium|Türkiye'nin en kalabalık üçüncü şehri olarak hangisi anılır?|İzmir|Bursa|Antalya|Adana
+medium|Bursa hangi coğrafi bölgededir?|Marmara|Ege|İç Anadolu|Karadeniz
+medium|Trabzon hangi coğrafi bölgededir?|Karadeniz|Doğu Anadolu|Marmara|İç Anadolu
+medium|Gaziantep hangi coğrafi bölgededir?|Güneydoğu Anadolu|Akdeniz|Doğu Anadolu|İç Anadolu
+medium|Erzurum hangi coğrafi bölgededir?|Doğu Anadolu|Karadeniz|İç Anadolu|Güneydoğu Anadolu
+medium|Denizli hangi coğrafi bölgededir?|Ege|Akdeniz|İç Anadolu|Marmara
+medium|Türkiye'nin Yunanistan ile sınırı olan ili hangisidir?|Edirne|Çanakkale|Tekirdağ|Kırklareli
+medium|Türkiye'nin Bulgaristan ile sınırı olan illerinden biri hangisidir?|Kırklareli|Tekirdağ|Çanakkale|İstanbul
+medium|Türkiye'nin Suriye ile sınırı olan illerinden biri hangisidir?|Hatay|Mersin|Adana|Osmaniye
+medium|Türkiye'nin İran ile sınırı olan illerinden biri hangisidir?|Van|Bitlis|Muş|Erzurum
+medium|Türkiye'nin Gürcistan ile sınırı olan ili hangisidir?|Artvin|Rize|Trabzon|Ardahan
+# --- Dünya ---
+easy|Fransa'nin devlet kurumlarının bulunduğu şehir hangisidir?|Paris|Lyon|Marsilya|Nice
+easy|Almanya'nın başkenti hangi şehirdir?|Berlin|Münih|Hamburg|Frankfurt
+easy|İtalya'nin yönetim merkezi hangi şehirdir?|Roma|Milano|Napoli|Torino
+easy|İspanya'nin devlet kurumlarının bulunduğu şehir hangisidir?|Madrid|Barselona|Valensiya|Sevilla
+easy|İngiltere'nin başkenti hangi şehirdir?|Londra|Manchester|Liverpool|Birmingham
+medium|Rusya'nin yönetim merkezi hangi şehirdir?|Moskova|Sankt Peterburg|Novosibirsk|Kazan
+medium|Japonya'nin devlet kurumlarının bulunduğu şehir hangisidir?|Tokyo|Osaka|Kyoto|Nagoya
+medium|Çin'in başkenti hangi şehirdir?|Pekin|Şanghay|Guangzhou|Shenzhen
+medium|Hindistan'in yönetim merkezi hangi şehirdir?|Yeni Delhi|Mumbai|Kalküta|Chennai
+medium|Brezilya'nin devlet kurumlarının bulunduğu şehir hangisidir?|Brasilia|Rio de Janeiro|São Paulo|Salvador
+medium|Kanada'nın başkenti hangi şehirdir?|Ottawa|Toronto|Montreal|Vancouver
+medium|Avustralya'nin yönetim merkezi hangi şehirdir?|Canberra|Sidney|Melbourne|Brisbane
+medium|ABD'in devlet kurumlarının bulunduğu şehir hangisidir?|Washington|New York|Los Angeles|Chicago
+medium|Yunanistan'ın başkenti hangi şehirdir?|Atina|Selanik|Patras|Girit
+medium|Mısır'in yönetim merkezi hangi şehirdir?|Kahire|İskenderiye|Luksor|Asvan
+medium|Güney Afrika'nın yasama başkenti hangi şehirdir?|Cape Town|Pretoria|Johannesburg|Durban
+medium|İsviçre'nin devlet kurumlarının bulunduğu şehir hangisidir?|Bern|Zürih|Cenevre|Basel
+medium|Hollanda'nın başkenti hangi şehirdir?|Amsterdam|Lahey|Rotterdam|Utrecht
+medium|Belçika'nin yönetim merkezi hangi şehirdir?|Brüksel|Anvers|Gent|Bruges
+medium|Portekiz'in devlet kurumlarının bulunduğu şehir hangisidir?|Lizbon|Porto|Coimbra|Faro
+medium|Polonya'nın başkenti hangi şehirdir?|Varşova|Krakov|Gdansk|Wroclaw
+medium|Avusturya'nin yönetim merkezi hangi şehirdir?|Viyana|Salzburg|Graz|Innsbruck
+medium|İsveç'in devlet kurumlarının bulunduğu şehir hangisidir?|Stockholm|Göteborg|Malmö|Uppsala
+medium|Norveç'in başkenti hangi şehirdir?|Oslo|Bergen|Trondheim|Stavanger
+medium|Finlandiya'nin yönetim merkezi hangi şehirdir?|Helsinki|Tampere|Turku|Espoo
+medium|Danimarka'nin devlet kurumlarının bulunduğu şehir hangisidir?|Kopenhag|Aarhus|Odense|Aalborg
+medium|Arjantin'in başkenti hangi şehirdir?|Buenos Aires|Córdoba|Rosario|Mendoza
+medium|Meksika'nin yönetim merkezi hangi şehirdir?|Meksiko|Guadalajara|Monterrey|Cancún
+medium|Güney Kore'nin devlet kurumlarının bulunduğu şehir hangisidir?|Seul|Busan|Incheon|Daegu
+medium|İran'ın başkenti hangi şehirdir?|Tahran|İsfahan|Şiraz|Meşhed
+medium|Azerbaycan'in yönetim merkezi hangi şehirdir?|Bakü|Gence|Sumgayıt|Şeki
+medium|Kazakistan'in devlet kurumlarının bulunduğu şehir hangisidir?|Astana|Almatı|Şimkent|Aktau
+medium|Özbekistan'ın başkenti hangi şehirdir?|Taşkent|Semerkant|Buhara|Hive
+# --- Fiziki coğrafya ---
+easy|Yüzölçümü en geniş okyanus hangisidir?|Büyük Okyanus|Atlas Okyanusu|Hint Okyanusu|Arktik Okyanusu
+medium|Dünyanın en uzun nehri olarak hangisi anılır?|Nil|Amazon|Yangtze|Mississippi
+medium|Dünyanın en büyük çölü olarak hangisi anılır?|Sahra|Gobi|Kalahari|Atacama
+medium|Dünyanın en yüksek dağı hangisidir?|Everest|K2|Kangchenjunga|Lhotse
+medium|Everest hangi sıradağlarda yer alır?|Himalayalar|Andlar|Alpler|Kayalık Dağları
+medium|And Dağları hangi kıtadadır?|Güney Amerika|Kuzey Amerika|Asya|Afrika
+medium|Alp Dağları hangi kıtadadır?|Avrupa|Asya|Afrika|Amerika
+medium|Amazon Nehri hangi kıtadadır?|Güney Amerika|Afrika|Asya|Avustralya
+medium|Nil Nehri hangi kıtadadır?|Afrika|Asya|Avrupa|Güney Amerika
+medium|Dünyanın en büyük gölü olarak hangisi anılır?|Hazar Denizi|Baykal Gölü|Superior Gölü|Viktorya Gölü
+medium|Dünyanın en derin gölü hangisidir?|Baykal Gölü|Hazar Denizi|Tanganyika Gölü|Superior Gölü
+medium|Ölü Deniz'in en belirgin özelliği nedir?|Çok yüksek tuzluluk|Çok derin olması|Tatlı su olması|Buzul gölü olması
+medium|Süveyş Kanalı hangi iki denizi birbirine bağlar?|Akdeniz ve Kızıldeniz|Karadeniz ve Marmara|Atlas ve Büyük Okyanus|Baltık ve Kuzey Denizi
+medium|Panama Kanalı hangi iki okyanusu birbirine bağlar?|Atlas ve Büyük Okyanus|Hint ve Atlas|Arktik ve Büyük|Hint ve Büyük
+medium|Cebelitarık Boğazı hangi iki kıtayı ayırır?|Avrupa ve Afrika|Asya ve Avrupa|Asya ve Afrika|Avrupa ve Amerika
+medium|Dünyanın en büyük adası hangisidir?|Grönland|Yeni Gine|Borneo|Madagaskar
+medium|Dünyanın en kalabalık ülkelerinden biri hangisidir?|Hindistan|Norveç|Portekiz|Yeni Zelanda
+medium|Yüzölçümü bakımından dünyanın en büyük ülkesi hangisidir?|Rusya|Kanada|Çin|ABD
+medium|Yüzölçümü bakımından dünyanın en küçük ülkesi hangisidir?|Vatikan|Monako|San Marino|Liechtenstein
+medium|Ekvator çizgisi dünyayı nasıl böler?|Kuzey ve güney yarım küreye|Doğu ve batı yarım küreye|Dört bölgeye|Üç kuşağa
+medium|Başlangıç meridyeni hangi şehirden geçer?|Londra|Paris|Roma|Berlin
+hard|Yengeç Dönencesi hangi yarım kürededir?|Kuzey yarım küre|Güney yarım küre|Batı yarım küre|Doğu yarım küre
+hard|Oğlak Dönencesi hangi yarım kürededir?|Güney yarım küre|Kuzey yarım küre|Batı yarım küre|Doğu yarım küre
+medium|Dünya kendi ekseni etrafındaki turunu yaklaşık ne kadar sürede tamamlar?|24 saat|12 saat|365 gün|30 gün
+medium|Dünya güneş etrafındaki turunu yaklaşık ne kadar sürede tamamlar?|365 gün|24 saat|30 gün|100 gün
+medium|Mevsimlerin oluşmasının temel nedeni nedir?|Eksen eğikliği|Ay'ın çekimi|Rüzgârlar|Okyanus akıntıları
+medium|Gelgit olayının temel nedeni nedir?|Ay'ın çekim etkisi|Rüzgâr|Deprem|Eksen eğikliği
+medium|Deprem şiddetini ölçen ölçeklerden biri hangisidir?|Richter|Beaufort|Celsius|Mohs
+hard|Rüzgâr hızını ölçen ölçek hangisidir?|Beaufort|Richter|Mohs|Kelvin
+hard|Minerallerin sertliğini ölçen ölçek hangisidir?|Mohs|Richter|Beaufort|Pascal
+medium|Volkanik püskürmeyle oluşan dağ türüne ne ad verilir?|Volkanik dağ|Kıvrım dağ|Kırık dağ|Buzul dağı
+medium|Levhaların sıkışmasıyla oluşan dağ türüne ne ad verilir?|Kıvrım dağ|Volkanik dağ|Kumul|Plato
+medium|Akarsuyun denize döküldüğü yerde oluşturduğu birikime ne ad verilir?|Delta|Fay|Plato|Vadi
+medium|Akarsuyun aşındırarak oluşturduğu derin çukura ne ad verilir?|Vadi|Delta|Plato|Kumul
+medium|Yüksek ve düz araziye ne ad verilir?|Plato|Vadi|Delta|Kanyon
+medium|Buzulların aşındırmasıyla oluşan geniş vadiye ne ad verilir?|Buzul vadisi|Delta|Kanyon|Kumul
+medium|Kireç taşının çözünmesiyle oluşan yer şekillerine ne ad verilir?|Karstik şekiller|Volkanik şekiller|Buzul şekilleri|Rüzgâr şekilleri
+hard|Mağaralarda yukarıdan aşağı uzayan oluşumlara ne ad verilir?|Sarkıt|Dikit|Sütun|Traverten
+hard|Mağaralarda aşağıdan yukarı uzayan oluşumlara ne ad verilir?|Dikit|Sarkıt|Sütun|Traverten
+medium|Çöllerde rüzgârla oluşan kum tepelerine ne ad verilir?|Kumul|Plato|Delta|Vadi
+# --- Tamamlayıcı ---
+medium|Nüfus yoğunluğu neyi ifade eder?|Birim alana düşen nüfus|Toplam nüfus|Doğum oranı|Göç hızı
+medium|Bir ülkeden başka ülkeye yerleşmeye ne ad verilir?|Dış göç|İç göç|Mevsimlik göç|Kentleşme
+medium|Kırsaldan kente yerleşmeye ne ad verilir?|İç göç|Dış göç|Turizm|Sanayileşme
+medium|Kent nüfusunun artmasına genel olarak ne ad verilir?|Kentleşme|Sanayileşme|Göç|Nüfus artışı
+medium|Bir yerin denizden yüksekliğine ne ad verilir?|Rakım|Enlem|Boylam|Eğim
+medium|Ekvatora olan uzaklığı belirten değere ne ad verilir?|Enlem|Boylam|Rakım|Meridyen
+medium|Başlangıç meridyenine olan uzaklığı belirten değere ne ad verilir?|Boylam|Enlem|Rakım|Paralel
+medium|Aynı enlem üzerindeki noktaları birleştiren çizgiye ne ad verilir?|Paralel|Meridyen|İzoterm|İzobar
+medium|Kutuplardan geçen ve boylamları gösteren çizgiye ne ad verilir?|Meridyen|Paralel|İzoterm|İzobar
+hard|Aynı sıcaklıktaki noktaları birleştiren çizgiye ne ad verilir?|İzoterm|İzobar|İzohips|Meridyen
+hard|Aynı basınçtaki noktaları birleştiren çizgiye ne ad verilir?|İzobar|İzoterm|İzohips|Paralel
+hard|Aynı yükseltideki noktaları birleştiren çizgiye ne ad verilir?|İzohips|İzoterm|İzobar|Meridyen
+medium|Haritada gerçek uzunluğun küçültülme oranına ne ad verilir?|Ölçek|Lejant|Rakım|Eğim
+medium|Haritadaki işaretlerin anlamını gösteren bölüme ne ad verilir?|Lejant|Ölçek|Rakım|Pusula
+medium|Türkiye hangi saat diliminde yer alır?|UTC+3|UTC+1|UTC+2|UTC+4
+medium|Akdeniz iklimi hangi mevsimde kurak geçer?|Yaz|Kış|İlkbahar|Sonbahar
+medium|Karadeniz iklimi hangi özelliğiyle bilinir?|Her mevsim yağışlı|Yazları kurak|Kışları kurak|Yağışsız
+medium|Karasal iklim hangi özelliğiyle bilinir?|Yaz-kış sıcaklık farkının yüksek olması|Sürekli yağış|Ilıman kış|Nemli yaz
+medium|Muson iklimi hangi kıtada yaygındır?|Asya|Avrupa|Kuzey Amerika|Antarktika
+medium|Ekvatoral iklim hangi özelliğiyle bilinir?|Yıl boyu sıcak ve yağışlı|Yıl boyu soğuk|Kurak|Karlı
+medium|Tundra iklimi hangi bölgelerde görülür?|Kutba yakın bölgeler|Ekvator çevresi|Çöller|Tropik adalar
+medium|Makiler hangi iklimin doğal bitki örtüsüdür?|Akdeniz|Karadeniz|Karasal|Tundra
+medium|Bozkır hangi iklimin bitki örtüsüdür?|Karasal|Akdeniz|Ekvatoral|Muson
+medium|Türkiye'nin kuzeyinde yer alan deniz hangisidir?|Karadeniz|Akdeniz|Ege|Marmara
+medium|Türkiye'nin güneyinde yer alan deniz hangisidir?|Akdeniz|Karadeniz|Marmara|Ege
+medium|Türkiye'nin batısında yer alan deniz hangisidir?|Ege|Karadeniz|Akdeniz|Marmara
+medium|Türkiye'nin tamamen kendi sınırları içinde kalan denizi hangisidir?|Marmara|Ege|Karadeniz|Akdeniz
+medium|Çanakkale Boğazı hangi iki denizi bağlar?|Marmara ve Ege|Karadeniz ve Marmara|Ege ve Akdeniz|Akdeniz ve Karadeniz
+medium|Türkiye'nin en büyük adası hangisidir?|Gökçeada|Bozcaada|Marmara Adası|Büyükada
+medium|Gökçeada hangi ilimize bağlıdır?|Çanakkale|Balıkesir|İzmir|Edirne
+medium|Türkiye'nin en büyük ovalarından biri hangisidir?|Konya Ovası|Bafra Ovası|Çarşamba Ovası|Iğdır Ovası
+medium|Çukurova hangi ilimizin çevresinde yer alır?|Adana|Antalya|Mersin|Hatay
+medium|Bafra ve Çarşamba ovaları hangi nehirlerin oluşturduğu deltalardır?|Kızılırmak ve Yeşilırmak|Fırat ve Dicle|Sakarya ve Susurluk|Ceyhan ve Seyhan
+medium|Türkiye'de doğal gaz ve petrol dışında öne çıkan maden hangisidir?|Bor|Elmas|Altın madenciliği dışı|Platin
+medium|Türkiye dünya bor rezervlerinde nasıl bir yere sahiptir?|Önemli bir paya sahip|Hiç rezervi yok|Çok küçük bir paya sahip|İthalatçı
+medium|Zonguldak hangi madenle bilinir?|Taş kömürü|Bor|Bakır|Krom
+medium|Soma hangi madenle bilinir?|Linyit|Bor|Krom|Altın
+medium|Türkiye'de jeotermal kaynaklarıyla öne çıkan illerden biri hangisidir?|Denizli|Sinop|Ardahan|Bartın
+medium|Rüzgâr enerjisi üretiminde öne çıkan bölgelerden biri hangisidir?|Ege|Doğu Anadolu|İç Anadolu|Güneydoğu Anadolu
+medium|Türkiye'de hidroelektrik üretim hangi kaynağa dayanır?|Akarsular|Rüzgâr|Güneş|Kömür
+medium|Güneş enerjisi potansiyeli yüksek bölgelerimizden biri hangisidir?|Güneydoğu Anadolu|Karadeniz|Marmara|Trakya
+medium|Deniz seviyesinden yüksekliği en fazla olan ilimiz olarak hangisi anılır?|Erzurum|İzmir|Mersin|Sakarya
+medium|Van Gölü'nün suyu hangi özelliğiyle bilinir?|Sodalı olması|Tatlı olması|Donması|Renksiz olması
+medium|Türkiye'de milli park sayısı bakımından öne çıkan bölge hangisidir?|Akdeniz|Marmara|Trakya|Ege
+medium|Kaz Dağları hangi iller arasında yer alır?|Balıkesir ve Çanakkale|İzmir ve Manisa|Bursa ve Bilecik|Aydın ve Muğla
+medium|Türkiye'nin en kuzeydeki ilçesi olarak hangisi anılır?|Sinop merkez|Şile|Hopa|Kilyos
+medium|Boğaziçi'nde yer alan tarihi hisarlardan biri hangisidir?|Rumeli Hisarı|Alanya Kalesi|Ankara Kalesi|Kız Kalesi
+medium|İstanbul'un Avrupa ve Anadolu yakasını bağlayan köprü sayısı kaçtır?|Üç|İki|Dört|Beş
+medium|İstanbul'da Boğaz'ın altından geçen karayolu tüneli hangisidir?|Avrasya Tüneli|Marmaray|Tünel|Zincirlikuyu Tüneli
+medium|İstanbul'un kuzeyinde yapılan havalimanı hangisidir?|İstanbul Havalimanı|Sabiha Gökçen|Atatürk Havalimanı|Çorlu Havalimanı
+medium|Yalova hangi denize kıyısı olan ilimizdir?|Marmara|Karadeniz|Ege|Akdeniz
+medium|Kocaeli'nin merkez ilçesi hangi adla anılır?|İzmit|Gebze|Gölcük|Derince
+medium|Sakarya'nın merkez ilçesi hangi adla anılır?|Adapazarı|Hendek|Karasu|Akyazı
+medium|Bolu Dağı geçişi hangi iki büyük şehir arasındaki yolda yer alır?|İstanbul ve Ankara|İzmir ve Ankara|Bursa ve Eskişehir|Adana ve Konya
