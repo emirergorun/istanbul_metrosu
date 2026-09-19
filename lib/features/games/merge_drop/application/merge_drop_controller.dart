@@ -116,11 +116,23 @@ class MergeDropController extends JourneyGameController {
   /// Tehlike çizgisinde **oturmuş** bir top kaybettirmeden önce ne kadar
   /// orada kalmalı. Yalnızca gerçekten oturmuş toplar sayıldığı için kısa
   /// tutulabilir; amaç anlık bir sekmeyi haksız kayıp saymamak.
-  static const double _overflowGraceSeconds = 0.35;
+  ///
+  /// 0.35'ten 0.15'e indirildi: yığın çizgiye ulaştığında oyunun **hemen**
+  /// bitmesi bekleniyordu, üçte bir saniyelik bekleme "çizgiye değince
+  /// bitmiyor" hissi veriyordu.
+  static const double _overflowGraceSeconds = 0.15;
 
   /// Bir topun "oturdu" sayılması için hızının altında kalması gereken
   /// değer. Düşmekte olan bir top bunun çok üstündedir.
-  static const double _settleSpeed = 0.06;
+  ///
+  /// 0.06'dan 0.09'a gevşetildi: top-top sürtünmesi hafifletilince
+  /// (`_friction` 0.82 → 0.94) sıkışık bir yığındaki toplar artık asla
+  /// tam durmuyor, sürekli ~0.06-0.08 aralığında ufak bir titreşimde
+  /// kalıyordu — oyun sonu kontrolü yalnızca `settled` toplara baktığı
+  /// için bu, çizgiye ulaşan yığının oyunu **hiç bitirmemesine** yol
+  /// açıyordu. Görsel akıcılığı etkilemez, yalnızca kaybetme kontrolünün
+  /// kullandığı eşiktir.
+  static const double _settleSpeed = 0.09;
 
   /// Temas toleransı: iki top bu mesafeye kadar yakınsa "değiyor" sayılır
   /// (çözücü zaten `_positionSlop` kadar boşluk bırakıyor).
@@ -219,7 +231,9 @@ class MergeDropController extends JourneyGameController {
     return true;
   }
 
-  int _randomLevel() => _random.nextInt(3) + mergeDropMinLevel;
+  // 3'ten 4'e genişletildi: zorluk artışının bir parçası olarak doğan
+  // parçalara biraz daha fazla çeşitlilik/boy geldi.
+  int _randomLevel() => _random.nextInt(4) + mergeDropMinLevel;
 
   @override
   void onTick(double dt) {

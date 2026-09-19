@@ -15,6 +15,7 @@ import 'package:istanbul_metro_game/features/games/merge_drop/presentation/merge
 import 'package:istanbul_metro_game/features/games/metro_merge/presentation/metro_merge_screen.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/presentation/rail_flight_screen.dart';
 import 'package:istanbul_metro_game/features/games/metro_quiz/presentation/metro_quiz_screen.dart';
+import 'package:istanbul_metro_game/features/games/train_snake/presentation/train_snake_screen.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -203,7 +204,23 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('altı oynanabilir oyun doğru ekrana açılır', (tester) async {
+  testWidgets('yolcu topla oyunu seçimden açılır', (tester) async {
+    await pumpSelect(tester);
+
+    await scrollToGame(tester, MiniGames.trainSnake);
+    await tester.tap(find.text(MiniGames.trainSnake.name));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(TrainSnakeScreen), findsOneWidget);
+    // HUD çipi + merdivendeki M1 madalyonu: en az bir tane olması yeterli.
+    expect(find.text('M1'), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('yedi oynanabilir oyun doğru ekrana açılır', (tester) async {
     final cases = <MiniGame, Type>{
       MiniGames.blocks: GameScreen,
       MiniGames.metroMerge: MetroMergeScreen,
@@ -211,6 +228,7 @@ void main() {
       MiniGames.mergeDrop: MergeDropScreen,
       MiniGames.metroQuiz: MetroQuizScreen,
       MiniGames.laneRunner: LaneRunnerScreen,
+      MiniGames.trainSnake: TrainSnakeScreen,
     };
 
     for (final entry in cases.entries) {

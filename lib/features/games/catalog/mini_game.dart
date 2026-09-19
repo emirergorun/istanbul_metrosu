@@ -118,6 +118,15 @@ class MiniGames {
     isAvailable: true,
   );
 
+  static const MiniGame trainSnake = MiniGame(
+    id: 'train_snake',
+    name: 'Yolcu Topla',
+    tagline: 'Yolcuları topla, vagon vagon uzayıp M11’e kadar büyü.',
+    glyph: GameGlyph.snake,
+    color: AppColors.gameSnake,
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -162,6 +171,7 @@ class MiniGames {
     railFlight,
     mergeDrop,
     laneRunner,
+    trainSnake,
     transfer,
     signal,
     wagon,

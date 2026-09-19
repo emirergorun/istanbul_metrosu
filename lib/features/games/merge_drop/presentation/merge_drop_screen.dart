@@ -512,12 +512,15 @@ class _AmbientTint extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 380),
       curve: Curves.easeOut,
+      // Fanusun daha şeffaf durması için parıltı çok hafifletildi —
+      // sahne görselindeki metro haritası/manzara toplar arasından daha
+      // net seçilsin.
       decoration: BoxDecoration(
         gradient: RadialGradient(
           center: const Alignment(0, -0.55),
           radius: 1.15,
           colors: <Color>[
-            color.withValues(alpha: 0.16),
+            color.withValues(alpha: 0.07),
             color.withValues(alpha: 0),
           ],
         ),
@@ -642,7 +645,10 @@ class _MergeDropPainter extends CustomPainter {
         ball.x,
         ball.y,
         ball.level,
-        alpha: 1,
+        // Tam opak değil: fanusun camsı/şeffaf hissi için toplar hafifçe
+        // yarı saydam — yığın kalınlaştıkça bile arkadaki sahne tamamen
+        // kaybolmuyor.
+        alpha: 0.9,
         // Birleşen top şişerek gelir (bkz. DropBall.drawRadius).
         worldRadius: ball.drawRadius,
       );

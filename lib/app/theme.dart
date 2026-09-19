@@ -146,6 +146,11 @@ class AppColors {
   static const Color gameDrop = Color(0xFFFF6B9D);
   static const Color gameLanes = Color(0xFFA8E05F);
 
+  /// Ton açısı ~234°: gameMerge (195°) ve gameQuiz (275°) arasındaki en
+  /// geniş boşluğa yerleşir, ikisinden de en az 35° uzak. [gameGlyphBox]
+  /// üzerinde ~4.0:1 kontrast — 3.9:1 sınırının üstünde.
+  static const Color gameSnake = Color(0xFF8C97FF);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

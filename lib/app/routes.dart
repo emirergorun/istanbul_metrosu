@@ -12,6 +12,8 @@ import '../features/games/rail_flight/application/rail_flight_controller.dart';
 import '../features/games/rail_flight/presentation/rail_flight_screen.dart';
 import '../features/games/metro_quiz/application/metro_quiz_controller.dart';
 import '../features/games/metro_quiz/presentation/metro_quiz_screen.dart';
+import '../features/games/train_snake/application/train_snake_controller.dart';
+import '../features/games/train_snake/presentation/train_snake_screen.dart';
 import '../features/games/catalog/game_select_screen.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
@@ -82,6 +84,9 @@ class AppRoutes {
               }
               if (args.gameId == LaneRunnerController.id) {
                 return LaneRunnerScreen(journey: args.journey);
+              }
+              if (args.gameId == TrainSnakeController.id) {
+                return TrainSnakeScreen(journey: args.journey);
               }
               return GameScreen(
                 journey: args.journey,

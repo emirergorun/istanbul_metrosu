@@ -6,10 +6,9 @@ const int mergeDropMinLevel = 1;
 const int mergeDropMaxLevel = 11;
 
 /// Tehlike çizgisi tepeye biraz daha yakın: havuzun kullanılabilir boyu
-/// azaldı, oyun daha çabuk biter. 11 seviyeye çıkarken bilerek biraz daha
-/// sıkılaştırıldı (0.15 → 0.18): daha uzun bir zirveye tırmanırken tahtanın
-/// hep aynı ölçüde toleranslı kalması oyunu kolaylaştırırdı.
-const double mergeDropDangerLine = 0.18;
+/// azaldı, oyun daha çabuk biter. Önce 0.15 → 0.18 (11 seviyeye çıkarken),
+/// sonra 0.18 → 0.20 (genel zorluk artışı) olarak sıkılaştırıldı.
+const double mergeDropDangerLine = 0.20;
 
 const List<String> mergeDropLabels = <String>[
   'M1',

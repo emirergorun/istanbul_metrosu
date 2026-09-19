@@ -44,6 +44,9 @@ enum GameGlyph {
   /// Şeritler arası geçiş — Ray Değiştir.
   lanes,
 
+  /// Art arda eklenen vagonlar ve önlerindeki yolcu noktası — Yolcu Topla.
+  snake,
+
   /// Kilitli kart.
   locked,
 }
@@ -106,6 +109,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintQuiz(canvas, s, fill, stroke);
       case GameGlyph.lanes:
         _paintLanes(canvas, s, fill, stroke);
+      case GameGlyph.snake:
+        _paintSnake(canvas, s, fill);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -334,6 +339,40 @@ class GameGlyphPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
     canvas.drawCircle(Offset(s * 0.78, s * 0.22), s * 0.10, fill);
+  }
+
+  /// Sivri burunlu bir tren ve önünde bekleyen bir yolcu — yolcu
+  /// toplandıkça tren vagon vagon uzuyor.
+  void _paintSnake(Canvas canvas, double s, Paint fill) {
+    final trainRect = Rect.fromLTWH(s * 0.08, s * 0.40, s * 0.46, s * 0.30);
+    final train = RRect.fromRectAndCorners(
+      trainRect,
+      topLeft: Radius.circular(s * 0.06),
+      bottomLeft: Radius.circular(s * 0.06),
+      topRight: Radius.circular(s * 0.16),
+      bottomRight: Radius.circular(s * 0.16),
+    );
+    canvas.drawRRect(train, fill);
+    // Pencere: gövdeyi zemin renginde bir dikdörtgenle "oyuyor".
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.14, s * 0.45, s * 0.16, s * 0.12),
+        Radius.circular(s * 0.03),
+      ),
+      Paint()..color = AppColors.background,
+    );
+
+    // Yolcu: trenin önünde, henüz binmemiş — baş + gövde, soluk ton.
+    final passenger = Paint()..color = color.withValues(alpha: 0.55);
+    final passengerX = s * 0.72;
+    canvas.drawCircle(Offset(passengerX, s * 0.46), s * 0.09, passenger);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.63, s * 0.56, s * 0.18, s * 0.16),
+        Radius.circular(s * 0.06),
+      ),
+      passenger,
+    );
   }
 
   /// Kilit — kilitli kartlar için.
