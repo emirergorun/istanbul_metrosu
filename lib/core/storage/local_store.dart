@@ -51,13 +51,20 @@ class LocalStore extends ChangeNotifier {
   bool _ready = false;
   bool _hapticsEnabled = true;
 
-  /// Ses varsayılan olarak **kapalı**: kulaklıksız bir vagonda telefonun
-  /// ötmesi istenmez, açmak kullanıcının tercihidir.
-  bool _soundEnabled = false;
+  /// Ses efektleri varsayılan olarak **açık**.
+  ///
+  /// Eskiden kapalıydı; gerekçesi "kulaklıksız bir vagonda telefonun ötmesi
+  /// istenmez" idi. Pratikte ters etki yaptı: oyun sessiz açılıyor, çoğu
+  /// oyuncu ayarlara hiç girmediği için sesin var olduğunu bile fark
+  /// etmiyordu. Telefonun kendi sessiz modu ve ses tuşları zaten bu işi
+  /// görüyor; istemeyen ayarlardan kapatabilir.
+  bool _soundEnabled = true;
 
-  /// Arka plan müziği de varsayılan olarak **kapalı** — efektlerden bile
-  /// daha müdahaleci olduğu için aynı gerekçe fazlasıyla geçerli.
-  bool _musicEnabled = false;
+  /// Arka plan müziği de varsayılan olarak **açık**.
+  ///
+  /// Efektlerle aynı gerekçe: ayarlara hiç girmeyen oyuncu, oyunun müziği
+  /// olduğunu fark etmeden oynuyordu. Sessiz isteyen ayarlardan kapatır.
+  bool _musicEnabled = true;
 
   /// Oyuncu adı — ilk açılışta sessizce atanır.
   ///
@@ -128,8 +135,8 @@ class LocalStore extends ChangeNotifier {
     try {
       _prefs = await SharedPreferences.getInstance();
       _hapticsEnabled = _prefs?.getBool(_hapticsKey) ?? true;
-      _soundEnabled = _prefs?.getBool(_soundKey) ?? false;
-      _musicEnabled = _prefs?.getBool(_musicKey) ?? false;
+      _soundEnabled = _prefs?.getBool(_soundKey) ?? true;
+      _musicEnabled = _prefs?.getBool(_musicKey) ?? true;
       _statsEnabled = _prefs?.getBool(_statsEnabledKey) ?? true;
       _restorePlayerIdentity();
     } catch (error, stack) {
