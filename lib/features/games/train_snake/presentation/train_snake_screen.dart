@@ -8,6 +8,7 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
@@ -348,59 +349,10 @@ class _SnakeHud extends StatelessWidget {
       run: controller,
       accent: accent,
       onPause: onPause,
-      chips: <Widget>[
-        // "Hat" çipi kaldırıldı: sağdaki M1-M11 merdiveni şu anki hattı
-        // zaten gösteriyor, HUD'da tekrar etmeye gerek yok.
-        _HudChip(
-          label: 'Yolcu',
-          value:
-              '${controller.passengersInLevel}/$trainSnakePassengersPerLevel',
-          accent: accent,
-        ),
-      ],
-    );
-  }
-}
-
-/// Oyuna özgü küçük gösterge; ortak HUD'un yanında durur.
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-            ),
-          ),
-        ],
-      ),
+      // "Hat" çipi sağdaki M1-M11 merdiveni, "Yolcu" çipi de sahnedeki
+      // canlı YOLCU kutusu aynı şeyi gösterdiği için kaldırıldı. HUD'da
+      // kalan skor + rota rekoru sahnede hiç görünmüyor, onlar duruyor.
+      chips: const <Widget>[],
     );
   }
 }
@@ -414,9 +366,34 @@ const double _sceneAspectRatio = 596 / 1026;
 /// sınırları, 0..1 aralığında. Görsel manuel ölçülerek bulundu; görsel
 /// değişirse bu dört sayı da yeniden ölçülmeli.
 const double _boardLeft = 0.151;
-const double _boardTop = 0.108;
+
+/// Tahtanın üst kenarı.
+///
+/// Eskiden 0.108'di ve bu bir rakam devriği hatasıydı (0.180 → 0.108):
+/// 0.108 × 1026 = 111. piksel, oysa krem tahta 185. pikselde başlıyor.
+/// Yani oyun alanı tahtanın 74 piksel yukarısından başlıyor, tam **iki
+/// satır** "İSTANBUL METRO" logosunun ve "İYİ YOLCULUKLAR" tabelasının
+/// üstüne taşıyordu: painter krem zemini oraya da basıyor (tabelayı
+/// örtüyor) ve tren tahtanın dışında, havada iki satır boyunca
+/// gezebiliyordu. Ölçülen doğru değer 185/1026 ≈ 0.180; diğer üç kenarda
+/// olduğu gibi ~3 piksellik taşma payıyla 0.178.
+const double _boardTop = 0.178;
 const double _boardRight = 0.864;
 const double _boardBottom = 0.882;
+
+/// Üstteki skor tablosunun üç kutusunun sahne görseli içindeki göreli
+/// sınırları. Merdivende olduğu gibi bu kutular da görsele **sabit**
+/// basılmış ("HAT M1", "YOLCU 0 / 3", "SKOR 0") — yani boyalı piksel,
+/// hiçbir zaman değişmiyorlar. Üstlerine canlı değerler bindirilir.
+/// Ölçüm 596×1026'lık kaynak görselden yapıldı.
+const double _scoreRowTop = 10 / 1026;
+const double _scoreRowBottom = 66 / 1026;
+const double _lineBoxLeft = 133 / 596;
+const double _lineBoxRight = 241 / 596;
+const double _passengerBoxLeft = 251 / 596;
+const double _passengerBoxRight = 358 / 596;
+const double _scoreBoxLeft = 367 / 596;
+const double _scoreBoxRight = 474 / 596;
 
 /// M1..M11 merdiveninin sahne görseli içindeki göreli sınırları. Görselde
 /// bu merdiven **sabit** çizilmiş (hep M1 vurgulu); bu dikdörtgenin üstüne
@@ -480,10 +457,167 @@ class _SnakePlayArea extends StatelessWidget {
                   height: sceneHeight * (_ladderBottom - _ladderTop),
                   child: _LineLadder(level: controller.level),
                 ),
+                // Görseldeki sabit skor tablosunun üstüne canlı değerler.
+                ..._liveScoreBoxes(controller, sceneWidth, sceneHeight),
               ],
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Görseldeki sabit skor tablosunun üç kutusunu canlı değerlerle örter.
+///
+/// Kutular kaynak görsele boyanmış olduğu için oyun boyunca hep "M1",
+/// "0 / 3" ve "0" yazıyorlardı; oyuncu skorunun, hattının ve yolcu
+/// sayısının hiç değişmediğini görüyordu. Merdivende uygulanan yöntemin
+/// aynısı: kutunun kendisi aynı renk ve ölçüde yeniden çizilir, üstüne
+/// gerçek değer yazılır.
+List<Widget> _liveScoreBoxes(
+  TrainSnakeController controller,
+  double sceneWidth,
+  double sceneHeight,
+) {
+  // Kaynak görsel pikselinden ekran pikseline ölçek. Yazı boyutları ve
+  // köşe yarıçapı da bununla ölçeklenir, yoksa küçük ekranda taşarlar.
+  final scale = sceneWidth / 596;
+  final top = sceneHeight * _scoreRowTop;
+  final height = sceneHeight * (_scoreRowBottom - _scoreRowTop);
+
+  Widget box(double left, double right, Widget child) => Positioned(
+    left: sceneWidth * left,
+    top: top,
+    width: sceneWidth * (right - left),
+    height: height,
+    child: child,
+  );
+
+  return <Widget>[
+    box(
+      _lineBoxLeft,
+      _lineBoxRight,
+      _ScoreBox(
+        label: 'HAT',
+        value: controller.lineLabel,
+        scale: scale,
+        pillColor: _ScoreBox.pill,
+      ),
+    ),
+    box(
+      _passengerBoxLeft,
+      _passengerBoxRight,
+      _ScoreBox(
+        label: 'YOLCU',
+        value:
+            '${controller.passengersInLevel} / $trainSnakePassengersPerLevel',
+        scale: scale,
+      ),
+    ),
+    box(
+      _scoreBoxLeft,
+      _scoreBoxRight,
+      _ScoreBox(
+        label: 'SKOR',
+        value: Formatters.score(controller.score),
+        scale: scale,
+      ),
+    ),
+  ];
+}
+
+/// Skor tablosundaki tek bir kutu. Ölçüler ve renkler kaynak görselden
+/// okunarak birebir eşleştirildi; amaç altındaki boyalı kutuyu tam
+/// örtmek, araya sızan bir kenar bırakmamak.
+class _ScoreBox extends StatelessWidget {
+  const _ScoreBox({
+    required this.label,
+    required this.value,
+    required this.scale,
+    this.pillColor,
+  });
+
+  final String label;
+  final String value;
+
+  /// Kaynak görsel pikseli → ekran pikseli.
+  final double scale;
+
+  /// Doluysa değer, görseldeki gibi bu renkte bir hapın içine yazılır.
+  final Color? pillColor;
+
+  /// Görselden ölçülen kutu dolgusu.
+  static const Color fill = Color(0xFF2B435E);
+
+  /// Görselden ölçülen hap (HAT rozeti) rengi.
+  static const Color pill = Color(0xFFBC3D3C);
+
+  static const Color _ink = Color(0xFFF4F5F7);
+
+  @override
+  Widget build(BuildContext context) {
+    // Değer uzayabilir (beş haneli skor); kutuyu taşırmak yerine küçülsün.
+    final text = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        value,
+        maxLines: 1,
+        style: AppText.stat.copyWith(
+          fontSize: 21 * scale,
+          height: 1,
+          color: _ink,
+        ),
+      ),
+    );
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(8 * scale),
+      ),
+      child: Stack(
+        children: <Widget>[
+          // Etiket: görselde kutunun üstünde, 10. ve 16. piksel arasında.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 8 * scale,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: AppText.label.copyWith(
+                fontSize: 10 * scale,
+                height: 1,
+                letterSpacing: 1.1 * scale,
+                color: _ink,
+              ),
+            ),
+          ),
+          // Değer: görselde 23. ve 50. piksel arasında.
+          Positioned(
+            left: 4 * scale,
+            right: 4 * scale,
+            top: 21 * scale,
+            height: 30 * scale,
+            child: Center(
+              child: pillColor == null
+                  ? text
+                  : Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 13 * scale,
+                        vertical: 3 * scale,
+                      ),
+                      decoration: BoxDecoration(
+                        color: pillColor,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: text,
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

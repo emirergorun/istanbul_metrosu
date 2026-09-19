@@ -55,9 +55,14 @@ void main() {
   testWidgets('oyun ekranı hatasız açılır ve HUD gösterilir', (tester) async {
     await pumpGame(tester);
 
-    // HUD çipi + merdivendeki M1 madalyonu: en az bir tane olması yeterli.
+    // Sahnedeki canlı skor tablosu + merdivendeki M1 madalyonu.
     expect(find.text('M1'), findsWidgets);
-    expect(find.text('0/3'), findsOneWidget);
+    // Skor tablosunun üç kutusu da görselin üstüne canlı basılır; görseldeki
+    // boyalı "HAT / YOLCU / SKOR" değerleri hiç değişmediği için bunlar
+    // olmazsa oyuncu skorunun sabit kaldığını görür.
+    expect(find.text('YOLCU'), findsOneWidget);
+    expect(find.text('SKOR'), findsOneWidget);
+    expect(find.text('0 / 3'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(tester.takeException(), isNull);
