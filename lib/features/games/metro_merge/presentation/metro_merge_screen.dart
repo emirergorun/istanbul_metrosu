@@ -8,6 +8,7 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/widgets/metro_train.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
@@ -161,12 +162,17 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
       return;
     }
 
-    if (outcome.terminalClears > 0 || outcome.didClear) {
+    if (outcome.merges > 0) {
       _haptic(HapticFeedback.mediumImpact);
-      _sound(outcome.linesCleared >= 2 ? GameSound.combo : GameSound.clear);
+      _sound(outcome.merges >= 2 ? GameSound.combo : GameSound.clear);
     } else {
       _haptic(HapticFeedback.lightImpact);
       _sound(GameSound.place);
+    }
+
+    if (outcome.reachedTarget) {
+      _haptic(HapticFeedback.heavyImpact);
+      _showBanner('M11! Tüm hatları birleştirdin');
     }
 
     if (outcome.beatRecord) {
@@ -217,6 +223,11 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
         child: Scaffold(
           body: Stack(
             children: <Widget>[
+              // Düz koyu zemin yerine hafif bir metro haritası dokusu:
+              // kıvrılan hatlar, aktarma noktaları ve yumuşak bir ışık.
+              Positioned.fill(
+                child: CustomPaint(painter: _MergeBackdrop(accent: accent)),
+              ),
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -239,12 +250,9 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
                           onMove: _move,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _DirectionPad(
-                        enabled: controller.status == GameStatus.playing,
-                        accent: accent,
-                        onMove: _move,
-                      ),
+                      // Yön tuşları kaldırıldı: tahtada kaydırma ve
+                      // klavyede ok tuşları zaten çalışıyor, ekrandaki
+                      // dörtlü ped yalnızca yer kaplıyordu.
                       const SizedBox(height: AppSpacing.sm),
                       JourneyStatusBar(
                         run: controller,
@@ -309,14 +317,7 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
       isNewBest: controller.isNewBest,
       extraStats: <Widget>[
         StatRow(label: 'Birleşme', value: '${controller.totalMerges}'),
-        StatRow(
-          label: 'Temizlenen hat',
-          value: '${controller.totalClearedLines}',
-        ),
-        StatRow(
-          label: 'Final hat temizliği',
-          value: '${controller.terminalClears}',
-        ),
+        StatRow(label: 'En yüksek hat', value: controller.highestLabel),
       ],
       gameOverTitle: 'Hat kilitlendi',
       gameOverSubtitle: 'Tahta doldu ve birleşebilecek tren kalmadı.',
@@ -341,92 +342,6 @@ class _MergeHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return JourneyHud(run: controller, accent: accent, onPause: onPause);
-  }
-}
-
-class _DirectionPad extends StatelessWidget {
-  const _DirectionPad({
-    required this.enabled,
-    required this.accent,
-    required this.onMove,
-  });
-
-  final bool enabled;
-  final Color accent;
-  final ValueChanged<MetroMoveDirection> onMove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Hat Birleştir yön kontrolleri',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          _DirectionButton(
-            icon: Icons.keyboard_arrow_up_rounded,
-            enabled: enabled,
-            accent: accent,
-            onPressed: () => onMove(MetroMoveDirection.up),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _DirectionButton(
-                icon: Icons.keyboard_arrow_left_rounded,
-                enabled: enabled,
-                accent: accent,
-                onPressed: () => onMove(MetroMoveDirection.left),
-              ),
-              const SizedBox(width: AppSpacing.xl),
-              _DirectionButton(
-                icon: Icons.keyboard_arrow_right_rounded,
-                enabled: enabled,
-                accent: accent,
-                onPressed: () => onMove(MetroMoveDirection.right),
-              ),
-            ],
-          ),
-          _DirectionButton(
-            icon: Icons.keyboard_arrow_down_rounded,
-            enabled: enabled,
-            accent: accent,
-            onPressed: () => onMove(MetroMoveDirection.down),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DirectionButton extends StatelessWidget {
-  const _DirectionButton({
-    required this.icon,
-    required this.enabled,
-    required this.accent,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final bool enabled;
-  final Color accent;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: 38,
-      child: IconButton.filledTonal(
-        padding: EdgeInsets.zero,
-        onPressed: enabled ? onPressed : null,
-        style: IconButton.styleFrom(
-          backgroundColor: accent.withValues(alpha: 0.16),
-          foregroundColor: accent,
-          disabledBackgroundColor: AppColors.surfaceHigh,
-          disabledForegroundColor: AppColors.textMuted,
-        ),
-        icon: Icon(icon, size: 26),
-      ),
-    );
   }
 }
 
@@ -484,7 +399,7 @@ class _MetroMergeBoard extends StatelessWidget {
                               Expanded(
                                 child: _BoardCell(
                                   tile: controller.grid[row][col],
-                                  dense: controller.config.gridSize >= 6,
+                                  dense: false,
                                 ),
                               ),
                           ],
@@ -515,17 +430,38 @@ class _BoardCell extends StatelessWidget {
       curve: Curves.easeOutCubic,
       margin: EdgeInsets.all(dense ? 3 : 4),
       decoration: BoxDecoration(
-        color: current == null ? AppColors.emptyCell : _metroLineColor(current),
+        // Zemin, hat renginin koyulaştırılmış hâli: karo hattın kimliğini
+        // taşır ama üstündeki tren ve etiket okunur kalır.
+        color: current == null
+            ? AppColors.emptyCell
+            : Color.lerp(_metroLineColor(current), const Color(0xFF0B1118), 0.7),
         borderRadius: BorderRadius.circular(dense ? 8 : 10),
-        border: current?.rank == metroMergeMaxRank
-            ? Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2)
-            : null,
+        border: current == null
+            ? null
+            : Border.all(
+                color: current.rank == metroMergeMaxRank
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : _metroLineColor(current).withValues(alpha: 0.75),
+                width: current.rank == metroMergeMaxRank ? 2 : 1.5,
+              ),
       ),
       child: current == null ? null : _TileContent(tile: current, dense: dense),
     );
   }
 }
 
+/// Karonun içi: hattın rengiyle çizilmiş küçük bir metro treni ve üstünde
+/// hat etiketi.
+///
+/// Tren **karenin içinde** kalır; hücre geometrisi hiç değişmez. Oyun
+/// mantığı ızgara hücrelerine dayandığı için bu şart: karo bir tren
+/// şeklinde olsaydı komşuluk ve kaydırma okuması bozulurdu.
+///
+/// Zemin, hattın renginin koyulaştırılmış hâli; tren ise tam güçte hat
+/// rengi. Böylece her hat kendi rengini taşırken trenin beyaz konturu ve
+/// pencereleri her renkte okunur kalıyor (tren gövdesini beyaz yapmak
+/// işe yaramaz: pencereler de beyaz çizildiği için tren düz bir lekeye
+/// dönüşüyordu).
 class _TileContent extends StatelessWidget {
   const _TileContent({required this.tile, required this.dense});
 
@@ -535,26 +471,149 @@ class _TileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _metroLineColor(tile);
-    final foreground = LineTheme.readableOn(color);
-    return Padding(
-      padding: EdgeInsets.all(dense ? 4 : 6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Text(
-            tile.lineLabel,
-            maxLines: 1,
-            style: TextStyle(
-              fontFamily: AppFonts.body,
-              fontSize: dense ? 15 : 19,
-              fontWeight: FontWeight.w800,
-              color: foreground,
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = math.min(constraints.maxWidth, constraints.maxHeight);
+        // İki vagonluk tren, karenin ~%68'i kadar yer kaplar.
+        final trainHeight = side * 0.29;
+        return Padding(
+          padding: EdgeInsets.all(side * 0.06),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  tile.lineLabel,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: AppFonts.body,
+                    fontSize: side * 0.27,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    color: Color.lerp(color, Colors.white, 0.55),
+                  ),
+                ),
+              ),
+              SizedBox(height: side * 0.08),
+              MetroTrain(color: color, height: trainHeight),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
+
+/// Oyun ekranının arka planı.
+///
+/// Eskiden düz koyu bir zemindi ve tahtanın etrafı bomboş duruyordu. Burada
+/// şematik bir metro haritası çizilir: yumuşak bir ışık, kıvrılarak geçen
+/// birkaç hat ve üzerlerinde aktarma noktaları. Hepsi çok düşük alfada —
+/// amaç tahtayla yarışmak değil, boşluğu doldurmak.
+class _MergeBackdrop extends CustomPainter {
+  const _MergeBackdrop({required this.accent});
+
+  /// Yolculuğun hattının rengi; doku ona göre tonlanır.
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color.lerp(AppColors.background, accent, 0.10)!,
+            AppColors.background,
+            Color.lerp(AppColors.background, Colors.black, 0.35)!,
+          ],
+          stops: const <double>[0, 0.45, 1],
+        ).createShader(rect),
+    );
+
+    // Üstten gelen yumuşak ışık — peron aydınlatması hissi.
+    canvas.drawCircle(
+      Offset(size.width * 0.5, -size.height * 0.12),
+      size.width * 0.78,
+      Paint()..color = accent.withValues(alpha: 0.07),
+    );
+
+    _drawLines(canvas, size);
+  }
+
+  /// Şematik hatlar: 45 derecelik kırılmalarla ilerleyen, gerçek metro
+  /// haritalarındaki gibi köşeleri yuvarlatılmış yollar.
+  void _drawLines(Canvas canvas, Size size) {
+    const palette = <Color>[
+      Color(0xFFE30613),
+      Color(0xFF009A44),
+      Color(0xFF00AEEF),
+      Color(0xFFFFD300),
+    ];
+    final stroke = (size.shortestSide * 0.012).clamp(2.0, 6.0);
+
+    // Her hat: başlangıç yüksekliği, kırılma noktaları (genişliğin oranı)
+    // ve kırılmada ne kadar yukarı/aşağı gittiği.
+    const routes = <List<double>>[
+      <double>[0.16, 0.22, -0.09, 0.62, 0.07],
+      <double>[0.38, 0.14, 0.08, 0.55, -0.06],
+      <double>[0.72, 0.30, -0.07, 0.70, 0.05],
+      <double>[0.89, 0.20, 0.06, 0.58, -0.08],
+    ];
+
+    for (var i = 0; i < routes.length; i++) {
+      final r = routes[i];
+      final path = Path();
+      var y = size.height * r[0];
+      path.moveTo(-size.width * 0.05, y);
+      path.lineTo(size.width * r[1], y);
+      final y2 = y + size.height * r[2];
+      path.lineTo(size.width * (r[1] + 0.12), y2);
+      path.lineTo(size.width * r[3], y2);
+      final y3 = y2 + size.height * r[4];
+      path.lineTo(size.width * (r[3] + 0.12), y3);
+      path.lineTo(size.width * 1.05, y3);
+
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = palette[i].withValues(alpha: 0.10)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+
+      // Aktarma noktaları: hattın kırıldığı yerlerdeki halkalar.
+      for (final point in <Offset>[
+        Offset(size.width * r[1], y),
+        Offset(size.width * r[3], y2),
+      ]) {
+        canvas.drawCircle(
+          point,
+          stroke * 1.5,
+          Paint()..color = AppColors.background.withValues(alpha: 0.9),
+        );
+        canvas.drawCircle(
+          point,
+          stroke * 1.5,
+          Paint()
+            ..color = palette[i].withValues(alpha: 0.16)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = stroke * 0.55,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MergeBackdrop oldDelegate) =>
+      oldDelegate.accent != accent;
 }
 
 Color _metroLineColor(MetroTile tile) {
