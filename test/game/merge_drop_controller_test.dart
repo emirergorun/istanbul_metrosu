@@ -325,5 +325,85 @@ void main() {
       final relativeVxAfter = b.vx - a.vx;
       expect(relativeVxAfter, greaterThan(0));
     });
+
+    // Ekrandaki havuzun gerçek en/boy oranı: sahne görselinin içindeki
+    // kutu (bkz. merge_drop_screen.dart → _boxTop/_boxBottom/_sceneAspectRatio).
+    // Regresyonun ancak bu oranda görünür olması, testin neden bu sabiti
+    // kullandığını açıklıyor: kare varsayımıyla hata gizleniyordu.
+    const double poolAspect = (0.955 - 0.335) * (1491 / 1055) / (0.925 - 0.075);
+
+    test(
+      'titreyen bir yığın çizgiyi aşınca oyun biter (sonsuza kadar sürmez)',
+      () {
+        // Regresyon: kaybetme koşulu topun **tam durmasını** şart koşuyordu.
+        // Sıkışık bir yığın çözücünün konum düzeltmeleri yüzünden asla tam
+        // durmaz, üstelik bekleme sayacı olumsuz her karede sıfırlanıyordu;
+        // ikisi birleşince yığın çizginin üstünde dursa bile oyun hiç
+        // bitmiyordu. Ölçümde 150 saniyelik oyunun 5 tohumun 3'ünde
+        // bitmediği görüldü.
+        for (final seed in <int>[1, 3, 7, 11, 21]) {
+          final controller = MergeDropController(
+            journey: shortJourney(),
+            recordToBeat: 0,
+            random: Random(seed),
+          )..start();
+          addTearDown(controller.dispose);
+          controller.setPoolAspect(poolAspect);
+
+          final aim = Random(seed * 31);
+          var frames = 0;
+          while (controller.status == GameStatus.playing && frames < 9000) {
+            if (controller.canDrop) {
+              controller.moveAim(0.12 + aim.nextDouble() * 0.76);
+              controller.drop();
+            }
+            controller.debugStep(1 / 60);
+            frames++;
+          }
+
+          expect(
+            controller.status,
+            GameStatus.gameOver,
+            reason:
+                'tohum $seed: havuz dolduğu hâlde 150 saniyede oyun bitmedi',
+          );
+        }
+      },
+    );
+
+    test('yığın çizgiyi aşınca kayıp yarım saniye içinde gelir', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      controller.setPoolAspect(poolAspect);
+
+      // Zeminden çizginin üstüne uzanan, birleşmeyecek seviyelerden bir
+      // sütun. Çözücü bunu sürekli titretir; eski sürümde bu yüzden
+      // "oturmuş" sayılmıyordu.
+      final balls = <DropBall>[];
+      var y = controller.worldHeight;
+      var id = 1;
+      for (final level in <int>[6, 5, 6, 5, 6, 5]) {
+        final r = mergeDropRadiusForLevel(level);
+        y -= r;
+        balls.add(DropBall(id: id++, level: level, x: 0.5, y: y));
+        y -= r;
+      }
+      controller.debugSetBalls(balls);
+      // Sütun gerçekten çizgiyi aşıyor olmalı, yoksa test bir şey ölçmez.
+      expect(
+        balls.any((b) => b.y - b.radius < controller.dangerY),
+        isTrue,
+        reason: 'kurulum hatalı: sütun tehlike çizgisine ulaşmıyor',
+      );
+
+      var frames = 0;
+      while (controller.status == GameStatus.playing && frames < 30) {
+        controller.debugStep(1 / 60);
+        frames++;
+      }
+
+      expect(controller.status, GameStatus.gameOver);
+      expect(frames, lessThanOrEqualTo(30));
+    });
   });
 }

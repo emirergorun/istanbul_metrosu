@@ -113,26 +113,36 @@ class MergeDropController extends JourneyGameController {
   /// mikroskobik ölçekte sürekli düzeltilip yeniden çakışabilir.
   static const double _positionSlop = 0.0015;
 
-  /// Tehlike çizgisinde **oturmuş** bir top kaybettirmeden önce ne kadar
-  /// orada kalmalı. Yalnızca gerçekten oturmuş toplar sayıldığı için kısa
-  /// tutulabilir; amaç anlık bir sekmeyi haksız kayıp saymamak.
-  ///
-  /// 0.35'ten 0.15'e indirildi: yığın çizgiye ulaştığında oyunun **hemen**
-  /// bitmesi bekleniyordu, üçte bir saniyelik bekleme "çizgiye değince
-  /// bitmiyor" hissi veriyordu.
+  /// Tehlike çizgisinde duran bir top kaybettirmeden önce ne kadar orada
+  /// kalmalı. Amaç anlık bir sekmeyi ya da yığına sürtünerek geçen bir topu
+  /// haksız kayıp saymamak.
   static const double _overflowGraceSeconds = 0.15;
 
-  /// Bir topun "oturdu" sayılması için hızının altında kalması gereken
-  /// değer. Düşmekte olan bir top bunun çok üstündedir.
+  /// Bekleme sayacının, koşul sağlanmayan karelerde saniyede ne kadar
+  /// eridiği.
   ///
-  /// 0.06'dan 0.09'a gevşetildi: top-top sürtünmesi hafifletilince
-  /// (`_friction` 0.82 → 0.94) sıkışık bir yığındaki toplar artık asla
-  /// tam durmuyor, sürekli ~0.06-0.08 aralığında ufak bir titreşimde
-  /// kalıyordu — oyun sonu kontrolü yalnızca `settled` toplara baktığı
-  /// için bu, çizgiye ulaşan yığının oyunu **hiç bitirmemesine** yol
-  /// açıyordu. Görsel akıcılığı etkilemez, yalnızca kaybetme kontrolünün
-  /// kullandığı eşiktir.
-  static const double _settleSpeed = 0.09;
+  /// Eskiden sayaç tek bir olumsuz karede **sıfırlanıyordu** ve asıl hata
+  /// buydu: çizgiyi aşmış sıkışık bir yığın sürekli mikro-titreşimde olduğu
+  /// için koşul kare kare açılıp kapanıyor, sayaç hiçbir zaman 0.15 saniyeye
+  /// ulaşamıyordu — yani yığın çizginin üstünde dursa bile oyun **hiç
+  /// bitmiyordu**. Sıfırlama yerine aynı hızda erime, gerçek bir taşmada
+  /// (koşul karelerin çoğunda doğru) sayacın net olarak yükselmesini, gerçek
+  /// bir geçici temasta ise (birkaç kare doğru, sonra sürekli yanlış) hızla
+  /// boşalmasını sağlar.
+  static const double _overflowDecayPerSecond = 1;
+
+  /// Bir topun "yığına oturmuş" sayılması için aşağı yönlü hızının altında
+  /// kalması gereken değer.
+  ///
+  /// Eskiden koşul topun **toplam** hızının 0.09'un altında olmasıydı ve bu
+  /// yanlıştı: sıkışık bir yığındaki toplar çözücünün konum düzeltmeleri
+  /// yüzünden asla tam durmuyor, ~0.05-0.15 aralığında titreşmeye devam
+  /// ediyor. Oyuncunun gördüğü ise duran bir yığın. Önemli olan topun ne
+  /// kadar titrediği değil, hâlâ **düşmeye devam edip etmediği**: dayanağı
+  /// olan ve artık aşağı inmeyen top, yığının parçasıdır. Bu eşik yalnızca
+  /// yığına sürtünerek aşağı kayan bir topu elemeye yarar; serbest düşüşteki
+  /// top zaten dayanaksız olduğu için baştan sayılmaz.
+  static const double _restingFallSpeed = 0.25;
 
   /// Temas toleransı: iki top bu mesafeye kadar yakınsa "değiyor" sayılır
   /// (çözücü zaten `_positionSlop` kadar boşluk bırakıyor).
@@ -266,7 +276,8 @@ class MergeDropController extends JourneyGameController {
       _overflowSeconds += dt;
       if (_overflowSeconds > _overflowGraceSeconds) endGame();
     } else {
-      _overflowSeconds = 0;
+      // Sıfırlamak yerine eritmek şart: bkz. `_overflowDecayPerSecond`.
+      _overflowSeconds = max(0, _overflowSeconds - dt * _overflowDecayPerSecond);
     }
   }
 
@@ -489,17 +500,22 @@ class MergeDropController extends JourneyGameController {
     ];
   }
 
-  /// Her topun "oturdu mu" durumunu baştan hesaplar.
+  /// Her topun "yığına oturdu mu" durumunu baştan hesaplar.
   ///
-  /// Oturmuş = neredeyse duruyor **ve** altında bir dayanak var (zemin ya da
-  /// merkezi daha aşağıda, temas hâlinde bir top). Havada düşmekte olan ya
-  /// da bir başka topa sürtüp geçen top oturmuş sayılmaz — kaybetme koşulu
-  /// buna baktığı için bu ayrım oyunun oynanabilirliğini belirliyor.
+  /// Oturmuş = altında bir dayanak var (zemin ya da merkezi daha aşağıda,
+  /// temas hâlinde bir top) **ve** artık aşağı inmiyor. Serbest düşen top
+  /// dayanaksız olduğu için elenir; bu önemli, çünkü doğum noktası zaten
+  /// tehlike çizgisinin üstünde — her yeni top çizgiyi geçerek düşer ve
+  /// bunların kaybettirmemesi gerekir.
+  ///
+  /// Dikkat: burada topun titreyip titremediğine **bakılmaz**. Sıkışık bir
+  /// yığın çözücünün konum düzeltmeleri yüzünden hiçbir zaman tam durmaz;
+  /// eski sürüm tam duruş şartı koştuğu için çizgiyi aşmış yığınlar
+  /// oturmuş sayılmıyor ve oyun bitmiyordu.
   void _updateSettled() {
     final updated = <DropBall>[];
     for (final ball in _balls) {
-      final slow = ball.speed < _settleSpeed;
-      if (!slow) {
+      if (ball.vy >= _restingFallSpeed) {
         updated.add(ball.copyWith(settled: false));
         continue;
       }
