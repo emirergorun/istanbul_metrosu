@@ -13,6 +13,7 @@ class TrainSnakeController extends JourneyGameController {
     super.store,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
+    super.session,
   }) : _random = random ?? Random(),
        super(gameId: id, maxFrameSeconds: _maxFrameSeconds) {
     _body = _initialBody();

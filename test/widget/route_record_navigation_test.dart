@@ -3,14 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/app/app.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
-import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
-import 'package:istanbul_metro_game/features/games/blocks/application/game_snapshot.dart';
-import 'package:istanbul_metro_game/features/games/blocks/domain/block_piece.dart';
-import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
-import 'package:istanbul_metro_game/features/games/blocks/domain/game_state.dart';
-import 'package:istanbul_metro_game/features/games/blocks/domain/piece_shapes.dart';
 import 'package:istanbul_metro_game/features/journey/presentation/widgets/line_selector.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
+import 'package:istanbul_metro_game/features/session/journey_save.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/metro_fixture.dart';
@@ -45,38 +40,41 @@ void main() {
     return store;
   }
 
-  testWidgets('yarım kalan oyunda "Başka oyun seç" oyun seçimine götürür', (
+  testWidgets('süren yolculuktaki "Başka oyun seç" oyun seçimine götürür', (
     tester,
   ) async {
     // Regresyon: oyun başlıktaki kayıttan açılınca altta oyun seçimi yoktu;
-    // düğme başlık ekranına dönüyordu.
+    // düğme başlık ekranına dönüyordu. Artık kart doğrudan oyun seçimini
+    // açıyor, oyun da onun üstünde duruyor.
     final journey = RouteService(
       metro,
     ).estimate('m2_taksim', 'm2_levent').journey!;
-    final session = GameSession.initial(
-      journey: journey,
-      board: Board.empty(),
-      tray: <BlockPiece?>[
-        PieceShapes.dot.withColor(1),
-        PieceShapes.h2.withColor(2),
-        PieceShapes.v2.withColor(3),
-      ],
-    );
-    final controller = GameController(
-      journey: session.journey,
-      resumeFrom: session,
-      tick: const Duration(days: 1),
-    );
-    addTearDown(controller.dispose);
 
     await pumpApp(tester, <String, Object>{
-      'saved_game': GameSnapshot.encode(controller),
+      'journey_save': JourneySave(
+        originId: journey.origin.id,
+        destinationId: journey.destination.id,
+        elapsedSeconds: 30,
+        score: 120,
+        scoreByGame: const <String, int>{'blocks': 120},
+        secondsByGame: const <String, double>{'blocks': 30},
+        stationsPassed: 0,
+        recordToBeat: 0,
+        recordBeaten: false,
+        savedAt: DateTime(2026),
+      ).encode(),
     });
 
-    await tester.tap(find.text('YARIM KALAN OYUN'));
+    await tester.tap(find.text('SÜREN YOLCULUK'));
     await tester.pumpAndSettle();
-    expect(find.text('Başka oyun seç'), findsOneWidget);
+    expect(find.text('Oyun seç'), findsOneWidget);
 
+    await tester.tap(find.text('Blok Metro'));
+    await tester.pumpAndSettle();
+    expect(find.text('Başka oyun seç'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.pause_rounded));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Başka oyun seç'));
     await tester.pumpAndSettle();
     expect(find.text('Oyun seç'), findsOneWidget);
@@ -85,7 +83,7 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('rota ekranı rekoru oyun adıyla gösterir, "En iyi" tekrarı yok', (
+  testWidgets('rota ekranı rota rekorunu gösterir, "En iyi" tekrarı yok', (
     tester,
   ) async {
     await pumpApp(tester, <String, Object>{
@@ -116,9 +114,11 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    // Rekor rotanın: eski oyun bazlı kayıtların en yükseği devralınıyor,
+    // hangi oyunda kurulduğu artık yazılmıyor.
     expect(find.text('ROTA REKORUN'), findsOneWidget);
     expect(find.text('300'), findsOneWidget);
-    expect(find.text('Ray Uçuşu'), findsOneWidget);
+    expect(find.text('yolculuk rekoru'), findsOneWidget);
     expect(find.textContaining('En iyi'), findsNothing);
   });
 
@@ -129,7 +129,7 @@ void main() {
       'best_game_route_rail_flight|m2_levent__m2_taksim': 300,
     });
 
-    expect(find.text('~9 dk · Ray Uçuşu rekorun 300'), findsOneWidget);
+    expect(find.text('~9 dk · rekorun 300'), findsOneWidget);
 
     await tester.tap(find.text('Taksim → Levent'));
     await tester.pumpAndSettle();

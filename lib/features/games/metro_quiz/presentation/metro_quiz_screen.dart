@@ -8,12 +8,14 @@ import '../../../../core/audio/audio_service.dart';
 import '../../../../core/widgets/metro_train.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
+import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
+import '../../../session/widgets/journey_breakdown.dart';
 import '../../../session/widgets/result_overlay.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../../core/telemetry/analytics.dart';
@@ -89,11 +91,13 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       journey: widget.journey,
       store: scope.store,
       pool: QuizPool(repository: scope.questions, onlyCategory: category),
-      recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: MetroQuizController.id,
-        originId: widget.journey.origin.id,
-        destinationId: widget.journey.destination.id,
+      recordToBeat: scope.store.bestJourneyScore(
+        widget.journey.origin.id,
+        widget.journey.destination.id,
       ),
+      // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
+      // puan, kalan süre ve geçilen duraklar oradan devam eder.
+      session: JourneyScope.sessionOf(context),
     );
     controller.addListener(_onControllerChanged);
     scope.analytics.log(
@@ -264,6 +268,7 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                       run: controller,
                       accent: accent,
                       onPause: controller.pause,
+                      gameScore: controller.scoreThisGame,
                       chips: <Widget>[
                         if (controller.multiplier > 1)
                           _MultiplierReadout(
@@ -358,6 +363,10 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
   }) {
     return ResultOverlay(
       isArrival: controller.status == GameStatus.arrived,
+      // Yolculuk ortaksa oyun bitişi bir ara duraktır, yolculuğun sonu değil.
+      journeyContinues:
+          controller.sharesJourney && controller.status != GameStatus.arrived,
+      remainingSeconds: controller.remainingSeconds,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -366,6 +375,10 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       accent: accent,
       isNewBest: controller.isNewBest,
       extraStats: <Widget>[
+        // Varışta yolculuğun dağılımı: hangi oyunda ne kadar süre geçti,
+        // ne kazandırdı. Oyunun kendi sayıları bunun altında.
+        if (controller.status == GameStatus.arrived)
+          ...journeyBreakdownRows(controller.journeySession),
         StatRow(label: 'Doğru cevap', value: '${controller.correctCount}'),
         StatRow(label: 'En uzun seri', value: '${controller.bestStreak}'),
         if (controller.bestCategory != null)

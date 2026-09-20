@@ -9,6 +9,7 @@ import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../journey/models/journey.dart';
+import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
@@ -16,6 +17,7 @@ import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
+import '../../../session/widgets/journey_breakdown.dart';
 import '../../../session/widgets/result_overlay.dart';
 import '../application/merge_drop_controller.dart';
 import '../domain/merge_drop_state.dart';
@@ -62,12 +64,18 @@ class _MergeDropScreenState extends State<MergeDropScreen>
     final controller = MergeDropController(
       journey: widget.journey,
       store: scope.store,
-      recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: MergeDropController.id,
-        originId: widget.journey.origin.id,
-        destinationId: widget.journey.destination.id,
+      recordToBeat: scope.store.bestJourneyScore(
+        widget.journey.origin.id,
+        widget.journey.destination.id,
       ),
+      // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
+      // puan, kalan süre ve geçilen duraklar oradan devam eder.
+      session: JourneyScope.sessionOf(context),
     );
+    // Sayaç tabanları koşudan okunur: yolculuk ekranlardan uzun yaşıyor,
+    // sıfırdan başlanırsa yolculuğun ortasında açılan ekran geçmiş durak
+    // bildirimlerini yeniden oynatır.
+    _seenStationPulse = controller.stationBonusPulse;
     controller.addListener(_onControllerChanged);
     _controller = controller;
     controller.start();
@@ -294,6 +302,10 @@ class _MergeDropScreenState extends State<MergeDropScreen>
   }) {
     return ResultOverlay(
       isArrival: controller.status == GameStatus.arrived,
+      // Yolculuk ortaksa oyun bitişi bir ara duraktır, yolculuğun sonu değil.
+      journeyContinues:
+          controller.sharesJourney && controller.status != GameStatus.arrived,
+      remainingSeconds: controller.remainingSeconds,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -302,6 +314,10 @@ class _MergeDropScreenState extends State<MergeDropScreen>
       accent: accent,
       isNewBest: controller.isNewBest,
       extraStats: <Widget>[
+        // Varışta yolculuğun dağılımı: hangi oyunda ne kadar süre geçti,
+        // ne kazandırdı. Oyunun kendi sayıları bunun altında.
+        if (controller.status == GameStatus.arrived)
+          ...journeyBreakdownRows(controller.journeySession),
         StatRow(label: 'Birleşme', value: '${controller.merges}'),
         StatRow(label: 'En büyük hat', value: controller.maxLabel),
       ],
@@ -332,6 +348,7 @@ class _DropHud extends StatelessWidget {
       run: controller,
       accent: accent,
       onPause: onPause,
+      gameScore: controller.scoreThisGame,
       chips: <Widget>[
         _HudChip(
           label: 'Sıradaki',

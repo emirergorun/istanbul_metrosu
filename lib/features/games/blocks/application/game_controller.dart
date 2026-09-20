@@ -88,6 +88,8 @@ class GameController extends JourneyGameController {
     Random? random,
     super.recordToBeat = 0,
     super.tick = AppConstants.playTick,
+    super.session,
+    super.onGamePayload,
     GameSession? resumeFrom,
     ResumedProgress? resumeProgress,
   }) : _generator = generator ?? PieceGenerator(random: random),
@@ -259,8 +261,17 @@ class GameController extends JourneyGameController {
     super.abandon();
   }
 
-  /// Yarım kalan oyunu diske yazar. Oyun bittiyse kaydı siler.
+  /// Yarım kalan tahtayı yolculuk kaydına yazar. Oyun bittiyse yükü düşer.
+  ///
+  /// Puan, süre ve geçilen durak artık burada değil: onlar yolculuğun ve
+  /// zarfa `JourneyController` yazıyor.
   void _persistSnapshot() {
+    final write = onGamePayload;
+    if (write != null) {
+      write(gameId, status.isFinished ? null : GameSnapshot.encode(this));
+      return;
+    }
+    // Ortak yolculuk yoksa (testler, tek oyunluk koşu) eski yola düşülür.
     final target = store;
     if (target == null) return;
     if (status.isFinished) {
@@ -517,9 +528,13 @@ class GameController extends JourneyGameController {
     revokeStationProgress(_undoStationProgress);
 
     // Hamlenin puanı geri alınır, **üstüne** sabit bedel biner.
-    restoreProgress(
-      score: (score - _undoScore - ScoreRules.undoPenalty).clamp(0, score),
-      elapsedSeconds: elapsedSeconds - _undoJourneySeconds,
+    //
+    // Mutlak skor yazılmaz: yolculuk puanı artık oyunlar arasında ortak,
+    // mutlak yazmak önceki oyunların kazandırdığını da silerdi. Geri alma
+    // farkı düşer, düştüğü kadarını oyunun hanesinden de siler.
+    refundScore(
+      points: _undoScore + ScoreRules.undoPenalty,
+      seconds: _undoJourneySeconds.toDouble(),
     );
     _undoScore = 0;
     _undoJourneySeconds = 0;

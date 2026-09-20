@@ -48,11 +48,14 @@ void main() {
     test('engel geçmek skoru artırır', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
-      controller.debugSetObstacles(passedObstacles(1));
+      // Altı engel: ortak para biriminde tek bir geçiş bir puandan az
+      // ediyor (oyun saniyede birkaç engel geçiriyor), kesirler birikince
+      // skora yazılıyor.
+      controller.debugSetObstacles(passedObstacles(6));
 
       controller.step();
 
-      expect(controller.passes, 1);
+      expect(controller.passes, 6);
       expect(controller.score, greaterThan(0));
     });
 

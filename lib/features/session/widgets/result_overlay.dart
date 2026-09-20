@@ -14,6 +14,11 @@ import '../../../core/widgets/pressable.dart';
 /// - **Oyun bitişi** sade ve nötrdür. Varışın değerli olması için varamama
 ///   ihtimalinin görünür kalması gerekir.
 ///
+/// Yolculuk oyundan uzun yaşadığı için oyun bitişinin iki hâli var: yolculuk
+/// sürüyorsa ([journeyContinues]) panel bir ara duraktır — puan ve kalan süre
+/// durur, oyuncu aynı oyunu yeniden başlatır ya da başka oyuna geçer. Rekor
+/// satırları o hâlde gösterilmez: rekor yolculuğun sonunda belli olur.
+///
 /// Oyuna özgü istatistikler [extraStats] ile verilir; panel bunların ne
 /// olduğunu bilmez. Blok oyunu "temizlenen satır/sütun" ve "en iyi combo"
 /// gönderir, başka bir oyun bambaşka satırlar gönderebilir.
@@ -35,6 +40,8 @@ class ResultOverlay extends StatelessWidget {
     this.gameOverTitle = 'Oyun bitti',
     this.gameOverSubtitle = 'Durağa varamadan oyun bitti.',
     this.showBackdrop = true,
+    this.journeyContinues = false,
+    this.remainingSeconds,
   });
 
   /// Varış mı, yoksa oyunun kendi kurallarıyla mı bitti?
@@ -68,6 +75,12 @@ class ResultOverlay extends StatelessWidget {
   /// Varış sahnesi kendi karartmasını çizer.
   final bool showBackdrop;
 
+  /// Oyun bitti ama yolculuk sürüyor mu?
+  final bool journeyContinues;
+
+  /// Yolculukta kalan süre; yalnızca [journeyContinues] iken gösterilir.
+  final int? remainingSeconds;
+
   @override
   Widget build(BuildContext context) {
     return OverlayPanel(
@@ -77,31 +90,41 @@ class ResultOverlay extends StatelessWidget {
       title: isArrival ? 'DURAĞA GELDİN' : gameOverTitle,
       subtitle: isArrival
           ? '$destinationName durağındasın. Yolculuğu tamamladın.'
+          : journeyContinues
+          ? '$gameOverSubtitle Yolculuk sürüyor: skorun ve kalan süren duruyor.'
           : gameOverSubtitle,
       children: <Widget>[
-        if (recordBeaten) ...<Widget>[
+        if (recordBeaten && !journeyContinues) ...<Widget>[
           _ChallengeBadge(accent: accent),
           const SizedBox(height: AppSpacing.md),
         ],
         StatRow(
-          label: 'Skor',
+          label: journeyContinues ? 'Yolculuk skoru' : 'Skor',
           value: Formatters.score(score),
           highlight: true,
           accent: isArrival ? accent : AppColors.textPrimary,
         ),
-        StatRow(
-          label: isFirstRun ? 'Bu rotada' : 'Rota rekoru',
-          value: isFirstRun ? 'İlk yolculuk' : Formatters.score(recordToBeat),
-        ),
+        if (journeyContinues && remainingSeconds != null)
+          StatRow(
+            label: 'Kalan yolculuk',
+            value: Formatters.remaining(remainingSeconds!),
+          )
+        else
+          StatRow(
+            label: isFirstRun ? 'Bu rotada' : 'Rota rekoru',
+            value: isFirstRun ? 'İlk yolculuk' : Formatters.score(recordToBeat),
+          ),
         ...extraStats,
-        if (!recordBeaten && !isFirstRun)
+        // Rekor yolculuğun sonunda belli olur; ara durakta rekor satırı
+        // oyuncuyu yolculuk bitmiş sanmaya iter.
+        if (!journeyContinues && !recordBeaten && !isFirstRun)
           StatRow(
             label: 'Rekora kalan',
             value: Formatters.score(
               (recordToBeat - score).clamp(0, recordToBeat),
             ),
           ),
-        if (isNewBest) ...<Widget>[
+        if (isNewBest && !journeyContinues) ...<Widget>[
           const SizedBox(height: AppSpacing.sm),
           const _NewRecordBadge(),
         ],
@@ -114,7 +137,7 @@ class ResultOverlay extends StatelessWidget {
           onPressed: AppFeedback.onTap(context, onRestart),
           child: const Text('TEKRAR OYNA'),
         ),
-        if (onShare != null)
+        if (onShare != null && !journeyContinues)
           OutlinedButton(
             onPressed: AppFeedback.onTap(context, onShare!),
             child: const Text('SONUCU PAYLAŞ'),

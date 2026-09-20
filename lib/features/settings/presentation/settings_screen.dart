@@ -10,7 +10,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/storage/local_store.dart';
 import '../../../core/widgets/line_badge.dart';
-import '../../games/catalog/mini_game.dart';
 import '../../../core/widgets/pressable.dart';
 
 /// Ayarlar: ses, titreşim, rekorlar ve uygulama bilgisi.
@@ -26,7 +25,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
     final store = scope.store;
-    final records = store.allRecords();
+    // Rekor rota başına tek: hangi oyunda kurulduğu artık anlamsız, puan
+    // yolculuğun tamamının.
+    final records = store.journeyRecords();
     final analytics = scope.analytics;
     final stats = analytics is UsageStats ? analytics : null;
 
@@ -225,26 +226,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// yüzden başlıktaki sayı ile ekrandaki satır sayısı tutmuyordu.
   /// Gösterilebilir rekorlar.
   ///
-  /// İki eleme var:
+  /// Durağı artık olmayan rota elenir (metro verisi değişmiş olabilir);
+  /// eskiden bu kayıtlar listeye girip boş satır olarak çiziliyordu ve
+  /// başlıktaki sayı ekrandaki satır sayısını tutmuyordu.
   ///
-  /// - **Durağı artık olmayan** rota (veri değişmiş olabilir).
-  /// - **Kataloğda olmayan oyun.** Emekliye ayrılan bir oyunun kaydı
-  ///   (ör. Durak Hafıza) cihazda duruyor; elenmezse `orElse` yüzünden
-  ///   Blok Metro rekoru gibi görünür ve oyuncu hiç kurmadığı bir rekorla
-  ///   karşılaşırdı. `gameId == null` olan eski kayıtlar Blok Metro'ya
-  ///   aittir, onlar kalır.
+  /// Oyun elemesine gerek kalmadı: rekor rotanın, oyunun değil.
   List<RouteRecord> _visible(List<RouteRecord> records) {
     final metro = AppScope.of(context).metro;
-    final knownGames = <String>{for (final game in MiniGames.all) game.id};
     return records
         .where(
           (r) =>
               metro.stationById(r.originId) != null &&
-              metro.stationById(r.destinationId) != null &&
-              (r.gameId == null || knownGames.contains(r.gameId)),
+              metro.stationById(r.destinationId) != null,
         )
-        .toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
+        .toList();
   }
 
   Future<void> _confirmReset(
@@ -351,13 +346,6 @@ class _RecordRow extends StatelessWidget {
 
   final RouteRecord record;
 
-  /// Kaydın hangi oyuna ait olduğu. Oyun ayrımından önceki kayıtlar
-  /// (`gameId == null`) Blok Metro'ya aittir.
-  MiniGame get _game => MiniGames.all.firstWhere(
-    (g) => g.id == (record.gameId ?? MiniGames.blocks.id),
-    orElse: () => MiniGames.blocks,
-  );
-
   @override
   Widget build(BuildContext context) {
     final metro = AppScope.of(context).metro;
@@ -389,10 +377,10 @@ class _RecordRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppText.body.copyWith(color: AppColors.textPrimary),
                 ),
-                // Aynı rotanın her oyunda ayrı rekoru var; hangisi olduğu
-                // yazılmazsa liste anlamsız tekrarlar gibi görünür.
+                // Oyun adı yok: rekor yolculuğun toplam puanı, o
+                // yolculukta birkaç oyun oynanmış olabilir.
                 Text(
-                  _game.name,
+                  'yolculuk rekoru',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.label,

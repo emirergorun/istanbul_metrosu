@@ -26,7 +26,7 @@ class StationBanner extends StatefulWidget {
     required this.accent,
   });
 
-  final JourneyRun run;
+  final JourneyView run;
 
   /// Hattın sıraya dizilmiş istasyonları; durak adı buradan çözülür.
   final List<Station> lineStations;

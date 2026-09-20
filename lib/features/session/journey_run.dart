@@ -5,7 +5,7 @@ import '../journey/models/journey.dart';
 
 export 'journey_status.dart';
 
-/// Bir oyunun yolculuk katmanına sunduğu görünüm.
+/// Yolculuk katmanının **okuduğu** görünüm.
 ///
 /// [JourneyScaffold] yalnızca bu arayüzü bilir; hangi oyunun oynandığını
 /// bilmez. Yeni bir oyun bunu uygularsa ilerleme çubuğu, duraklatma paneli,
@@ -13,7 +13,7 @@ export 'journey_status.dart';
 /// yeniden yazmak gerekmez.
 ///
 /// Oyuna özgü hiçbir şey (tahta, parça, combo…) burada yer almaz.
-abstract class JourneyRun implements Listenable {
+abstract class JourneyView implements Listenable {
   /// Oynanan rota. Süre ve durak sayısı buradan gelir.
   Journey get journey;
 
@@ -63,7 +63,16 @@ abstract class JourneyRun implements Listenable {
   /// değer bir şey yapıldıysa gelir, oysa durağın kendisi her hâlükârda
   /// geçilir. Yolculuğun ilerlediği oyuncuya bu sayaçla gösterilir.
   int get stationPulse;
+}
 
+/// Yolculuğu **sürdüren** taraf: okumanın üstüne yaşam döngüsü.
+///
+/// Oyun controller'ları bunu uygular. Widget'lar uygulamaz ve istemez:
+/// hiçbiri yolculuğu başlatmaz ya da durdurmaz, yalnızca okur. Ayrım bunun
+/// için var — oyun seçim ekranı ve başlık kartı da aynı widget'ları
+/// besleyebilsin diye ortak yolculuk oturumu [JourneyView] uygular, oyunun
+/// yaşam döngüsünü taşımaz.
+abstract class JourneyRun implements JourneyView {
   void start();
   void pause();
   void resume();

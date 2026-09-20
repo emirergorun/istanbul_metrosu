@@ -19,13 +19,22 @@ class JourneyHud extends StatelessWidget {
     required this.run,
     required this.accent,
     required this.onPause,
+    this.gameScore,
     this.chips = const <Widget>[],
     this.actions = const <Widget>[],
   });
 
-  final JourneyRun run;
+  final JourneyView run;
   final Color accent;
   final VoidCallback onPause;
+
+  /// Bu oyunun **bu yolculukta** kazandırdığı puan.
+  ///
+  /// Skor artık yolculuğun toplamı: oyuncu Blok Metro'dan Hat Düşür'e
+  /// geçtiğinde HUD 1.840'tan başlar. Yeni oyunun ne kattığı görünmezse
+  /// bu bir hata gibi okunur. Yalnızca başka bir oyun da puan kattıysa
+  /// gösterilir; tek oyun oynanıyorken iki kez aynı sayıyı yazmak gürültü.
+  final int? gameScore;
 
   /// Oyuna özgü rozetler (combo, hat seviyesi, sıradaki parça…).
   final List<Widget> chips;
@@ -39,18 +48,29 @@ class JourneyHud extends StatelessWidget {
   /// okunur kalması rozetlerden önce gelir.
   static const double _maxChipShare = 0.58;
 
+  /// Yolculuğun toplamı bu oyunun katkısından büyükse ayrım anlamlı.
+  bool get _showGameScore {
+    final value = gameScore;
+    return value != null && value > 0 && value < run.score;
+  }
+
   String get _recordLine => run.isFirstRun
       ? 'SKOR · İLK YOLCULUK'
       : run.recordBeaten
       ? 'SKOR · REKOR GEÇİLDİ'
       : 'SKOR · REKOR ${Formatters.score(run.recordToBeat)}';
 
-  String get _semanticLabel => run.isFirstRun
-      ? 'Skor ${Formatters.score(run.score)}, bu rotada ilk yolculuk'
-      : run.recordBeaten
-      ? 'Skor ${Formatters.score(run.score)}, rekor geçildi'
-      : 'Skor ${Formatters.score(run.score)}, '
-            'rekor ${Formatters.score(run.recordToBeat)}';
+  String get _semanticLabel {
+    final base = run.isFirstRun
+        ? 'Yolculuk skoru ${Formatters.score(run.score)}, '
+              'bu rotada ilk yolculuk'
+        : run.recordBeaten
+        ? 'Yolculuk skoru ${Formatters.score(run.score)}, rekor geçildi'
+        : 'Yolculuk skoru ${Formatters.score(run.score)}, '
+              'rekor ${Formatters.score(run.recordToBeat)}';
+    if (!_showGameScore) return base;
+    return '$base, bu oyunda ${Formatters.score(gameScore!)} puan';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,16 +116,38 @@ class JourneyHud extends StatelessWidget {
                                   : AppColors.textMuted,
                             ),
                           ),
-                          Text(
-                            Formatters.score(run.score),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            // Skor sık değişir: iri başlık fontu değil,
-                            // sabit genişlikli rakamlarla M PLUS Rounded 1c.
-                            style: AppText.stat.copyWith(
-                              fontSize: 28,
-                              height: 1.1,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: <Widget>[
+                              Flexible(
+                                child: Text(
+                                  Formatters.score(run.score),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  // Skor sık değişir: iri başlık fontu
+                                  // değil, sabit genişlikli rakamlarla
+                                  // M PLUS Rounded 1c.
+                                  style: AppText.stat.copyWith(
+                                    fontSize: 28,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              if (_showGameScore) ...<Widget>[
+                                const SizedBox(width: 6),
+                                Text(
+                                  'bu oyunda +${Formatters.score(gameScore!)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppText.label.copyWith(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),

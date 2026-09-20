@@ -57,24 +57,54 @@ class QuizRules {
   /// Jokerin eleyeceği yanlış şık sayısı.
   static const int jokerEliminates = 2;
 
-  /// Cevaptan sonra doğru şıkkın ekranda kaldığı süre.
+  /// Cevaptan sonra doğru şıkkın ekranda kaldığı en az süre.
   ///
   /// Yanlış yapan oyuncunun doğruyu **okuyabilmesi** gerekiyor; 900 ms
   /// bunun için kısaydı, hareket eden vagonda göz şıkka odaklanana kadar
   /// soru değişiyordu.
   static const Duration revealTime = Duration(milliseconds: 1200);
 
+  /// Bir sorunun kapladığı en az süre: soru açılır, cevaplanır, doğru şık
+  /// gösterilir.
+  ///
+  /// **Neden var.** Rota rekoru artık ortak; bir oyunun dakikadaki puanı
+  /// diğerlerinden çok yüksek olamaz. Metro Bilgi'de hız iki kere
+  /// ödüllendiriliyordu: erken cevaplayan hem hız bonusu alıyor **hem de
+  /// dakikada daha çok soru** görüyordu. İkisi çarpılınca soruları bilen
+  /// bir oyuncu dakikada 400 puanı aşıyordu (ölçüldü); diğer oyunların
+  /// usta seviyesi 130-180 bandındaydı.
+  ///
+  /// Artık erken cevaplamak soru sayısını değil **doğru şıkkı okuma
+  /// süresini** uzatıyor: iki saniyede cevaplayan, doğru cevabı beş
+  /// saniye görüyor. Hız bonusu yerinde duruyor, bilgi hâlâ ödüllü;
+  /// yalnızca temponun kendisi tavanlandı.
+  static const Duration questionSlot = Duration(seconds: 7);
+
+  /// Bu cevaptan sonra doğru şıkkın ekranda kalacağı süre.
+  ///
+  /// [answeredAfter] sorunun açılmasından cevaba kadar geçen süre.
+  static Duration revealTimeFor(Duration answeredAfter) {
+    final left = questionSlot - answeredAfter;
+    return left > revealTime ? left : revealTime;
+  }
+
   /// Serinin çarpana dönüştüğü eşikler.
   ///
-  /// 3 doğru → ×2, 6 → ×3, 10 → ×4. Tavan bilinçli: tavansız bırakılsaydı
-  /// 20 doğru yapan biri tek soruda 200 puan alır, rekor tablosu tek bir
-  /// şanslı seriye dönerdi.
+  /// 4 doğru → ×2. Tavan bilinçli: tavansız bırakılsaydı 20 doğru yapan
+  /// biri tek soruda 200 puan alır, rekor tablosu tek bir şanslı seriye
+  /// dönerdi.
+  ///
+  /// Merdiven önce 3/6/10 → ×2/×3/×4'tü. Rota rekoru ortaklaşınca sorun
+  /// oldu: soru havuzu sonlu, tekrar oynayan oyuncu er geç havuzu tanıyor,
+  /// seriyi hiç kırmıyor ve ×4'te kalıyordu. Ölçümde böyle bir oyuncu
+  /// dakikada 429 puan topluyordu; diğer oyunların usta seviyesi 128-149
+  /// bandındaydı. Üç tavan birden kondu: tempo ([questionSlot]), çarpan
+  /// (tek basamak) ve hız bonusu ([speedBonusMax]).
+  ///
+  /// Seri hâlâ oyunun kalbi — "seriyi bozma" kartın kendi vaadi — ama
+  /// artık iki katından fazlasını vermiyor.
   static const List<({int streak, int multiplier})> streakLadder =
-      <({int streak, int multiplier})>[
-        (streak: 10, multiplier: 4),
-        (streak: 6, multiplier: 3),
-        (streak: 3, multiplier: 2),
-      ];
+      <({int streak, int multiplier})>[(streak: 4, multiplier: 2)];
 
   /// Verilen seri uzunluğundaki çarpan.
   static int multiplierFor(int streak) {
@@ -86,12 +116,15 @@ class QuizRules {
 
   /// Hızlı cevabın kazandırdığı en fazla ek puan.
   ///
+  /// Hız zaten [questionSlot] ile sınırlandı; bonusun kendisi de tavanın
+  /// bir parçası olduğu için küçük tutuluyor.
+  ///
   /// Sayacın tamamını kullanmakla iki saniyede cevaplamak aynı puanı
   /// veriyordu; süre çubuğu ekranda duruyor ama hiçbir kararı
   /// etkilemiyordu. Bonus **çarpanla çarpılmaz**: seri zaten kendi
   /// ödülünü veriyor, ikisi çarpılınca tek bir hızlı seri rekor tablosunu
   /// ele geçiriyordu.
-  static const int speedBonusMax = 6;
+  static const int speedBonusMax = 4;
 
   /// Kalan süre oranına göre hız bonusu.
   ///

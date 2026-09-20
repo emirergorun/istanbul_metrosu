@@ -13,6 +13,14 @@ class LocalStore extends ChangeNotifier {
   static const String _bestScorePrefix = 'best_route_';
   static const String _bestGameScorePrefix = 'best_game_route_';
 
+  /// Yolculuk rekoru: rotanın **tüm oyunlardan** toplanan en iyi puanı.
+  ///
+  /// Puan artık oyuna değil yolculuğa ait; oyuncu bir rotada oyun
+  /// değiştirerek tek bir skor biriktiriyor. Oyun bazlı eski anahtarlar
+  /// silinmiyor: yeni rekor yazılana kadar onların en yükseği devralınıyor
+  /// (bkz. [bestJourneyScore]), böylece kimsenin emeği çöpe gitmiyor.
+  static const String _bestJourneyPrefix = 'best_journey_';
+
   /// Oyun kimliğiyle rotayı ayırır.
   ///
   /// Alt çizgi kullanılamaz: istasyon id'leri de alt çizgi içeriyor
@@ -38,6 +46,13 @@ class LocalStore extends ChangeNotifier {
   static const String _musicKey = 'music_enabled';
   static const String _onboardingKey = 'onboarding_seen';
   static const String _savedGameKey = 'saved_game';
+
+  /// Yarım kalan **yolculuğun** zarfı (bkz. `JourneySave`).
+  ///
+  /// `saved_game` ondan önceki biçim: yalnızca Blok Metro'yu, yolculuk
+  /// alanlarıyla birlikte tutuyordu. Bir sürüm boyunca silinmiyor; göç
+  /// `JourneyController` içinde, zarf yoksa okunarak yapılıyor.
+  static const String _savedJourneyKey = 'journey_save';
   static const String _lastOriginKey = 'last_route_origin';
   static const String _lastDestinationKey = 'last_route_destination';
   static const String _playerNameKey = 'player_name';
@@ -155,6 +170,42 @@ class LocalStore extends ChangeNotifier {
   static String routeKey(String originId, String destinationId) {
     final pair = <String>[originId, destinationId]..sort();
     return '${pair[0]}__${pair[1]}';
+  }
+
+  /// Rotanın yolculuk rekoru.
+  ///
+  /// Henüz yolculuk rekoru yazılmamışsa, oyun bazlı eski rekorların en
+  /// yükseği devralınır: puanlama değişti diye oyuncunun elindeki en iyi
+  /// sonuç sıfırlanmasın.
+  int bestJourneyScore(String originId, String destinationId) {
+    final stored = _prefs?.getInt(
+      '$_bestJourneyPrefix${routeKey(originId, destinationId)}',
+    );
+    if (stored != null) return stored;
+    return bestRecordForRoute(originId, destinationId)?.score ?? 0;
+  }
+
+  /// Yolculuk puanını rotaya yazar. Yeni rekorsa `true` döner.
+  Future<bool> submitJourneyScore({
+    required String originId,
+    required String destinationId,
+    required int score,
+  }) async {
+    if (score <= 0) return false;
+    final previous = bestJourneyScore(originId, destinationId);
+    final isNewBest = score > previous;
+
+    if (isNewBest) {
+      await _prefs?.setInt(
+        '$_bestJourneyPrefix${routeKey(originId, destinationId)}',
+        score,
+      );
+    }
+    if (score > overallBest) {
+      await _prefs?.setInt(_overallBestKey, score);
+    }
+    notifyListeners();
+    return isNewBest;
   }
 
   int bestScoreForRoute(String originId, String destinationId) =>
@@ -329,6 +380,25 @@ class LocalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Yarım kalan yolculuğun kaydı (JSON). Yoksa `null`.
+  String? get savedJourney => _prefs?.getString(_savedJourneyKey);
+
+  bool get hasSavedJourney => (savedJourney?.isNotEmpty ?? false);
+
+  Future<void> saveJourney(String envelope) async {
+    await _prefs?.setString(_savedJourneyKey, envelope);
+    notifyListeners();
+  }
+
+  /// Yolculuk kaydını siler — eski biçimdeki kayıt da gider, yoksa göç
+  /// bir dahaki açılışta onu yeniden diriltir.
+  Future<void> clearSavedJourney() async {
+    final had = _prefs?.containsKey(_savedJourneyKey) == true;
+    if (had) await _prefs?.remove(_savedJourneyKey);
+    await clearSavedGame();
+    if (had) notifyListeners();
+  }
+
   /// Son oynanan rota — açılışta "tekrar oyna" için.
   ({String originId, String destinationId})? get lastRoute {
     final origin = _prefs?.getString(_lastOriginKey);
@@ -405,6 +475,7 @@ class LocalStore extends ChangeNotifier {
           (k) =>
               k.startsWith(_bestScorePrefix) ||
               k.startsWith(_bestGameScorePrefix) ||
+              k.startsWith(_bestJourneyPrefix) ||
               k.startsWith(_bestComboPrefix) ||
               k.startsWith(_bestStreakPrefix) ||
               k.startsWith(_bestStationsPrefix),
@@ -445,6 +516,52 @@ class LocalStore extends ChangeNotifier {
       destinationId: best.destinationId,
       score: best.score,
     );
+  }
+
+  /// Rota rekorları: **rota başına tek satır**, yolculuğun toplam puanı.
+  ///
+  /// Rekor artık oyunun değil yolculuğun: oyuncu Blok Metro'dan Hat
+  /// Düşür'e geçse de aynı skora yazıyor. Eski oyun bazlı kayıtlar hâlâ
+  /// diskte duruyor ve [bestJourneyScore] onları devralıyor; liste de o
+  /// yüzden ikisinin birleşiminden kuruluyor — aynı rota iki kez
+  /// görünmesin.
+  List<RouteRecord> journeyRecords() {
+    final prefs = _prefs;
+    if (prefs == null) return const <RouteRecord>[];
+
+    final routes = <String, ({String originId, String destinationId})>{};
+    void remember(String originId, String destinationId) {
+      routes[routeKey(originId, destinationId)] = (
+        originId: originId,
+        destinationId: destinationId,
+      );
+    }
+
+    for (final key in prefs.getKeys()) {
+      if (!key.startsWith(_bestJourneyPrefix)) continue;
+      final pair = key.substring(_bestJourneyPrefix.length).split('__');
+      if (pair.length != 2) continue;
+      remember(pair[0], pair[1]);
+    }
+    for (final record in allRecords()) {
+      if (record.score <= 0) continue;
+      remember(record.originId, record.destinationId);
+    }
+
+    final records = <RouteRecord>[];
+    for (final route in routes.values) {
+      final score = bestJourneyScore(route.originId, route.destinationId);
+      if (score <= 0) continue;
+      records.add(
+        RouteRecord(
+          originId: route.originId,
+          destinationId: route.destinationId,
+          score: score,
+        ),
+      );
+    }
+    records.sort((a, b) => b.score.compareTo(a.score));
+    return records;
   }
 
   List<RouteRecord> allRecords() {

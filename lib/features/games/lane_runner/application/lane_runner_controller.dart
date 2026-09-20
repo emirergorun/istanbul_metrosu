@@ -13,6 +13,7 @@ class LaneRunnerController extends JourneyGameController {
     super.store,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
+    super.session,
   }) : _random = random ?? Random(),
        super(gameId: id, maxFrameSeconds: _maxFrameSeconds);
 
@@ -124,8 +125,10 @@ class LaneRunnerController extends JourneyGameController {
 
       if (!moved.passed && moved.y > laneRunnerTrainY + 0.08) {
         _obstacles[i] = moved.copyWith(passed: true);
-        addScore(10);
         _passes++;
+        // Geçiş başına sabit 10 puan beceri taşımıyordu; hat seviyesi
+        // (`lineLevel`) zaten ekranda ilerliyordu, puan da ona bağlandı.
+        addScore(lineLevel);
         markStationProgress();
       }
 

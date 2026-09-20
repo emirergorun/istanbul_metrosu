@@ -9,6 +9,7 @@ import 'package:istanbul_metro_game/features/games/metro_quiz/domain/trivia_cate
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:istanbul_metro_game/features/session/journey_status.dart';
 
+import '../helpers/journey_points.dart';
 import '../helpers/metro_fixture.dart';
 import '../helpers/trivia_fixture.dart';
 
@@ -139,17 +140,18 @@ void main() {
   });
 
   group('seri çarpanı', () {
-    test('merdiven: 3 doğru ×2, 6 doğru ×3, 10 doğru ×4, tavan ×4', () {
+    test('merdiven: 4 doğru ×2, tavan ×2', () {
+      // Tavan ortak rota rekoru için indirildi: soru havuzunu tanıyan
+      // oyuncu seriyi hiç kırmıyor ve eski ×4 tavanı onu diğer oyunların
+      // iki katına çıkarıyordu (bkz. QuizRules.streakLadder).
       expect(QuizRules.multiplierFor(0), 1);
-      expect(QuizRules.multiplierFor(2), 1);
-      expect(QuizRules.multiplierFor(3), 2);
-      expect(QuizRules.multiplierFor(5), 2);
-      expect(QuizRules.multiplierFor(6), 3);
-      expect(QuizRules.multiplierFor(10), 4);
-      expect(QuizRules.multiplierFor(99), 4);
+      expect(QuizRules.multiplierFor(3), 1);
+      expect(QuizRules.multiplierFor(4), 2);
+      expect(QuizRules.multiplierFor(10), 2);
+      expect(QuizRules.multiplierFor(99), 2);
     });
 
-    test('üçüncü doğru cevap zaten ×2 kazandırır', () {
+    test('dördüncü doğru cevap zaten ×2 kazandırır', () {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
@@ -162,14 +164,27 @@ void main() {
 
       slowCorrect();
       slowCorrect();
-      expect(controller.score, QuizRules.basePoints * 2);
+      slowCorrect();
+      expect(
+        controller.score,
+        journeyPoints('metro_quiz', <int>[
+          QuizRules.basePoints,
+          QuizRules.basePoints,
+          QuizRules.basePoints,
+        ]),
+      );
       expect(controller.multiplier, 1);
 
       slowCorrect();
       expect(controller.multiplier, 2);
       expect(
         controller.score,
-        QuizRules.basePoints * 2 + QuizRules.basePoints * 2,
+        journeyPoints('metro_quiz', <int>[
+          QuizRules.basePoints,
+          QuizRules.basePoints,
+          QuizRules.basePoints,
+          QuizRules.basePoints * 2,
+        ]),
       );
     });
 
@@ -228,7 +243,7 @@ void main() {
       final controller = controllerFor()..start();
       addTearDown(controller.dispose);
 
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 4; i++) {
         answerCorrectly(controller);
       }
       expect(controller.multiplier, 2);
@@ -237,7 +252,7 @@ void main() {
 
       expect(controller.streak, 0);
       expect(controller.multiplier, 1);
-      expect(controller.bestStreak, 3, reason: 'en uzun seri hatırlanmalı');
+      expect(controller.bestStreak, 4, reason: 'en uzun seri hatırlanmalı');
     });
   });
 

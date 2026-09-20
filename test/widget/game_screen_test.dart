@@ -236,8 +236,8 @@ void main() {
         RouteService(metro),
       );
       expect(restored, isNotNull);
-      expect(restored!.progress.score, greaterThan(0));
-      expect(restored.session.board.filledCount, greaterThan(0));
+      // Puan yolculuğun zarfında; kayıt yalnızca tahtayı taşıyor.
+      expect(restored!.session.board.filledCount, greaterThan(0));
 
       await disposeGame(tester);
     });

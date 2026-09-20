@@ -190,6 +190,40 @@ rekoru bölmez: Taksim→Levent ile Levent→Taksim aynı rekoru paylaşır.
 
 O rotada ilk yolculuksa kıyas yoktur; skorun rekor olur.
 
+### Yolculuk ortaktır, oyun değil
+
+Rota seçildikten sonra **her şey tek**: bir saat, bir kalan süre, bir durak
+sayacı, bir tren, bir puan. Oyun değiştirmek yolculuğu baştan başlatmaz;
+Blok Metro'dan Hat Düşür'e geçen oyuncu aynı puandan ve aynı kalan süreden
+devam eder. Yanmak da yolculuğu bitirmez: puan ve süre durur, oyuncu oyun
+seçimine döner. Yolculuğun tek finali varıştır.
+
+Rota rekoru bu yüzden **yolculuğun toplam puanı**dır, tek bir oyunun değil.
+Eski oyun bazlı rekorlar devralındı: her rotada en yüksek olanı o rotanın
+yolculuk rekoru oldu.
+
+### Ortak puanlama
+
+Tek rekor, ancak oyunlar dakikada yakın puan verirse adil olur; yoksa
+"en cömert oyunu açan kazanır" olurdu. Ölçüldüğünde fark **85 kata**
+çıkıyordu (Ray Uçuşu 25 puan/dk, Hat Düşür 2.124 puan/dk).
+
+Her oyunun ham puanı kendi kurallarında kalır (combo, seri, seviye —
+beceri oyunun kendi içinde ödüllendirilir), yolculuğa yazılırken bir
+**ölçekten** geçer:
+[`game_score_profile.dart`](lib/features/session/scoring/game_score_profile.dart).
+Hedef, çıpa olan Blok Metro'nun temposu: **dakikada ~120 puan**.
+
+Ölçüm gerçek controller'ları orta seviye botlarla bir yolculuk boyu
+oynatarak yapılır:
+
+```
+flutter test test/balance/points_per_minute_test.dart --tags balance
+```
+
+`test/balance/parity_test.dart` her koşuda aynı şeyi küçük bir örneklemle
+denetler: bir oyunun puanı sessizce cömertleşirse test düşer.
+
 ### Yolculuk oyunu etkiler
 
 - **Durak bonusu:** tren bir durağı geçerken, o duraktan beri en az bir hat

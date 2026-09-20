@@ -17,8 +17,10 @@ import 'package:istanbul_metro_game/features/games/rail_flight/presentation/rail
 import 'package:istanbul_metro_game/features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/presentation/train_snake_screen.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
+import 'package:istanbul_metro_game/features/session/widgets/journey_status_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/journey_harness.dart';
 import '../helpers/metro_fixture.dart';
 import '../helpers/trivia_fixture.dart';
 
@@ -34,8 +36,8 @@ void main() {
     await store.init();
   });
 
-  Future<void> pumpSelect(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1170, 2532);
+  Future<void> pumpSelect(WidgetTester tester, {Size? size}) async {
+    tester.view.physicalSize = size ?? const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
@@ -52,10 +54,13 @@ void main() {
         // sessizce boş soru üretmek yerine hata verir.
         questions: TriviaFixture.repository(perCategory: 4),
         routeService: RouteService(metro),
-        child: MaterialApp(
-          theme: AppTheme.dark(),
-          onGenerateRoute: AppRoutes.onGenerateRoute,
-          home: GameSelectScreen(journey: journey),
+        child: withJourney(
+          store: store,
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            onGenerateRoute: AppRoutes.onGenerateRoute,
+            home: GameSelectScreen(journey: journey),
+          ),
         ),
       ),
     );
@@ -71,7 +76,10 @@ void main() {
         scrollable: find.byType(Scrollable),
       );
     }
-    await tester.pump();
+    // Kart listenin kenarında kalmış olabilir (şeridin yüksekliği
+    // değişince oluyor): dokunmadan önce tamamen görünür yapılır.
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
   }
 
   testWidgets('yolculuk özeti ve tüm oyunlar listelenir', (tester) async {
@@ -79,7 +87,10 @@ void main() {
 
     // Hangi yolculuk için seçim yapıldığı görünmeli.
     expect(find.text('Taksim → Levent'), findsOneWidget);
-    expect(find.text('M2'), findsOneWidget);
+    // Hat rozeti iki kez: üstteki yolculuk kartında ve canlı yolculuk
+    // şeridinde. Şerit oyun seçerken de trenin yol aldığını gösterir.
+    expect(find.text('M2'), findsNWidgets(2));
+    expect(find.byType(JourneyStatusBar), findsOneWidget);
 
     for (final game in MiniGames.all) {
       await scrollToGame(tester, game);
@@ -243,5 +254,21 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
     }
+  });
+
+  testWidgets('yolculuk puanı şeritte görünür', (tester) async {
+    await pumpSelect(tester);
+
+    // Oyun değiştirirken toplam puan burada görünmeli: bu ekranda skoru
+    // gösteren başka bir şey yok.
+    expect(find.textContaining('YOLCULUK PUANIN'), findsOneWidget);
+  });
+
+  testWidgets('dar ekranda şerit taşmaz', (tester) async {
+    // iPhone SE: puan satırı eklendiğinde ilk taşma riski burada.
+    await pumpSelect(tester, size: const Size(750, 1334));
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('YOLCULUK PUANIN'), findsOneWidget);
   });
 }

@@ -8,6 +8,7 @@ import '../core/telemetry/error_reporter.dart';
 import '../data/metro/metro_repository.dart';
 import '../data/questions/question_repository.dart';
 import '../features/journey/services/route_service.dart';
+import '../features/session/journey_host.dart';
 import 'app_scope.dart';
 import 'routes.dart';
 import 'theme.dart';
@@ -37,35 +38,43 @@ class MetroGameApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final routeService = RouteService(metro);
     return AppScope(
       store: store,
       audio: audio,
       metro: metro,
       questions: questions,
       analytics: analytics,
-      routeService: RouteService(metro),
-      child: MaterialApp(
-        title: AppConstants.appTitle,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark(),
-        // Erişilebilirlik: kullanıcının yazı tipi tercihine saygı gösterilir.
-        //
-        // Üst sınır tamamen kaldırılmadı çünkü oyun tahtası sabit oranlı;
-        // aşırı ölçekte HUD tahtayı eziyor. 1.6 iOS'un "Büyük" kademelerini
-        // kapsar ve düzen bu değere kadar test edildi.
-        // TODO(PROD): Tahta/HUD düzenini ölçekten bağımsız hale getirip
-        // sınırı tamamen kaldır.
-        builder: (context, child) {
-          final media = MediaQuery.of(context);
-          return MediaQuery(
-            data: media.copyWith(
-              textScaler: media.textScaler.clamp(maxScaleFactor: 1.6),
-            ),
-            child: child ?? const SizedBox.shrink(),
-          );
-        },
-        initialRoute: AppRoutes.home,
-        onGenerateRoute: AppRoutes.onGenerateRoute,
+      routeService: routeService,
+      // Yolculuk `Navigator`'ın üstünde yaşar: oyun ekranı kapansa da,
+      // oyuncu oyun seçimine ya da başlığa dönse de tren yol almaya devam
+      // eder.
+      child: JourneyHost(
+        store: store,
+        routes: routeService,
+        child: MaterialApp(
+          title: AppConstants.appTitle,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.dark(),
+          // Erişilebilirlik: kullanıcının yazı tipi tercihine saygı gösterilir.
+          //
+          // Üst sınır tamamen kaldırılmadı çünkü oyun tahtası sabit oranlı;
+          // aşırı ölçekte HUD tahtayı eziyor. 1.6 iOS'un "Büyük" kademelerini
+          // kapsar ve düzen bu değere kadar test edildi.
+          // TODO(PROD): Tahta/HUD düzenini ölçekten bağımsız hale getirip
+          // sınırı tamamen kaldır.
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: media.textScaler.clamp(maxScaleFactor: 1.6),
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          initialRoute: AppRoutes.home,
+          onGenerateRoute: AppRoutes.onGenerateRoute,
+        ),
       ),
     );
   }

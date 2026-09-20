@@ -202,7 +202,13 @@ Kod içinde `// TODO(PROD):` ile işaretlidir:
 | Quiz puan/seri kuralları | `features/games/metro_quiz/domain/quiz_rules.dart` |
 | Yazılı soru havuzu | `assets/data/questions.json` + `data/questions/question_repository.dart` |
 | Ses | `core/audio/audio_service.dart` |
-| Denge ölçümü (araç) | `test/balance_report_test.dart` |
+| Ortak yolculuk (saat, puan, durak) | `features/session/journey_session.dart` |
+| Yolculuğu ekranlardan uzun yaşatan tutamak | `features/session/journey_host.dart` |
+| Yarım kalan yolculuğun kaydı | `features/session/journey_save.dart` |
+| Oyunlar arası ortak puan ölçeği | `features/session/scoring/game_score_profile.dart` |
+| Oyunlar arası tempo ölçümü (araç) | `test/balance/points_per_minute_test.dart` |
+| Ortak puanlamanın bekçisi | `test/balance/parity_test.dart` |
+| Blok Metro denge ölçümü (araç) | `test/balance/blocks_report_test.dart` |
 | İkon üretimi (araç) | `test/icon_generator_test.dart` |
 | Parça torbası | `features/game/application/piece_generator.dart` |
 | Sürükle-bırak koordinat eşlemesi | `features/game/presentation/game_screen.dart` |
@@ -279,23 +285,38 @@ oyun rotasını `await` edip dönüşte `setState` çağırmazsa "son rotan" kar
 ve yeni rekor ekranda görünmez. Regresyon testi:
 `test/widget/home_screen_test.dart` → "oyundan dönünce son rota kartı görünür".
 
-### Yarım kalan oyun
+### Yarım kalan yolculuk
 
-`GameSnapshot` oturumu JSON'a çevirir; `LocalStore` tek anahtarda tutar.
-Yazma anları: **her yerleştirme**, duraklatma ve ekrandan çıkış. Silme
-anları: oyun bitişi (varış/hamle bitişi) ve yeniden başlatma.
+Kayıt artık **yolculuğun**, tek bir oyunun değil: `JourneySave` (zarf)
+rotayı, geçen süreyi, puanı, puanın oyunlara dağılımını ve geçilen durağı
+tutar. Oyunun kendi durumu (Blok Metro'nun tahtası) zarfın içinde
+`gamePayload` alanında, zarfın okumadığı bir metin olarak taşınır;
+`GameSnapshot` (v4) onu yalnız tahta olarak yazar.
+
+Yazma anları: yolculuk başlarken, her beş saniyede bir, arka plana
+alınırken ve oyun kendi durumunu yazdığında (Blok Metro'da her
+yerleştirme). Silme anları: varış ve yolculuğun kapatılması — ikisinde de
+puan rotanın rekoruna yazılır.
+
+`savedAt` **yalnızca gösterim içindir; asla süreye eklenmez.** Uygulama
+kapalıyken tren yol almaz; oyuncunun bir gün sonra dönüp yolculuğu bitmiş
+bulması kaydın anlamını yok ederdi. Arka plandaki süre ise sayılır
+(`JourneyController.onForeground`): uygulama açıkken telefon cebe girse de
+tren yol alır.
 
 Yolculuk iki durak id'siyle saklanır ve açılışta yeniden hesaplanır; metro
 verisi değişirse eski kayıt sessizce geçersiz olur (`decode` `null` döner).
-Kayıt sürümü `GameSnapshot.version` ile korunur — biçim değişirse eski
-kayıtlar atılır.
+Ortak yolculuktan önceki Blok Metro kaydı (`saved_game`, v3) açılışta
+zarfa çevrilir — sürüm yükseltmesinde yarım kalan oyun kaybolmaz.
 
-Geri yüklenen oturum daima `GameStatus.paused` başlar; mevcut duraklatma
-paneli olduğu gibi kullanılır, yeni bir ekran gerekmez.
+Başlık ekranındaki kart **canlı**: yolculuk orada da sürüyor, kalan süre
+akıyor. Karta dokunmak oyun seçimini açar (yolculuk ortak, oyuncu kalan
+süreyi istediği oyunda geçirebilir); "Yolculuğu bitir" kaydı silmez, puanı
+rotanın rekoruna yazar.
 
 ### Denge ölçümü — kritik bulgu ve çözümü
 
-`flutter test test/balance_report_test.dart` gerçek kurallarla (yalnız zaman
+`flutter test test/balance/blocks_report_test.dart` gerçek kurallarla (yalnız zaman
 döngüsü ve oyuncu davranışı modellenir) 150 oyun simüle eder.
 
 **Bulgu:** 9 dakikadan uzun yolculuklarda oyuncu durağına varamıyordu. Tahta
