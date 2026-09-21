@@ -63,18 +63,30 @@ void main() {
     await disposeGame(tester);
   });
 
-  testWidgets('gerçek zamanlayıcıyla ilerler ve sonunda çarpışma olur', (
-    tester,
-  ) async {
-    // Hiç dokunulmazsa engeller er geç aynı raya denk gelir; birkaç
-    // saniye içinde oyun bitmeli. Bu, fizik döngüsünün gerçek Timer +
-    // clock.now() ile doğru çalıştığını ve tester.pump(süre) ile
-    // hızlandırılabildiğini kanıtlıyor.
+  testWidgets('gerçek zamanlayıcıyla yolculuk ilerler', (tester) async {
+    // Bu test **fizik döngüsünün gerçek Timer + clock.now() ile döndüğünü**
+    // ölçüyor: `tester.pump(süre)` ile zaman ilerliyor ve yolculuk de
+    // onunla birlikte ilerliyor.
+    //
+    // Eskiden "sekiz saniyede çarpışma olur" diye yazılmıştı ve tam
+    // takımda ara sıra düşüyordu: engellerin rayı tohumlanmamış bir
+    // `Random`'dan geliyor, yani çarpışmanın o pencereye düşmesi şansa
+    // bağlı. Çarpışmanın kendisi zaten tohumlanmış birim testinde
+    // deterministik olarak sınanıyor (`test/game/lane_runner_controller_test.dart`,
+    // "çarpışma oyunu bitirir"). Widget testi şansa bakmaz.
     await pumpGame(tester);
 
-    await tester.pump(const Duration(seconds: 8));
+    final bar = tester.widget<JourneyProgressBar>(
+      find.byType(JourneyProgressBar),
+    );
+    final before = bar.progress;
 
-    expect(find.text('Kapalı raya girdin'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+
+    final after = tester
+        .widget<JourneyProgressBar>(find.byType(JourneyProgressBar))
+        .progress;
+    expect(after, greaterThan(before));
     expect(tester.takeException(), isNull);
 
     await disposeGame(tester);

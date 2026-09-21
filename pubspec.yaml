@@ -29,6 +29,17 @@ dependencies:
   clock: ^1.1.2
   share_plus: ^13.3.0
 
+  # Meydan okuma QR'ı. Saf Dart kodlayıcı — kamera, ağ ya da native
+  # eklenti yok. Çizim bize ait (`ChallengeQrView`): hazır widget yerine
+  # kendi boyacımızı kullanıyoruz ki kod, uygulamanın renk ve köşe diliyle
+  # aynı görünsün ve paylaşım kartına gömülebilsin.
+  qr: ^3.0.2
+
+  # QR okuma. iOS'ta AVFoundation + Vision, Android'de CameraX + ML Kit.
+  # Kamera erişimi gerektiren **tek** bağımlılık; meydan okumanın kamerasız
+  # yolu (kod yazarak kabul) her zaman açık.
+  mobile_scanner: ^7.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

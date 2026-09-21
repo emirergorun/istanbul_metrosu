@@ -131,24 +131,26 @@ void main() {
       expect(controller.grid[2][3], isNull);
     });
 
-    test('tahtayı değiştirmeyen hamle reddedilir: karo doğmaz, puan yazılmaz',
-        () {
-      final controller = controllerFor(seed: 6);
-      addTearDown(controller.dispose);
+    test(
+      'tahtayı değiştirmeyen hamle reddedilir: karo doğmaz, puan yazılmaz',
+      () {
+        final controller = controllerFor(seed: 6);
+        addTearDown(controller.dispose);
 
-      final grid = emptyGrid(controller.config.gridSize);
-      grid[0][0] = const MetroTile(rank: 1);
-      grid[1][0] = const MetroTile(rank: 3);
-      controller.debugSetGrid(grid);
-      final before = tileCount(controller);
-      final scoreBefore = controller.score;
+        final grid = emptyGrid(controller.config.gridSize);
+        grid[0][0] = const MetroTile(rank: 1);
+        grid[1][0] = const MetroTile(rank: 3);
+        controller.debugSetGrid(grid);
+        final before = tileCount(controller);
+        final scoreBefore = controller.score;
 
-      final outcome = controller.move(MetroMoveDirection.left);
+        final outcome = controller.move(MetroMoveDirection.left);
 
-      expect(outcome.accepted, isFalse);
-      expect(tileCount(controller), before);
-      expect(controller.score, scoreBefore);
-    });
+        expect(outcome.accepted, isFalse);
+        expect(tileCount(controller), before);
+        expect(controller.score, scoreBefore);
+      },
+    );
 
     test('kabul edilen her hamlede bir yeni karo doğar', () {
       final controller = controllerFor(seed: 7);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../journey/models/station.dart';
+import '../../social/presentation/widgets/challenge_hud_badge.dart';
 import '../../journey/models/station_progress.dart';
 import '../journey_run.dart';
 import 'journey_progress.dart';
@@ -25,6 +26,7 @@ class JourneyStatusBar extends StatelessWidget {
     this.arrivalPulse = 0,
     this.isMoving = true,
     this.showStationBanner = true,
+    this.gameId,
   });
 
   final JourneyRun run;
@@ -43,6 +45,12 @@ class JourneyStatusBar extends StatelessWidget {
   /// Durak geçişinde adı bildiren şerit gösterilsin mi?
   final bool showStationBanner;
 
+  /// Oynanan oyunun kimliği.
+  ///
+  /// Verilirse meydan okuma modunda çubuğun üstünde küçük bir hedef
+  /// rozeti çıkar. Verilmezse HUD bugünkü hâlinde kalır.
+  final String? gameId;
+
   @override
   Widget build(BuildContext context) {
     final journey = run.journey;
@@ -52,7 +60,7 @@ class JourneyStatusBar extends StatelessWidget {
       progress: run.progress,
     );
 
-    final bar = JourneyProgressBar(
+    final progress = JourneyProgressBar(
       lineId: journey.lineId,
       stopCount: journey.stopCount,
       originName: journey.origin.name,
@@ -65,6 +73,24 @@ class JourneyStatusBar extends StatelessWidget {
       accent: accent,
       isMoving: isMoving,
     );
+
+    // Meydan okuma rozeti çubuğun **üstünde**, sağa yaslı: oyun alanından
+    // yer almıyor ve ilerleme çubuğunun okunmasını engellemiyor. Meydan
+    // okuma modunda değilse hiç çizilmiyor.
+    final bar = gameId == null
+        ? progress
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ChallengeHudBadge(
+                journey: journey,
+                gameId: gameId!,
+                score: run.score,
+              ),
+              progress,
+            ],
+          );
 
     if (!showStationBanner) return bar;
 

@@ -62,12 +62,19 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
     final controller = MetroMergeController(
       journey: widget.journey,
       store: scope.store,
+      discovery: scope.discoveryFor(widget.journey, MetroMergeController.id),
+      // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
+      // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
+      random: scope.challengeRandomFor(widget.journey, MetroMergeController.id),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: MetroMergeController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
     );
+    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
+    controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);
     _controller = controller;
     controller.start();
@@ -195,7 +202,7 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
 
   void _exitToHome() {
     _controller?.abandon();
-    Navigator.of(context).pop();
+    AppRoutes.exitToGallery(context);
   }
 
   @override
@@ -255,6 +262,7 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
                       // dörtlü ped yalnızca yer kaplıyordu.
                       const SizedBox(height: AppSpacing.sm),
                       JourneyStatusBar(
+              gameId: MetroMergeController.id,
                         run: controller,
                         lineStations: AppScope.of(
                           context,
@@ -307,7 +315,12 @@ class _MetroMergeScreenState extends State<MetroMergeScreen>
     bool showBackdrop = true,
   }) {
     return ResultOverlay(
+      // Sosyal çıkış için rota ve oyun kimliği; panel meydan okuma
+      // modunda karşılaştırma, normal koşuda davet gösteriyor.
+      journey: controller.journey,
+      gameId: MetroMergeController.id,
       isArrival: controller.status == GameStatus.arrived,
+      discovery: controller.discovery,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -434,7 +447,11 @@ class _BoardCell extends StatelessWidget {
         // taşır ama üstündeki tren ve etiket okunur kalır.
         color: current == null
             ? AppColors.emptyCell
-            : Color.lerp(_metroLineColor(current), const Color(0xFF0B1118), 0.7),
+            : Color.lerp(
+                _metroLineColor(current),
+                const Color(0xFF0B1118),
+                0.7,
+              ),
         borderRadius: BorderRadius.circular(dense ? 8 : 10),
         border: current == null
             ? null

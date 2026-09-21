@@ -11,6 +11,7 @@ class MergeDropController extends JourneyGameController {
     required super.journey,
     required super.recordToBeat,
     super.store,
+    super.discovery,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
   }) : _random = random ?? Random(),
@@ -191,6 +192,7 @@ class MergeDropController extends JourneyGameController {
     }
     return true;
   }
+
   List<DropBall> get balls => List<DropBall>.unmodifiable(_balls);
 
   @visibleForTesting
@@ -277,7 +279,10 @@ class MergeDropController extends JourneyGameController {
       if (_overflowSeconds > _overflowGraceSeconds) endGame();
     } else {
       // Sıfırlamak yerine eritmek şart: bkz. `_overflowDecayPerSecond`.
-      _overflowSeconds = max(0, _overflowSeconds - dt * _overflowDecayPerSecond);
+      _overflowSeconds = max(
+        0,
+        _overflowSeconds - dt * _overflowDecayPerSecond,
+      );
     }
   }
 
@@ -544,8 +549,6 @@ class MergeDropController extends JourneyGameController {
 
   /// Yalnızca gerçekten oturmuş toplar sayılır.
   bool _isOverflowing() {
-    return _balls.any(
-      (ball) => ball.settled && ball.y - ball.radius < dangerY,
-    );
+    return _balls.any((ball) => ball.settled && ball.y - ball.radius < dangerY);
   }
 }

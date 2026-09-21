@@ -14,11 +14,40 @@ import '../features/games/metro_quiz/application/metro_quiz_controller.dart';
 import '../features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import '../features/games/train_snake/application/train_snake_controller.dart';
 import '../features/games/train_snake/presentation/train_snake_screen.dart';
+import '../features/daily/presentation/daily_screen.dart';
+import '../features/discovery/presentation/discovery_screen.dart';
+import '../features/passport/presentation/achievements_screen.dart';
+import '../features/social/domain/challenge.dart';
+import '../features/social/presentation/add_friend_screen.dart';
+import '../features/social/presentation/challenge_preview_screen.dart';
+import '../features/social/presentation/challenge_share_screen.dart';
+import '../features/social/presentation/friends_screen.dart';
+import '../features/social/presentation/scan_screen.dart';
+import '../features/games/catalog/game_detail_screen.dart';
 import '../features/games/catalog/game_select_screen.dart';
+import '../features/games/catalog/mini_game.dart';
 import '../features/home/presentation/title_screen.dart';
 import '../features/journey/models/journey.dart';
 import '../features/journey/presentation/home_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
+
+/// Meydan okuma paylaşım ekranına geçilirken taşınan bilgi.
+@immutable
+class ChallengeShareArgs {
+  const ChallengeShareArgs({required this.challenge, this.isRematch = false});
+
+  final Challenge challenge;
+  final bool isRematch;
+}
+
+/// Oyun tanıtım ekranına geçilirken taşınan bilgi.
+@immutable
+class GameDetailArgs {
+  const GameDetailArgs({required this.journey, required this.gameId});
+
+  final Journey journey;
+  final String gameId;
+}
 
 /// Oyun ekranına geçilirken taşınan bilgi.
 @immutable
@@ -43,8 +72,17 @@ class AppRoutes {
   static const String home = '/';
   static const String planner = '/planner';
   static const String gameSelect = '/game-select';
+  static const String gameDetail = '/game-detail';
   static const String game = '/game';
   static const String settings = '/settings';
+  static const String discovery = '/discovery';
+  static const String daily = '/daily';
+  static const String achievements = '/achievements';
+  static const String friends = '/friends';
+  static const String addFriend = '/friends/add';
+  static const String scanChallenge = '/challenge/scan';
+  static const String challengePreview = '/challenge/preview';
+  static const String challengeShare = '/challenge/share';
 
   static Route<void> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -57,6 +95,66 @@ class AppRoutes {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => const SettingsScreen(),
+        );
+      case discovery:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const DiscoveryScreen(),
+        );
+      case daily:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const DailyScreen(),
+        );
+      case achievements:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const AchievementsScreen(),
+        );
+      case friends:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const FriendsScreen(),
+        );
+      case addFriend:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const AddFriendScreen(),
+        );
+      case scanChallenge:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const ScanScreen(),
+        );
+      case challengePreview:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) =>
+              ChallengePreviewScreen(challenge: settings.arguments! as Challenge),
+        );
+      case challengeShare:
+        final args = settings.arguments! as ChallengeShareArgs;
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => ChallengeShareScreen(
+            challenge: args.challenge,
+            isRematch: args.isRematch,
+          ),
+        );
+      case gameDetail:
+        final args = settings.arguments! as GameDetailArgs;
+        final game = MiniGames.byId(args.gameId);
+        // Katalogda olmayan kimlik seçim ekranına düşürülür; kilitli oyun
+        // zaten kartından açılamıyor.
+        if (game == null || !game.isAvailable) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => GameSelectScreen(journey: args.journey),
+          );
+        }
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => GameDetailScreen(journey: args.journey, game: game),
         );
       case gameSelect:
         return MaterialPageRoute<void>(
@@ -152,6 +250,56 @@ class AppRoutes {
   /// Rota seçildikten sonra oyun seçim ekranını açar.
   static Future<void> openGameSelect(BuildContext context, Journey journey) =>
       Navigator.of(context).pushNamed<void>(gameSelect, arguments: journey);
+
+  /// Oyunun tanıtım ekranını açar.
+  ///
+  /// Oyunu **başlatmaz**: yolculuk sayacı ve İstanbul Keşfi yalnızca
+  /// [openGame] ile başlar.
+  static Future<void> openGameDetail(
+    BuildContext context,
+    Journey journey, {
+    required String gameId,
+  }) => Navigator.of(context).pushNamed<void>(
+    gameDetail,
+    arguments: GameDetailArgs(journey: journey, gameId: gameId),
+  );
+
+  /// Oyundaki "Başka oyun seç" eyleminin hedefi: **oyun galerisi**.
+  ///
+  /// Tek bir `pop` V2'de oyunun tanıtım ekranına düşüyordu — oyuncu "başka
+  /// oyun seç" deyip aynı oyunun sayfasına varıyordu. Yığında galeri yoksa
+  /// (başlık ekranından açılan yarım kalan oyun) ilk rotaya kadar dönülür;
+  /// davranış eskisiyle aynı kalır.
+  static void exitToGallery(BuildContext context) {
+    Navigator.of(context).popUntil(
+      (Route<dynamic> route) =>
+          route.settings.name == gameSelect || route.isFirst,
+    );
+  }
+
+  /// Arkadaşlar katmanını açar.
+  static Future<void> openFriends(BuildContext context) =>
+      Navigator.of(context).pushNamed<void>(friends);
+
+  /// Okunmuş bir meydan okumanın onay ekranını açar.
+  ///
+  /// Açmak kabul etmek değil: oyun ancak oyuncu onaylayınca başlıyor.
+  static Future<void> openChallengePreview(
+    BuildContext context,
+    Challenge challenge,
+  ) => Navigator.of(
+    context,
+  ).pushNamed<void>(challengePreview, arguments: challenge);
+
+  /// Üretilmiş bir meydan okumanın karesini gösterir.
+  static Future<void> openChallengeShare(
+    BuildContext context,
+    Challenge challenge, {
+    bool isRematch = false,
+  }) => Navigator.of(context).pushNamed<void>(
+    challengeShare,
+    arguments: ChallengeShareArgs(challenge: challenge, isRematch: isRematch),
+  );
 
   /// Ayarları açar.
   static Future<void> openSettings(BuildContext context) =>

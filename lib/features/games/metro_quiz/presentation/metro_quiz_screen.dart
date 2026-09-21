@@ -88,13 +88,28 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     final controller = MetroQuizController(
       journey: widget.journey,
       store: scope.store,
-      pool: QuizPool(repository: scope.questions, onlyCategory: category),
+      discovery: scope.discoveryFor(widget.journey, MetroQuizController.id),
+      // Meydan okumada **soru sırası** tohumlanır, cevaplar değil.
+      // Karekod hiçbir soruyu ve hiçbir doğru şıkkı taşımıyor; iki cihaz
+      // aynı yerel soru havuzundan aynı sırayı türetiyor. Havuz farklı
+      // sürümdeyse yükteki içerik sürümü bunu görünür kılar.
+      pool: QuizPool(
+        repository: scope.questions,
+        onlyCategory: category,
+        random: scope.challengeRandomFor(
+          widget.journey,
+          MetroQuizController.id,
+        ),
+      ),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: MetroQuizController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
     );
+    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
+    controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);
     scope.analytics.log(
       AnalyticsEvent.gameStarted,
@@ -222,7 +237,7 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       _logOutcome(AnalyticsEvent.gameAbandoned);
     }
     _controller?.abandon();
-    Navigator.of(context).pop();
+    AppRoutes.exitToGallery(context);
   }
 
   @override
@@ -312,6 +327,7 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
                     _Options(controller: controller, onAnswer: _answer),
                     const SizedBox(height: AppSpacing.md),
                     JourneyStatusBar(
+              gameId: MetroQuizController.id,
                       run: controller,
                       lineStations: AppScope.of(
                         context,
@@ -357,7 +373,12 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
     bool showBackdrop = true,
   }) {
     return ResultOverlay(
+      // Sosyal çıkış için rota ve oyun kimliği; panel meydan okuma
+      // modunda karşılaştırma, normal koşuda davet gösteriyor.
+      journey: controller.journey,
+      gameId: MetroQuizController.id,
       isArrival: controller.status == GameStatus.arrived,
+      discovery: controller.discovery,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,

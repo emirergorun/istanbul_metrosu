@@ -115,12 +115,17 @@ class _GameScreenState extends State<GameScreen>
     super.didChangeDependencies();
     if (_controller != null) return;
 
-    final store = AppScope.of(context).store;
+    final scope = AppScope.of(context);
+    final store = scope.store;
     // dispose sırasında AppScope'a erişmek güvenli değil; referansı şimdi al.
-    _audio = AppScope.of(context).audio;
+    _audio = scope.audio;
     final controller = GameController(
       journey: widget.journey,
       store: store,
+      discovery: scope.discoveryFor(widget.journey, GameController.id),
+      // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
+      // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
+      random: scope.challengeRandomFor(widget.journey, GameController.id),
       recordToBeat: store.bestScoreForRoute(
         widget.journey.origin.id,
         widget.journey.destination.id,
@@ -128,6 +133,9 @@ class _GameScreenState extends State<GameScreen>
       resumeFrom: widget.resumeFrom?.session,
       resumeProgress: widget.resumeFrom?.progress,
     );
+    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
+    controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);
     _controller = controller;
 
@@ -393,7 +401,7 @@ class _GameScreenState extends State<GameScreen>
 
   void _exitToHome() {
     _controller?.abandon();
-    Navigator.of(context).pop();
+    AppRoutes.exitToGallery(context);
   }
 
   @override
@@ -489,6 +497,7 @@ class _GameScreenState extends State<GameScreen>
                           _StationGoal(controller: controller, accent: accent),
                           const SizedBox(height: AppSpacing.sm),
                           JourneyStatusBar(
+              gameId: GameController.id,
                             run: controller,
                             lineStations: AppScope.of(
                               context,
@@ -561,7 +570,12 @@ class _GameScreenState extends State<GameScreen>
   }) {
     final session = controller.session;
     return ResultOverlay(
+      // Sosyal çıkış için rota ve oyun kimliği; panel meydan okuma
+      // modunda karşılaştırma, normal koşuda davet gösteriyor.
+      journey: controller.journey,
+      gameId: GameController.id,
       isArrival: controller.status == GameStatus.arrived,
+      discovery: controller.discovery,
       destinationName: session.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,

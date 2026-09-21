@@ -63,12 +63,19 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
     final controller = LaneRunnerController(
       journey: widget.journey,
       store: scope.store,
+      discovery: scope.discoveryFor(widget.journey, LaneRunnerController.id),
+      // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
+      // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
+      random: scope.challengeRandomFor(widget.journey, LaneRunnerController.id),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: LaneRunnerController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
     );
+    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
+    controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);
     _controller = controller;
     controller.start();
@@ -187,7 +194,7 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
 
   void _exitToHome() {
     _controller?.abandon();
-    Navigator.of(context).pop();
+    AppRoutes.exitToGallery(context);
   }
 
   @override
@@ -247,6 +254,7 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
                         _LaneControls(onLeft: _moveLeft, onRight: _moveRight),
                         const SizedBox(height: AppSpacing.md),
                         JourneyStatusBar(
+              gameId: LaneRunnerController.id,
                           run: controller,
                           lineStations: AppScope.of(
                             context,
@@ -304,7 +312,12 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
     bool showBackdrop = true,
   }) {
     return ResultOverlay(
+      // Sosyal çıkış için rota ve oyun kimliği; panel meydan okuma
+      // modunda karşılaştırma, normal koşuda davet gösteriyor.
+      journey: controller.journey,
+      gameId: LaneRunnerController.id,
       isArrival: controller.status == GameStatus.arrived,
+      discovery: controller.discovery,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,

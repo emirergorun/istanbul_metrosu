@@ -30,6 +30,7 @@ class MetroMergeController extends JourneyGameController {
     required super.journey,
     required super.recordToBeat,
     super.store,
+    super.discovery,
     Random? random,
     super.tick = AppConstants.playTick,
   }) : _random = random ?? Random(),

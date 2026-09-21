@@ -107,6 +107,113 @@ kalıcı ölü hücre bırakmamak için bilinçli bir karardır.
 
 ---
 
+## 2b. Meta Katmanlar — Keşif, Günlük, Pasaport
+
+Oyunların üstünde üç katman var ve üçü de **tek bir kaynağa** dayanıyor.
+Birinin kendi sayacını tutması, o sayacın er geç kaynaktan ayrı düşmesi
+demek; mimarinin tamamı bunu engellemek üzerine kurulu.
+
+```text
+OYUN
+ ↓  JourneyGameController._finish
+RunReport  (rota, oyun, sonuç, geçilen durak)
+ ↓  CompositeRunReporter
+DailyController  +  AchievementController
+```
+
+### V1a — İstanbul Keşfi (`lib/features/discovery/`)
+
+Kalıcı olarak saklanan **tek** şey keşfedilen fiziksel durak kimlikleri
+(`discovered_stations`). Yüzde, hat tamamlanması, aktarma sayısı: hepsi
+türetilir. Kaydedilselerdi `metro.json`'a bir hat eklendiği gün yalan
+söylerlerdi.
+
+- `DiscoveryCatalog` — hat kapsamlı `Station` kayıtlarını **fiziksel**
+  duraklara (`canonicalId`) indirger. Yenikapı üç kayıt, bir durak.
+- `JourneyDiscovery` — tek koşunun defteri. Motor "kaç durak geçildi" der,
+  keşif kuralı burada kalır. Yedi oyunun hiçbiri durak kimliği görmez.
+- `DiscoveryController` — kalıcı durum. Hat sayaçları ve aktarma sayısı
+  yazma anında güncellenen **önbellek**; diske yazılmaz, her açılışta
+  kümeden yeniden kurulur.
+
+Bildirimler `scheduleMicrotask` ile kare başına bire indiriliyor. Biniş
+durağı `didChangeDependencies` içindeki `start()` çağrısıyla keşfediliyor,
+yani build sırasında; doğrudan `notifyListeners` "setState() called during
+build" hatası veriyordu.
+
+### V3 — Günlük Yolculuk (`lib/features/daily/`)
+
+İki kavram ayrı:
+
+| | Nerede | Saklanır mı? |
+|---|---|---|
+| **Plan** (rota, oyun, görevler) | `DailyGenerator` | Hayır — takvim gününden türer |
+| **İlerleme** (sayaçlar) | `DailyCounters` | Evet — `daily_counters` |
+| **Seri** | `StreakState` | Evet — `daily_streak` |
+
+- **Determinizm.** Tohum FNV-1a + xorshift32. `dart:math`'ın `Random`'ı
+  kullanılmadı: tohumdan üretilen dizinin Dart sürümleri arasında aynı
+  kalacağı garanti değil ve bir güncelleme günün rotasını gün ortasında
+  değiştirebilirdi.
+- **Oyun rotasyonu.** `(epochDay × adım) % oyunSayısı`, adım oyun sayısıyla
+  aralarında asal. Bütün oyunlar sırayla gelir, iki gün üst üste aynı oyun
+  düşmez.
+- **Görevler sayaçlardan türer.** Görev başına ilerleme saklanmaz; bkz.
+  `DailyMission.progressFrom`.
+- **Keşif görevi keşif durumuna duyarlı.** Kalan durak hedeften azsa hedef
+  kırpılır, hiç kalmadıysa görev üretilmez. İkisi de tek yönlü: keşif geri
+  gitmediği için gün içinde görev zorlaşamaz.
+- **Anlamlı koşu.** Sayaçlar yalnız `RunReport.isMeaningful` olan koşuyu
+  görür: varış, ya da en az bir durak geçilmiş bir oyun sonu. Oyunu açıp
+  iki saniyede kaybetmek "oyun bitirmek" değil.
+- **Seri.** Takvim günü üzerinden, `DayStamp` ile. Gün farkı sivil takvim
+  formülüyle (Hinnant `days_from_civil`) hesaplanır — süre hesabı yaz saati
+  gecesinde 23 saat çıkarıp seriyi sessizce kırardı. Her serinin **bir**
+  af hakkı var: bir gün kaçırmak seriyi bitirmez, iki gün bitirir. Hak seri
+  kırıldığında tazelenir.
+
+### V4 — İstanbul Pasaportu (`lib/features/passport/`)
+
+Pasaport **ikinci bir ilerleme veritabanı değil**. Keşif ekranı pasaporta
+dönüştü (`DiscoveryScreen`, başlık `PASAPORTUM`); bölümler: İSTANBUL KEŞFİ →
+GÜNLÜK → BAŞARIMLAR → HATLAR.
+
+`AchievementController` ölçüyü kaynağından okur:
+
+| Ölçü | Kaynak |
+|---|---|
+| Keşfedilen durak, aktarma, tamamlanan hat | `DiscoveryController` |
+| En uzun seri, toplam gün | `DailyController` |
+| Metro Bilgi rekoru | `LocalStore.bestScoreForGame` |
+| Tamamlanan yolculuk, oynanan oyunlar | `PlayerStats` (`player_stats`) |
+
+Yalnız son satır saklanıyor, çünkü türetilemiyor. Açılma kaydı
+`achievements_unlocked` içinde `kimlik@yyyy-MM-dd` biçiminde; tarihsiz eski
+biçim de okunur. Geriye dönük göçte tarih **yazılmaz** — rozet ne zaman hak
+edildi bilinmiyor, uydurulmuyor.
+
+İlk kurulum sessiz (`_evaluate(announce: false)`): V4'ten önce 40 durak
+keşfetmiş oyuncuya açılışta beş rozet birden patlamaz.
+
+### Yeni oyun eklerken
+
+Meta katmanlara **dokunmak gerekmiyor**. `MiniGames` kataloğuna kayıt,
+ekranda iki satır:
+
+```dart
+final controller = YeniOyunController(
+  journey: widget.journey,
+  discovery: scope.discoveryFor(widget.journey, YeniOyunController.id),
+  ...
+);
+controller.reporter = scope.runReporter;
+```
+
+Gerisi — keşif, günlük görev, seri, başarım, sonuç paneli — kendiliğinden
+gelir.
+
+---
+
 ## 3. Tasarım Notlarından Sapmalar
 
 Hepsi bilinçlidir ve ürün gereksinimini değiştirmez:
@@ -154,6 +261,86 @@ Hepsi bilinçlidir ve ürün gereksinimini değiştirmez:
 | 10 | Rekor hat bazında | "Rota bazında rekor" yok |
 | 11 | Durak bonusu ve sprint dengelenmedi | +25 ve ×2 tahmin; ölçülmedi |
 | 12 | Rekor sıfırlama yok | Yanlışlıkla yüksek rekor kurulursa rota oynanamaz hâle gelebilir |
+
+---
+
+## 4b. Backlog — Ertelenmiş Sürümler
+
+Bunlar **bilinçli olarak yapılmadı**. Her birinin neden ertelendiği yazılı;
+gerekçe okunmadan başlanmamalı.
+
+### V1b — Metro Bilgi: 1 doğru = 1 durak
+
+Negatif binom hesabı yapıldı: mevcut can ve süre dengesiyle uçtan uca bir
+hatta varış oranı %0,9 ile %10 arasına düşüyor. Önce can/süre formülünün
+simülasyonu gerekiyor. Soru veritabanına ve cana **dokunulmadı**.
+
+### Game Center — bugün ne yapıyor, ne yapmıyor
+
+**Yapıyor:** oyuncu isterse görünen adı Game Center takma adına çeviriyor.
+`ios/Runner/AppDelegate.swift` içindeki `GameCenterBridge` yalnız `alias`
+döndürüyor.
+
+**Neden `displayName` değil:** Apple'ın belgelediği davranışa göre
+`GKPlayer.displayName`, bakan kişi oyuncunun arkadaşıysa **gerçek adı**
+döndürüyor. Bu üründe ad bir karekoda giriyor ve o kareyi tanımadığı biri
+okuyabiliyor. Gerçek ad oraya asla girmemeli.
+
+**Yapmıyor:** arkadaş listesi çekmiyor, skor tablosu yazmıyor, başarım
+göndermiyor. `GKLocalPlayer.loadFriends` onay kapılı ve salt okunur;
+GameKit oyuna arkadaş ekleme, oyuncu arama ya da istek gönderme yetkisi
+vermiyor. Uygulamanın arkadaş katmanı bu yüzden kendine ait.
+
+**Android:** `UnavailableGamingService`. Play Games v2 bir Play Console
+uygulama kimliği ve manifest girdisi istiyor; kimlik olmadan SDK açılışta
+çöküyor. Kimlik hazır olduğunda yapılacak tek şey `GameCenterService`
+yanına bir `PlayGamesService` koyup `app.dart`'ta platforma göre seçmek.
+
+**Sınırlar:**
+
+- Takma ad **kalıcı** yazılıyor (`platform_display_name`). Oyuncu Game
+  Center'dan çıkarsa ad bayat kalır; "KALDIR" ile yerel ada dönülüyor.
+- Oturum açma 12 saniyede zaman aşımına uğruyor: GameKit çevrimdışıyken
+  askıda kalabiliyor.
+- **Gerçek cihazda doğrulanmadı.** Simülatörde köprünün çağrıldığı ve
+  başarısızlığın nazikçe yutulduğu görüldü; başarılı bir oturum açma
+  App Store Connect kaydı gerektiriyor.
+
+### V5b — Yakındaki oyuncu / canlı yarış
+
+V5a arkadaş ve meydan okuma katmanını kurdu; V5b aynı vagondaki iki
+telefonu **canlı** yarıştıracak.
+
+Kapsam:
+
+- İki cihazın eşleşmesi (tek karekod ya da yerel keşif).
+- Koşu sırasında skorun karşılıklı akması; "önde/geride" canlı.
+- Bitişte iki tarafın da doğruladığı ortak sonuç.
+- Gerçek karşılaşma tablosu — V5a'da **kasten yok**, çünkü iki cihazın
+  geçmişi birbirini doğrulayamıyor.
+
+Bilinen kısıtlar, araştırıldı:
+
+- **Play Games** gerçek zamanlı ve sıra tabanlı çok oyuncu API'lerini
+  31 Mart 2020'de kapattı; yeni oyunlara açılmıyor.
+- **Game Center** eşleştirme sunuyor ama arkadaş listesi salt okunur ve
+  onay kapılı; oyun içinde arkadaş eklemeye izin vermiyor.
+- Yani taşıma katmanı **kendi işimiz**: yerel ağ, Bluetooth ya da hafif
+  bir sunucu. Üçü de yeni bir izin yüzeyi ve yeni bir hata durumu demek.
+
+Hazır olan: `PlatformGamingService`, `ChallengeCodec`, `ChallengeSession`
+ve tohumlu adalet modeli. V5b'nin yeniden yazması gereken şey yalnızca
+taşıma ve eşleşme.
+
+### Diğer backlog
+
+- **Aktarmalı rota.** Bugün iki durak aynı hatta olmalı; Dijkstra + aktarma
+  kenarları gerekiyor (`RouteService`).
+- **Meydan okuma kalıcılığı.** Kabul edilmiş ama oynanmamış meydan okuma
+  uygulama kapanınca kayboluyor.
+- **Metro Bilgi başarımı eşiği** (`quiz_400`) hesapla konuldu, oyuncu
+  verisiyle doğrulanmadı.
+- **Gerçek cihazda kamera okuması** — simülatörde doğrulanamadı.
 
 ---
 

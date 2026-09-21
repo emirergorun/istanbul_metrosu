@@ -11,6 +11,7 @@ class LaneRunnerController extends JourneyGameController {
     required super.journey,
     required super.recordToBeat,
     super.store,
+    super.discovery,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
   }) : _random = random ?? Random(),

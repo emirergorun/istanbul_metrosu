@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../discovery/application/journey_discovery.dart';
+import '../../discovery/presentation/widgets/run_discovery_summary.dart';
+import '../../journey/models/journey.dart';
+import '../../social/presentation/widgets/challenge_result_section.dart';
 import 'overlay_panel.dart';
+import 'run_rewards_summary.dart';
 import '../../../core/widgets/pressable.dart';
 
 /// Oyun sonu paneli — **her oyun için ortak**.
@@ -31,6 +36,9 @@ class ResultOverlay extends StatelessWidget {
     required this.onRestart,
     required this.onExit,
     this.extraStats = const <Widget>[],
+    this.discovery,
+    this.journey,
+    this.gameId,
     this.onShare,
     this.gameOverTitle = 'Oyun bitti',
     this.gameOverSubtitle = 'Durağa varamadan oyun bitti.',
@@ -52,6 +60,20 @@ class ResultOverlay extends StatelessWidget {
 
   /// Oyuna özgü istatistik satırları ([StatRow] beklenir).
   final List<Widget> extraStats;
+
+  /// Bu yolculuğun keşif defteri. `null` ise keşif bölümü çizilmez.
+  ///
+  /// Yarım kalan yolculuk da keşif gösterir: ulaşılan duraklar kalıcıdır,
+  /// oyunun nasıl bittiği bunu değiştirmez.
+  final JourneyDiscovery? discovery;
+
+  /// Oynanan rota ve oyun.
+  ///
+  /// İkisi birden verilirse sonuç paneli sosyal bölümü de çizer: meydan
+  /// okuma oynandıysa karşılaştırma ve rövanş, normal koşuysa "arkadaşına
+  /// meydan oku". Verilmezse panel bugünkü hâliyle kalır.
+  final Journey? journey;
+  final String? gameId;
 
   /// Sonucu paylaşma. Verilmezse düğme çizilmez.
   ///
@@ -81,7 +103,7 @@ class ResultOverlay extends StatelessWidget {
       children: <Widget>[
         if (recordBeaten) ...<Widget>[
           _ChallengeBadge(accent: accent),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.stack),
         ],
         StatRow(
           label: 'Skor',
@@ -102,23 +124,43 @@ class ResultOverlay extends StatelessWidget {
             ),
           ),
         if (isNewBest) ...<Widget>[
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.stack),
           const _NewRecordBadge(),
         ],
-        const SizedBox(height: AppSpacing.lg),
+        if (discovery != null)
+          RunDiscoverySummary(run: discovery!, accent: accent),
+        // Günlük görev, seri ve başarım ödülleri **toplu** olarak burada.
+        // Panel bunların ne olduğunu bilmez; ödül yoksa hiç çizilmez.
+        RunRewardsSummary(accent: accent),
+        // Sosyal çıkış: meydan okuma sonucu ya da yeni meydan okuma.
+        if (journey != null && gameId != null)
+          ChallengeResultSection(
+            score: score,
+            journey: journey!,
+            gameId: gameId!,
+            accent: accent,
+          ),
+        // Bilgi bitti, eylemler başlıyor.
+        const SizedBox(height: AppSpacing.sectionGap),
         // Birincil eylem her hatta ve her bitişte aynı: `theme.dart`'taki
         // hiyerarşi kuralı gereği hat rengi kimliktir, aksiyon rengi değil.
         // Kutlama tonu butondan değil, yukarıdaki rozetlerden ve accent'li
         // skor satırından geliyor.
+        // Üç eylem de aynı boşlukla ayrılıyor. Önce hiç boşluk yoktu ve
+        // düğmeler birbirine yapışık duruyordu; hiyerarşi aralıktan değil
+        // düğmenin kendi ağırlığından geliyor (dolu, çerçeveli, düz).
         FilledButton(
           onPressed: AppFeedback.onTap(context, onRestart),
           child: const Text('TEKRAR OYNA'),
         ),
-        if (onShare != null)
+        if (onShare != null) ...<Widget>[
+          const SizedBox(height: AppSpacing.stack),
           OutlinedButton(
             onPressed: AppFeedback.onTap(context, onShare!),
             child: const Text('SONUCU PAYLAŞ'),
           ),
+        ],
+        const SizedBox(height: AppSpacing.stack),
         TextButton(
           onPressed: AppFeedback.onTap(context, onExit),
           child: const Text('Başka oyun seç'),

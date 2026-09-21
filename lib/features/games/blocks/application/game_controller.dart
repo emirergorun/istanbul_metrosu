@@ -85,6 +85,7 @@ class GameController extends JourneyGameController {
     required super.journey,
     PieceGenerator? generator,
     super.store,
+    super.discovery,
     Random? random,
     super.recordToBeat = 0,
     super.tick = AppConstants.playTick,

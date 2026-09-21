@@ -28,6 +28,7 @@ class MetroQuizController extends JourneyGameController {
     required super.recordToBeat,
     required QuizPool pool,
     super.store,
+    super.discovery,
     super.tick = AppConstants.playTick,
     // Alan private, parametre public kalmalı; `this._pool` dışarıdan
     // kullanılamayacak bir ad üretirdi.
