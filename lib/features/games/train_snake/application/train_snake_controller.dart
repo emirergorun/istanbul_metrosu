@@ -11,6 +11,7 @@ class TrainSnakeController extends JourneyGameController {
     required super.journey,
     required super.recordToBeat,
     super.store,
+    super.discovery,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
   }) : _random = random ?? Random(),
@@ -41,8 +42,48 @@ class TrainSnakeController extends JourneyGameController {
   late List<Point<int>> _previousBody;
   SnakeDirection _direction = SnakeDirection.right;
   SnakeDirection? _queuedDirection;
+
+  /// Tren ilk yön girdisine kadar bekler.
+  ///
+  /// Önce oyun açılır açılmaz hareket ediyordu: ızgara 11 sütun, tren
+  /// x=3'ten sağa doğru başlıyor ve adım aralığı 0,22 saniye. Yani sağ
+  /// duvara **1,54 saniyede** varıyordu. Oyuncu ekranı görüp parmağını
+  /// kaldırmadan oyun bitiyor, skor 0 kalıyordu.
+  ///
+  /// Beklemek yılan türünün standardı ve yolculuk saatini de durdurmuyor
+  /// — oyun başlamış sayılıyor, yalnızca tren duruyor.
+  bool _awaitingFirstInput = true;
+
+  /// Tren hâlâ ilk girdiyi mi bekliyor? Ekran ipucunu buna göre gösterir.
+  bool get isAwaitingFirstInput => _awaitingFirstInput;
+
+  /// Oyun kazanılarak mı bitti?
+  ///
+  /// Yolculuk motorunun üç finali var: varış (süre doldu), oyun sonu
+  /// (çarpma) ve bu. Motora yeni bir durum eklemek altı oyunu birden
+  /// ilgilendirirdi; zafer burada bir bayrak, sonuç paneli metnini
+  /// değiştiriyor.
+  bool _victory = false;
+  bool get isVictory => _victory;
+
+  /// Kazanmaya kalan yolcu.
+  int get passengersToGoal =>
+      (trainSnakeGoalPassengers - _passengersCollected).clamp(0, 999);
+
+  /// Trenin o an baktığı yön.
+  ///
+  /// Ekran bunu yön tuşlarını çizmek için okuyor: tam ters yöndeki tuş
+  /// sönük gösterilir, çünkü o hamle yok sayılıyor.
+  SnakeDirection get direction => _direction;
   late Point<int> _passenger;
   int _passengersCollected = 0;
+
+  /// Sıradaki adımlarda kuyruğun kısaltılmayacağı sayı.
+  ///
+  /// Hat bonusu tek karede birden çok vagon ekleyemez (gövde ızgarada
+  /// süreklidir); bonus buraya yazılır ve sonraki adımlarda birer birer
+  /// ödenir.
+  int _pendingGrowth = 0;
   double _stepElapsed = 0;
 
   /// Baştan kuyruğa tüm vagonlar. İlk eleman lokomotif (baş).
@@ -55,9 +96,8 @@ class TrainSnakeController extends JourneyGameController {
   /// gövde, eski gövdenin başına bir hücre eklenip (büyümüyorsa) kuyruktan
   /// bir hücre çıkarılarak kurulur. Bu sayede her vagon "eskiden nerede
   /// olduğu"ndan "şimdi nerede olduğu"na doğru düzgün bir çizgide kayar.
-  List<Point<int>> get previousBody => List<Point<int>>.unmodifiable(
-    _previousBody,
-  );
+  List<Point<int>> get previousBody =>
+      List<Point<int>>.unmodifiable(_previousBody);
 
   /// Şu anki adımın ne kadarının geçtiği, 0..1. Ekran katmanı [previousBody]
   /// ile [body] arasında bu orana göre ara değer çizer.
@@ -94,6 +134,9 @@ class TrainSnakeController extends JourneyGameController {
     _previousBody = _body;
     _direction = SnakeDirection.right;
     _queuedDirection = null;
+    _awaitingFirstInput = true;
+    _victory = false;
+    _pendingGrowth = 0;
     _passengersCollected = 0;
     _stepElapsed = 0;
     _passenger = _spawnPassenger();
@@ -109,8 +152,36 @@ class TrainSnakeController extends JourneyGameController {
     if (status != GameStatus.playing) return;
     final reference = _queuedDirection ?? _direction;
     if (next.isOppositeOf(reference)) return;
+
+    // İlk girdi treni başlatır. Aynı yöne basmak da başlatır: oyuncu
+    // "sağa gideceğim" diyorsa onu beklet
+    if (_awaitingFirstInput) {
+      _awaitingFirstInput = false;
+      _stepElapsed = 0;
+      notifyListeners();
+    }
     _queuedDirection = next;
   }
+
+  /// Trenin gittiği yöne göre **sola** döner.
+  ///
+  /// Mutlak yön yerine göreli dönüş: dört yönlü tuş takımında her an bir
+  /// tuş ölüdür (tam ters yön yasak) ve başparmak dört hedef arasında
+  /// gezinir. İki dönüş tuşuyla ölü tuş kalmıyor ve tek elle oynanıyor.
+  void turnLeft() => turn(switch (_queuedDirection ?? _direction) {
+    SnakeDirection.up => SnakeDirection.left,
+    SnakeDirection.left => SnakeDirection.down,
+    SnakeDirection.down => SnakeDirection.right,
+    SnakeDirection.right => SnakeDirection.up,
+  });
+
+  /// Trenin gittiği yöne göre **sağa** döner.
+  void turnRight() => turn(switch (_queuedDirection ?? _direction) {
+    SnakeDirection.up => SnakeDirection.right,
+    SnakeDirection.right => SnakeDirection.down,
+    SnakeDirection.down => SnakeDirection.left,
+    SnakeDirection.left => SnakeDirection.up,
+  });
 
   @visibleForTesting
   void debugSetBody(List<Point<int>> body, {SnakeDirection? direction}) {
@@ -137,6 +208,8 @@ class TrainSnakeController extends JourneyGameController {
 
   @override
   void onTick(double dt) {
+    // Tren ilk girdiye kadar durur; yolculuk saati işlemeye devam eder.
+    if (_awaitingFirstInput) return;
     _stepElapsed += dt;
     final interval = _stepSeconds;
     // `while`: uzun bir donmadan sonra (kırpılmış da olsa) birikmiş süre
@@ -168,9 +241,10 @@ class TrainSnakeController extends JourneyGameController {
     }
 
     final eating = next == _passenger;
+    final growing = eating || _pendingGrowth > 0;
     // Büyümüyorsa kuyruk bu adımda tam da bu hücreyi boşaltacağı için
     // kendi kuyruğuna değmek çarpışma sayılmaz — klasik yılan kuralı.
-    final bodyForCollision = eating
+    final bodyForCollision = growing
         ? _body
         : _body.sublist(0, _body.length - 1);
     if (bodyForCollision.contains(next)) {
@@ -180,10 +254,23 @@ class TrainSnakeController extends JourneyGameController {
 
     _body = <Point<int>>[next, ..._body];
     if (eating) {
+      final levelBefore = level;
       _passengersCollected++;
       addScore(10 * level);
       markStationProgress();
+
+      // Hat atlandıysa ek vagon borcu yazılır.
+      if (level > levelBefore) _pendingGrowth += trainSnakeLevelBonusCars;
+
+      if (_passengersCollected >= trainSnakeGoalPassengers) {
+        _victory = true;
+        notifyListeners();
+        endGame();
+        return;
+      }
       _passenger = _spawnPassenger();
+    } else if (_pendingGrowth > 0) {
+      _pendingGrowth--;
     } else {
       _body = _body.sublist(0, _body.length - 1);
     }
@@ -191,9 +278,9 @@ class TrainSnakeController extends JourneyGameController {
   }
 
   Point<int> _spawnPassenger() {
-    // Işıklı sonsuz döngü riski yok: ızgara 11×17 = 187 hücre, tren en
-    // kötü ihtimalle bunun küçük bir kısmını kaplar (oyun ondan önce
-    // biter); rastgele deneme pratikte tek seferde bulur.
+    // Sonsuz döngü riski yok: ızgara 11×15 = 165 hücre, tren zaferde bile
+    // 73 hücre kaplıyor (%44); rastgele deneme pratikte birkaç turda boş
+    // hücre bulur.
     while (true) {
       final candidate = Point<int>(
         _random.nextInt(trainSnakeColumns),

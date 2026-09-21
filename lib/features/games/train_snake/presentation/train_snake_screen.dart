@@ -8,11 +8,12 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
+import '../../../../core/widgets/line_badge.dart';
+import '../../../../core/widgets/pressable.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -63,12 +64,19 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
     final controller = TrainSnakeController(
       journey: widget.journey,
       store: scope.store,
+      discovery: scope.discoveryFor(widget.journey, TrainSnakeController.id),
+      // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
+      // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
+      random: scope.challengeRandomFor(widget.journey, TrainSnakeController.id),
       recordToBeat: scope.store.bestScoreForGameRoute(
         gameId: TrainSnakeController.id,
         originId: widget.journey.origin.id,
         destinationId: widget.journey.destination.id,
       ),
     );
+    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
+    controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);
     _controller = controller;
     controller.start();
@@ -183,19 +191,51 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
     }
   }
 
-  void _handlePanEnd(DragEndDetails details) {
-    final velocity = details.velocity.pixelsPerSecond;
-    if (velocity.distance < 80) return;
-    if (velocity.dx.abs() > velocity.dy.abs()) {
-      _turn(velocity.dx > 0 ? SnakeDirection.right : SnakeDirection.left);
-    } else {
-      _turn(velocity.dy > 0 ? SnakeDirection.down : SnakeDirection.up);
+  /// Sürüklemenin başladığı nokta; her dönüşten sonra sıfırlanır.
+  Offset? _dragAnchor;
+
+  void _handlePanStart(DragStartDetails details) {
+    _dragAnchor = details.localPosition;
+  }
+
+  /// Parmak eşiği aşar aşmaz döner.
+  ///
+  /// Önce `onPanEnd` kullanılıyordu ve yön ancak **parmak kalkınca**
+  /// belirleniyordu; üstüne 80 px/s hız eşiği vardı, yani yavaş kaydırma
+  /// hiç sayılmıyordu. Adım aralığı 0,22 saniye olan bir oyunda bu
+  /// gecikme "tuşlar dönmüyor" diye hissediliyordu.
+  ///
+  /// Dönüşten sonra çapa yeniden konuyor: parmağı kaldırmadan L çizerek
+  /// arka arkaya iki dönüş yapılabiliyor.
+  void _handlePanUpdate(DragUpdateDetails details) {
+    final anchor = _dragAnchor;
+    if (anchor == null) return;
+    final delta = details.localPosition - anchor;
+    // 16 logical px: kazara titremeyi eler, bilinçli hareketi geçirir.
+    if (delta.distance < 16) return;
+
+    _turn(
+      delta.dx.abs() > delta.dy.abs()
+          ? (delta.dx > 0 ? SnakeDirection.right : SnakeDirection.left)
+          : (delta.dy > 0 ? SnakeDirection.down : SnakeDirection.up),
+    );
+    _dragAnchor = details.localPosition;
+  }
+
+  void _handlePanEnd(DragEndDetails details) => _dragAnchor = null;
+
+  /// Yön tuşuna basıldı.
+  void _turnFromPad(SnakeDirection direction) {
+    if (_controller?.status != GameStatus.playing) return;
+    _turn(direction);
+    if (AppScope.of(context).store.hapticsEnabled) {
+      HapticFeedback.selectionClick();
     }
   }
 
   void _exitToHome() {
     _controller?.abandon();
-    Navigator.of(context).pop();
+    AppRoutes.exitToGallery(context);
   }
 
   @override
@@ -244,14 +284,33 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
                           onPause: controller.pause,
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        _LevelProgress(controller: controller, accent: accent),
+                        const SizedBox(height: AppSpacing.sm),
                         Expanded(
                           child: _SnakePlayArea(
                             controller: controller,
+                            accent: accent,
+                            onPanStart: _handlePanStart,
+                            onPanUpdate: _handlePanUpdate,
                             onPanEnd: _handlePanEnd,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        // Dönüş tuşları oyun alanının **altında**: metroda
+                        // tek elle, tutunurken oynanıyor ve başparmak
+                        // ekranın alt üçte birine ulaşabiliyor. Kaydırma
+                        // da çalışmaya devam ediyor; iki girdi birbirini
+                        // dışlamıyor.
+                        _TurnPad(
+                          accent: accent,
+                          enabled: controller.status == GameStatus.playing,
+                          hint: controller.isAwaitingFirstInput,
+                          current: controller.direction,
+                          onTurn: _turnFromPad,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
                         JourneyStatusBar(
+              gameId: TrainSnakeController.id,
                           run: controller,
                           lineStations: AppScope.of(
                             context,
@@ -308,7 +367,12 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
     bool showBackdrop = true,
   }) {
     return ResultOverlay(
+      // Sosyal çıkış için rota ve oyun kimliği; panel meydan okuma
+      // modunda karşılaştırma, normal koşuda davet gösteriyor.
+      journey: controller.journey,
+      gameId: TrainSnakeController.id,
       isArrival: controller.status == GameStatus.arrived,
+      discovery: controller.discovery,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -322,9 +386,18 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
           value: '${controller.passengersCollected}',
         ),
         StatRow(label: 'Ulaşılan hat', value: controller.lineLabel),
+        StatRow(label: 'Vagon sayısı', value: '${controller.body.length}'),
       ],
-      gameOverTitle: 'Tren durdu',
-      gameOverSubtitle: 'Duvara ya da kendi vagonlarına çarptın.',
+      // Bu oyunun üç finali var: varış (yolculuk süresi doldu), zafer
+      // (tüm hatlar tamamlandı) ve çarpma. Motorda yeni bir durum yok;
+      // zafer yalnızca panelin dilini değiştiriyor.
+      gameOverTitle: controller.isVictory
+          ? 'Tüm hatlar tamamlandı'
+          : 'Tren durdu',
+      gameOverSubtitle: controller.isVictory
+          ? 'M1\'den M11\'e kadar bütün hatları topladın. '
+                'Trenin ${controller.body.length} vagon uzunluğunda.'
+          : 'Duvara ya da kendi vagonlarına çarptın.',
       onRestart: controller.restart,
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
@@ -357,352 +430,150 @@ class _SnakeHud extends StatelessWidget {
   }
 }
 
-/// Kaynak sahne görselinin ([assets/images/train_snake_scene.png]) gerçek
-/// piksel en/boy oranı. Görsel **bozulmadan/kırpılmadan** tam gösterilmesi
-/// için düzen bu oranı korur (bkz. [_SnakePlayArea]).
-const double _sceneAspectRatio = 596 / 1026;
-
-/// Oyun alanının (sarı rayların hemen içi) sahne görseli içindeki göreli
-/// sınırları, 0..1 aralığında. Görsel manuel ölçülerek bulundu; görsel
-/// değişirse bu dört sayı da yeniden ölçülmeli.
-const double _boardLeft = 0.151;
-
-/// Tahtanın üst kenarı.
+/// Oyun tahtası.
 ///
-/// Eskiden 0.108'di ve bu bir rakam devriği hatasıydı (0.180 → 0.108):
-/// 0.108 × 1026 = 111. piksel, oysa krem tahta 185. pikselde başlıyor.
-/// Yani oyun alanı tahtanın 74 piksel yukarısından başlıyor, tam **iki
-/// satır** "İSTANBUL METRO" logosunun ve "İYİ YOLCULUKLAR" tabelasının
-/// üstüne taşıyordu: painter krem zemini oraya da basıyor (tabelayı
-/// örtüyor) ve tren tahtanın dışında, havada iki satır boyunca
-/// gezebiliyordu. Ölçülen doğru değer 185/1026 ≈ 0.180; diğer üç kenarda
-/// olduğu gibi ~3 piksellik taşma payıyla 0.178.
-const double _boardTop = 0.178;
-const double _boardRight = 0.864;
-const double _boardBottom = 0.882;
-
-/// Üstteki skor tablosunun üç kutusunun sahne görseli içindeki göreli
-/// sınırları. Merdivende olduğu gibi bu kutular da görsele **sabit**
-/// basılmış ("HAT M1", "YOLCU 0 / 3", "SKOR 0") — yani boyalı piksel,
-/// hiçbir zaman değişmiyorlar. Üstlerine canlı değerler bindirilir.
-/// Ölçüm 596×1026'lık kaynak görselden yapıldı.
-const double _scoreRowTop = 10 / 1026;
-const double _scoreRowBottom = 66 / 1026;
-const double _lineBoxLeft = 133 / 596;
-const double _lineBoxRight = 241 / 596;
-const double _passengerBoxLeft = 251 / 596;
-const double _passengerBoxRight = 358 / 596;
-const double _scoreBoxLeft = 367 / 596;
-const double _scoreBoxRight = 474 / 596;
-
-/// M1..M11 merdiveninin sahne görseli içindeki göreli sınırları. Görselde
-/// bu merdiven **sabit** çizilmiş (hep M1 vurgulu); bu dikdörtgenin üstüne
-/// gerçek seviyeyle senkron, canlı bir merdiven bindirilir.
-const double _ladderLeft = 0.895;
-const double _ladderTop = 0.135;
-const double _ladderRight = 1.0;
-const double _ladderBottom = 0.615;
-
-/// Sahne görselini tam gösterir, canlı oyunu (tahta + tren + yolcu) tam da
-/// görseldeki sarı raylı kutunun içine oturtur. Raylar görselin kendi
-/// çizimi olduğu için kenarlar her zaman net görünür ("yanlar belli
-/// olsun"); oyun katmanı o dikdörtgeni opak doldurduğundan altındaki örnek
-/// çizim (tren/yolcu illüstrasyonu) tamamen örtülür.
+/// Eskiden ekranın tamamı bir sahne görseliydi
+/// (`assets/images/train_snake_scene.png`, 877 KB) ve oyun alanı o
+/// görselin içine elle ölçülmüş yüzdelerle yerleştiriliyordu. Üç sorun
+/// vardı:
+///
+/// 1. **Sahte düğmeler.** Görselin üstünde boyalı bir geri oku ve bir
+///    duraklatma düğmesi vardı; ikisi de işlevsizdi ama oyuncu basıyordu.
+/// 2. **Çift gösterge.** Görsele basılı "HAT / YOLCU / SKOR" kutuları
+///    ortak HUD ile aynı şeyi söylüyordu.
+/// 3. **Kırılgan düzen.** Tahtanın sınırları görselden ölçülmüş dört
+///    ondalık sayıydı; görsel değişirse hepsi yeniden ölçülmeliydi.
+///
+/// Şimdi tahtayı kendimiz çiziyoruz: oran serbest, sahte düğme yok,
+/// ekranın tamamı oyuna ait.
 class _SnakePlayArea extends StatelessWidget {
-  const _SnakePlayArea({required this.controller, required this.onPanEnd});
+  const _SnakePlayArea({
+    required this.controller,
+    required this.accent,
+    required this.onPanStart,
+    required this.onPanUpdate,
+    required this.onPanEnd,
+  });
 
   final TrainSnakeController controller;
+  final Color accent;
+  final GestureDragStartCallback onPanStart;
+  final GestureDragUpdateCallback onPanUpdate;
   final GestureDragEndCallback onPanEnd;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: AspectRatio(
-        aspectRatio: _sceneAspectRatio,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final sceneWidth = constraints.maxWidth;
-            final sceneHeight = constraints.maxHeight;
-            final boardLeft = sceneWidth * _boardLeft;
-            final boardTop = sceneHeight * _boardTop;
-            final boardWidth = sceneWidth * (_boardRight - _boardLeft);
-            final boardHeight = sceneHeight * (_boardBottom - _boardTop);
-
-            return Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                Image.asset(
-                  'assets/images/train_snake_scene.png',
-                  fit: BoxFit.fill,
-                ),
-                Positioned(
-                  left: boardLeft,
-                  top: boardTop,
-                  width: boardWidth,
-                  height: boardHeight,
-                  child: ClipRect(
-                    child: GestureDetector(
-                      onPanEnd: onPanEnd,
-                      child: CustomPaint(
-                        painter: _TrainSnakePainter(controller),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: sceneWidth * _ladderLeft,
-                  top: sceneHeight * _ladderTop,
-                  width: sceneWidth * (_ladderRight - _ladderLeft),
-                  height: sceneHeight * (_ladderBottom - _ladderTop),
-                  child: _LineLadder(level: controller.level),
-                ),
-                // Görseldeki sabit skor tablosunun üstüne canlı değerler.
-                ..._liveScoreBoxes(controller, sceneWidth, sceneHeight),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-/// Görseldeki sabit skor tablosunun üç kutusunu canlı değerlerle örter.
-///
-/// Kutular kaynak görsele boyanmış olduğu için oyun boyunca hep "M1",
-/// "0 / 3" ve "0" yazıyorlardı; oyuncu skorunun, hattının ve yolcu
-/// sayısının hiç değişmediğini görüyordu. Merdivende uygulanan yöntemin
-/// aynısı: kutunun kendisi aynı renk ve ölçüde yeniden çizilir, üstüne
-/// gerçek değer yazılır.
-List<Widget> _liveScoreBoxes(
-  TrainSnakeController controller,
-  double sceneWidth,
-  double sceneHeight,
-) {
-  // Kaynak görsel pikselinden ekran pikseline ölçek. Yazı boyutları ve
-  // köşe yarıçapı da bununla ölçeklenir, yoksa küçük ekranda taşarlar.
-  final scale = sceneWidth / 596;
-  final top = sceneHeight * _scoreRowTop;
-  final height = sceneHeight * (_scoreRowBottom - _scoreRowTop);
-
-  Widget box(double left, double right, Widget child) => Positioned(
-    left: sceneWidth * left,
-    top: top,
-    width: sceneWidth * (right - left),
-    height: height,
-    child: child,
-  );
-
-  return <Widget>[
-    box(
-      _lineBoxLeft,
-      _lineBoxRight,
-      _ScoreBox(
-        label: 'HAT',
-        value: controller.lineLabel,
-        scale: scale,
-        pillColor: _ScoreBox.pill,
-      ),
-    ),
-    box(
-      _passengerBoxLeft,
-      _passengerBoxRight,
-      _ScoreBox(
-        label: 'YOLCU',
-        value:
-            '${controller.passengersInLevel} / $trainSnakePassengersPerLevel',
-        scale: scale,
-      ),
-    ),
-    box(
-      _scoreBoxLeft,
-      _scoreBoxRight,
-      _ScoreBox(
-        label: 'SKOR',
-        value: Formatters.score(controller.score),
-        scale: scale,
-      ),
-    ),
-  ];
-}
-
-/// Skor tablosundaki tek bir kutu. Ölçüler ve renkler kaynak görselden
-/// okunarak birebir eşleştirildi; amaç altındaki boyalı kutuyu tam
-/// örtmek, araya sızan bir kenar bırakmamak.
-class _ScoreBox extends StatelessWidget {
-  const _ScoreBox({
-    required this.label,
-    required this.value,
-    required this.scale,
-    this.pillColor,
-  });
-
-  final String label;
-  final String value;
-
-  /// Kaynak görsel pikseli → ekran pikseli.
-  final double scale;
-
-  /// Doluysa değer, görseldeki gibi bu renkte bir hapın içine yazılır.
-  final Color? pillColor;
-
-  /// Görselden ölçülen kutu dolgusu.
-  static const Color fill = Color(0xFF2B435E);
-
-  /// Görselden ölçülen hap (HAT rozeti) rengi.
-  static const Color pill = Color(0xFFBC3D3C);
-
-  static const Color _ink = Color(0xFFF4F5F7);
-
-  @override
-  Widget build(BuildContext context) {
-    // Değer uzayabilir (beş haneli skor); kutuyu taşırmak yerine küçülsün.
-    final text = FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        value,
-        maxLines: 1,
-        style: AppText.stat.copyWith(
-          fontSize: 21 * scale,
-          height: 1,
-          color: _ink,
-        ),
-      ),
-    );
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(8 * scale),
-      ),
-      child: Stack(
-        children: <Widget>[
-          // Etiket: görselde kutunun üstünde, 10. ve 16. piksel arasında.
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 8 * scale,
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: AppText.label.copyWith(
-                fontSize: 10 * scale,
-                height: 1,
-                letterSpacing: 1.1 * scale,
-                color: _ink,
+        aspectRatio: trainSnakeColumns / trainSnakeRows,
+        child: GestureDetector(
+          onPanStart: onPanStart,
+          onPanUpdate: onPanUpdate,
+          onPanEnd: onPanEnd,
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              // Kenarlık hat renginde: tahta hangi hatta oynandığını
+              // söyleyen tek yer. Blok Metro'da ızgara çizgisi aynı işi
+              // yapıyor.
+              border: Border.all(
+                color: accent.withValues(alpha: 0.55),
+                width: 2,
+              ),
+            ),
+            child: RepaintBoundary(
+              child: CustomPaint(
+                painter: _TrainSnakePainter(controller),
+                child: const SizedBox.expand(),
               ),
             ),
           ),
-          // Değer: görselde 23. ve 50. piksel arasında.
-          Positioned(
-            left: 4 * scale,
-            right: 4 * scale,
-            top: 21 * scale,
-            height: 30 * scale,
-            child: Center(
-              child: pillColor == null
-                  ? text
-                  : Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 13 * scale,
-                        vertical: 3 * scale,
-                      ),
-                      decoration: BoxDecoration(
-                        color: pillColor,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: text,
-                    ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Görseldeki sabit M1..M11 merdiveninin üstüne binen canlı sürüm: şu anki
-/// hat büyük ve rengiyle vurgulu, diğerleri küçük ve soluk. "M1'den M2'ye
-/// geçince sağ panel de senkron ilerlesin" isteğinin karşılığı.
-class _LineLadder extends StatelessWidget {
-  const _LineLadder({required this.level});
+/// Hat merdiveni yerine tek satırlık ilerleme.
+///
+/// Önce sağda M1..M11 dikey merdiveni vardı: on bir rozet, ekranın
+/// yüksekliğinin yarısı, ve hangisinde olduğunu anlamak için taramak
+/// gerekiyordu. Tek satır aynı üç bilgiyi veriyor — hangi hattasın,
+/// hedefe ne kadar kaldı, ne kadar yol gittin — ve okunması bir bakış.
+class _LevelProgress extends StatelessWidget {
+  const _LevelProgress({required this.controller, required this.accent});
 
-  final int level;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Boyut hem genişliğe hem yüksekliğe sığmalı — 11 madalyonun
-        // toplamı yüksekliği aşarsa Column taşardı.
-        final pill = math.min(
-          constraints.maxWidth,
-          constraints.maxHeight / trainSnakeMaxLevel,
-        );
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            for (var i = 1; i <= trainSnakeMaxLevel; i++)
-              _LadderPill(active: i == level, size: pill, level: i),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _LadderPill extends StatelessWidget {
-  const _LadderPill({
-    required this.active,
-    required this.size,
-    required this.level,
-  });
-
-  final bool active;
-  final double size;
-  final int level;
+  final TrainSnakeController controller;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    final color = _snakeLineColor(level);
-    final dimension = active ? size : size * 0.78;
+    final collected = controller.passengersCollected;
+    final ratio = (collected / trainSnakeGoalPassengers).clamp(0.0, 1.0);
+
     return Semantics(
-      label: '${trainSnakeLabelForLevel(level)} hattı${active ? ', şu anki hat' : ''}',
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: dimension,
-        height: dimension,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: active ? color : AppColors.surfaceHigh.withValues(alpha: 0.9),
-          border: Border.all(
-            color: active
-                ? Colors.white.withValues(alpha: 0.8)
-                : _TrainSnakePainter._carOutline,
-            width: active ? 2 : 1,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          trainSnakeLabelForLevel(level),
-          style: TextStyle(
-            fontFamily: AppFonts.body,
-            fontWeight: FontWeight.w800,
-            fontSize: dimension * 0.4,
-            color: active
-                ? LineTheme.readableOn(color)
-                : AppColors.textMuted,
-          ),
+      label:
+          '${controller.lineLabel} hattı, $collected yolcu toplandı, '
+          'hedefe ${controller.passengersToGoal} kaldı',
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                LineBadge(
+                  label: controller.lineLabel,
+                  color: accent,
+                  compact: true,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    controller.isVictory
+                        ? 'Tüm hatlar tamamlandı'
+                        : 'Hedefe ${controller.passengersToGoal} yolcu',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.caption.copyWith(fontSize: 12),
+                  ),
+                ),
+                Text(
+                  '$collected / $trainSnakeGoalPassengers',
+                  style: AppText.micro.copyWith(
+                    fontFeatures: kTabularFigures,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            // Çubuk yalnızca genişliğini değiştirir; düzen sabit kalır.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: SizedBox(
+                height: 4,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      flex: (ratio * 1000).round().clamp(0, 1000),
+                      child: ColoredBox(color: accent),
+                    ),
+                    Expanded(
+                      flex: 1000 - (ratio * 1000).round().clamp(0, 1000),
+                      child: const ColoredBox(color: AppColors.surfaceHigh),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Işgarada treni ve yolcuyu çizer. Bilerek düz: gradyan, parıltı ya da
-/// yapay bir "AI görünümü" yok — tek renk dolgular ve net çizgiler.
 class _TrainSnakePainter extends CustomPainter {
   const _TrainSnakePainter(this.controller);
 
@@ -760,7 +631,8 @@ class _TrainSnakePainter extends CustomPainter {
     final cell = math.min(cellW, cellH);
     final center = Offset((p.x + 0.5) * cellW, (p.y + 0.5) * cellH);
     final color =
-        _passengerColors[controller.passengersCollected % _passengerColors.length];
+        _passengerColors[controller.passengersCollected %
+            _passengerColors.length];
     final fill = Paint()..color = color;
     final outline = Paint()
       ..style = PaintingStyle.stroke
@@ -980,4 +852,146 @@ Color _snakeLineColor(int level) {
     Color(0xFF3F51B5),
   ];
   return colors[(level - 1).clamp(0, colors.length - 1)];
+}
+
+/// Trenin yönünü veren dört tuş.
+///
+/// **Mutlak yön**, göreli dönüş değil. Önce iki göreli tuş denendi
+/// ("sola dön / sağa dön"): ölü tuş bırakmıyordu ve hedefler daha
+/// genişti, ama oyun yukarıdan bakış. Tren aşağı giderken "sağa dön"
+/// ekranda **sola** gitmek demek. Tutarlı ve öğrenilebilir, ama metroda
+/// oturumlar kısa — ilk oturumdaki kafa karışıklığı doğrudan silme
+/// sebebi.
+///
+/// Dört tuşun klasik itirazı "biri her zaman ölü": tam ters yön yasak.
+/// Bunu gizlemek yerine **gösteriyoruz** — o tuş sönük çizilir ve
+/// dokunmayı yok sayar. Oyuncu "oraya basamam" bilgisini bedava alır.
+///
+/// Tuşlar kaydırmanın yerine geçmiyor, yanında duruyor; ikisi de artık
+/// aynı dili konuşuyor (mutlak yön).
+class _TurnPad extends StatelessWidget {
+  const _TurnPad({
+    required this.accent,
+    required this.enabled,
+    required this.hint,
+    required this.current,
+    required this.onTurn,
+  });
+
+  final Color accent;
+  final bool enabled;
+
+  /// Tren henüz başlamadıysa tuşlar "başlat" görevini de görüyor.
+  final bool hint;
+
+  /// Trenin o an baktığı yön; tam tersi sönük çizilir.
+  final SnakeDirection current;
+
+  final ValueChanged<SnakeDirection> onTurn;
+
+  static const List<({SnakeDirection direction, IconData icon, String label})>
+  _buttons = <({SnakeDirection direction, IconData icon, String label})>[
+    (
+      direction: SnakeDirection.left,
+      icon: Icons.keyboard_arrow_left_rounded,
+      label: 'Sola',
+    ),
+    (
+      direction: SnakeDirection.up,
+      icon: Icons.keyboard_arrow_up_rounded,
+      label: 'Yukarı',
+    ),
+    (
+      direction: SnakeDirection.down,
+      icon: Icons.keyboard_arrow_down_rounded,
+      label: 'Aşağı',
+    ),
+    (
+      direction: SnakeDirection.right,
+      icon: Icons.keyboard_arrow_right_rounded,
+      label: 'Sağa',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        // İpucu satırı yer kaplamasın diye yüksekliği sabit: tren
+        // başlayınca tuşlar zıplamıyor.
+        SizedBox(
+          height: 18,
+          child: hint
+              ? Center(
+                  child: Text(
+                    'BİR YÖNE BAS YA DA KAYDIR',
+                    style: AppText.micro.copyWith(color: accent),
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: <Widget>[
+            for (final button in _buttons) ...<Widget>[
+              Expanded(
+                child: _TurnButton(
+                  icon: button.icon,
+                  label: button.label,
+                  // Tam ters yön oynanamaz: tuş sönük ve dokunmaz.
+                  enabled: enabled && !button.direction.isOppositeOf(current),
+                  onTap: () => onTurn(button.direction),
+                ),
+              ),
+              if (button != _buttons.last) const SizedBox(width: AppSpacing.sm),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TurnButton extends StatelessWidget {
+  const _TurnButton({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+      semanticLabel: label,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        // 60: hareket eden vagonda 48 bile ıskalanıyor. Dört tuş satırı
+        // paylaşınca her biri 375 px ekranda ~80 px genişlikte kalıyor,
+        // yani 44 pt eşiğinin çok üstünde.
+        height: 60,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.surface : AppColors.background,
+          borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+          border: Border.all(
+            color: enabled ? AppColors.outline : AppColors.surface,
+            width: 1.4,
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: 32,
+          color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+        ),
+      ),
+    );
+  }
 }

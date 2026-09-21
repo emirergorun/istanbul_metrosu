@@ -1,13 +1,39 @@
 import 'dart:math';
 
 const int trainSnakeMaxLevel = 11;
-const int trainSnakePassengersPerLevel = 3;
 
-/// Izgara boyutu. Satır/sütun oranı (17/11 ≈ 1.55) tipik dikey oyun
-/// alanının en/boy oranına yakın seçildi — kutu şeklinde büyük bir boşluk
-/// bırakmadan hücreler kareye yakın kalır.
+/// Bir üst hatta geçmek için toplanması gereken yolcu.
+///
+/// Üçtü ve oyunun bir hedefi yoktu: M11'e ~45 saniyede ulaşılıyor, sonra
+/// oyun sonsuza kadar sürüyordu. Beşe çıkarıldı ve M11 artık **zafer**.
+///
+/// Hesap: 10 hat × 5 = 50 yolcu. Yolcu başına ortalama ~12 adım (tren
+/// uzadıkça yol bulmak zorlaşır), adım 0,20 saniye → yaklaşık iki dakika.
+/// En kısa yolculukta (6 dakika) bile kazanılabilir; hedefin ulaşılabilir
+/// olması şart, yoksa anlamını yitirir.
+const int trainSnakePassengersPerLevel = 5;
+
+/// Hat atlayınca verilen ek vagon.
+///
+/// Yolcu başına bir vagon zaten uzuyor; hat atlamak ayrıca ödüllendirilir
+/// ki merdivenin her basamağı tahtada görünür bir bedel yaratsın.
+///
+/// Son uzunluk: 3 + 50 + (10 × 2) = 73 vagon. 11×15 = 165 hücrede %44
+/// doluluk — yılan türünde "zor ama yapılabilir" bandı; %50 üstünde tren
+/// kendi kuyruğuyla kilitleniyor.
+const int trainSnakeLevelBonusCars = 2;
+
+/// Izgara boyutu.
+///
+/// 15/11 ≈ 1.36: ekranın tamamını kaplayan bir sahne görseli yerine kendi
+/// çizdiğimiz tahtayı kullanınca oran serbest kaldı. Bu oran alt tuş
+/// sırasına yer bırakırken hücreleri kare tutuyor.
 const int trainSnakeColumns = 11;
-const int trainSnakeRows = 17;
+const int trainSnakeRows = 15;
+
+/// Kazanmak için gereken toplam yolcu.
+const int trainSnakeGoalPassengers =
+    (trainSnakeMaxLevel - 1) * trainSnakePassengersPerLevel;
 
 /// Trenin başlangıç uzunluğu (vagon dahil lokomotif).
 const int trainSnakeStartLength = 3;

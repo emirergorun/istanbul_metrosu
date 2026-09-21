@@ -72,7 +72,7 @@ void main() {
       expect(controller.body.first, const Point<int>(6, 8));
     });
 
-    test('3 yolcu toplayınca M2 hattına geçer', () {
+    test('beş yolcu toplayınca M2 hattına geçer', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
       controller.debugSetBody(const <Point<int>>[
@@ -81,15 +81,41 @@ void main() {
         Point<int>(1, 8),
       ], direction: SnakeDirection.right);
 
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < trainSnakePassengersPerLevel; i++) {
         final headX = controller.body.first.x;
         controller.debugSetPassenger(Point<int>(headX + 1, 8));
         controller.step();
       }
 
-      expect(controller.passengersCollected, 3);
+      expect(controller.passengersCollected, trainSnakePassengersPerLevel);
       expect(controller.level, 2);
       expect(controller.lineLabel, 'M2');
+    });
+
+    test('hat atlayınca ek vagon kazanılır', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      controller.debugSetBody(const <Point<int>>[
+        Point<int>(1, 8),
+        Point<int>(0, 8),
+      ], direction: SnakeDirection.right);
+
+      for (var i = 0; i < trainSnakePassengersPerLevel; i++) {
+        final headX = controller.body.first.x;
+        controller.debugSetPassenger(Point<int>(headX + 1, 8));
+        controller.step();
+      }
+      // Yolcu başına bir vagon zaten uzadı; bonus sonraki adımlarda
+      // birer birer ödenir (gövde ızgarada sürekli olmak zorunda).
+      final afterLevelUp = controller.body.length;
+      controller.debugSetPassenger(const Point<int>(0, 0));
+      controller.step(trainSnakeLevelBonusCars);
+
+      expect(
+        controller.body.length,
+        afterLevelUp + trainSnakeLevelBonusCars,
+        reason: 'hat bonusu vagona dönüşmeli',
+      );
     });
 
     test('yön kuyruklanır, bir sonraki adımda uygulanır', () {
@@ -108,23 +134,26 @@ void main() {
       expect(controller.body.first, const Point<int>(5, 9));
     });
 
-    test('tam ters yöne dönüş kendi boynuna çarpmayı önlemek için yok sayılır', () {
-      final controller = controllerFor();
-      addTearDown(controller.dispose);
-      controller.debugSetBody(const <Point<int>>[
-        Point<int>(5, 8),
-        Point<int>(4, 8),
-        Point<int>(3, 8),
-      ], direction: SnakeDirection.right);
-      controller.debugSetPassenger(const Point<int>(9, 9));
+    test(
+      'tam ters yöne dönüş kendi boynuna çarpmayı önlemek için yok sayılır',
+      () {
+        final controller = controllerFor();
+        addTearDown(controller.dispose);
+        controller.debugSetBody(const <Point<int>>[
+          Point<int>(5, 8),
+          Point<int>(4, 8),
+          Point<int>(3, 8),
+        ], direction: SnakeDirection.right);
+        controller.debugSetPassenger(const Point<int>(9, 9));
 
-      // Sağa giderken sola dönmek anında geriye, kendi boynuna gitmek
-      // demektir — istek yok sayılmalı, tren sağa devam etmeli.
-      controller.turn(SnakeDirection.left);
-      controller.step();
+        // Sağa giderken sola dönmek anında geriye, kendi boynuna gitmek
+        // demektir — istek yok sayılmalı, tren sağa devam etmeli.
+        controller.turn(SnakeDirection.left);
+        controller.step();
 
-      expect(controller.body.first, const Point<int>(6, 8));
-    });
+        expect(controller.body.first, const Point<int>(6, 8));
+      },
+    );
 
     test('sol duvara çarpınca oyun biter (ekranın diğer ucuna çıkmaz)', () {
       final controller = controllerFor();
@@ -249,6 +278,143 @@ void main() {
       final dt = controller.debugElapsedSecondsSince(t1);
 
       expect(dt, lessThanOrEqualTo(0.05));
+    });
+  });
+
+  group('ilk girdi', () {
+    test('girdi gelmeden tren hareket etmez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      final before = controller.head;
+      expect(controller.isAwaitingFirstInput, isTrue);
+
+      // Sağ duvara varmaya yetecek kadar süre: eskiden oyun burada
+      // bitiyordu, artık tren hiç kıpırdamıyor.
+      controller.debugAdvance(5);
+
+      expect(controller.head, before);
+      expect(controller.status, GameStatus.playing);
+    });
+
+    test('ilk geçerli yön treni başlatır', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.turn(SnakeDirection.up);
+
+      expect(controller.isAwaitingFirstInput, isFalse);
+    });
+
+    test('ters yön treni başlatmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      // Başlangıç yönü sağ; sol tam ters, yok sayılır.
+      controller.turn(SnakeDirection.left);
+
+      expect(controller.isAwaitingFirstInput, isTrue);
+    });
+
+    test('yeniden başlatmada tren yine bekler', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.turn(SnakeDirection.up);
+      controller.restart();
+
+      expect(controller.isAwaitingFirstInput, isTrue);
+    });
+  });
+
+  group('göreli dönüş', () {
+    test('sola dönüş yönü saat yönünün tersine çevirir', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      // Başlangıç: sağ. Sola dönüş yukarı bakmalı.
+      controller.turnLeft();
+      controller.step();
+      expect(controller.direction, SnakeDirection.up);
+
+      controller.turnLeft();
+      controller.step();
+      expect(controller.direction, SnakeDirection.left);
+    });
+
+    test('sağa dönüş yönü saat yönünde çevirir', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.turnRight();
+      controller.step();
+      expect(controller.direction, SnakeDirection.down);
+
+      controller.turnRight();
+      controller.step();
+      expect(controller.direction, SnakeDirection.left);
+    });
+
+    test('göreli dönüş asla tam tersi üretmez', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      for (var i = 0; i < 12; i++) {
+        final before = controller.direction;
+        controller.turnLeft();
+        controller.step();
+        expect(controller.direction.isOppositeOf(before), isFalse);
+      }
+    });
+  });
+
+  group('zafer', () {
+    test('hedefe ulaşınca oyun kazanılarak biter', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+      controller.debugSetBody(const <Point<int>>[
+        Point<int>(1, 8),
+        Point<int>(0, 8),
+      ], direction: SnakeDirection.right);
+      controller.turn(SnakeDirection.right);
+
+      // Hedef kadar yolcu topla: her adımda başın önüne bir yolcu koy.
+      for (var i = 0; i < trainSnakeGoalPassengers; i++) {
+        final head = controller.body.first;
+        // Tren duvara dayanmasın diye her turda gövdeyi başa çekiyoruz.
+        if (head.x >= trainSnakeColumns - 2) {
+          controller.debugSetBody(<Point<int>>[
+            const Point<int>(1, 8),
+            const Point<int>(0, 8),
+          ], direction: SnakeDirection.right);
+        }
+        final headX = controller.body.first.x;
+        controller.debugSetPassenger(Point<int>(headX + 1, 8));
+        controller.step();
+      }
+
+      expect(controller.passengersCollected, trainSnakeGoalPassengers);
+      expect(controller.isVictory, isTrue);
+      expect(controller.status, GameStatus.gameOver);
+      expect(controller.passengersToGoal, 0);
+    });
+
+    test('hedefe varmadan zafer bayrağı kalkmaz', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      expect(controller.isVictory, isFalse);
+      expect(controller.passengersToGoal, trainSnakeGoalPassengers);
+    });
+
+    test('yeniden başlatmada zafer sıfırlanır', () {
+      final controller = controllerFor()..start();
+      addTearDown(controller.dispose);
+
+      controller.restart();
+
+      expect(controller.isVictory, isFalse);
+      expect(controller.passengersToGoal, trainSnakeGoalPassengers);
     });
   });
 }

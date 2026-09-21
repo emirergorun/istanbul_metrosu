@@ -46,8 +46,9 @@ flutter:
     - assets/audio/
     # Hat Düşür arka plan sahnesi (tren içi + kutu).
     - assets/images/merge_drop_scene.png
-    # Yolcu Topla arka plan sahnesi (başlık + sarı raylı tahta + siluet).
-    - assets/images/train_snake_scene.png
+    # Oyun kapakları. Referans tabakasından kesildi, gömülü başlıkları
+    # temizlendi; ad Bungee ile Flutter katmanında biniyor.
+    - assets/images/games/
     # Font lisans metinleri uygulama içi "Lisanslar" ekranına kaydedilir.
     - assets/fonts/OFL-Bungee.txt
     - assets/fonts/OFL-MPLUSRounded1c.txt

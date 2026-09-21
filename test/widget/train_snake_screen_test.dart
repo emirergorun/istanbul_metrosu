@@ -5,6 +5,7 @@ import 'package:istanbul_metro_game/app/app_scope.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
+import 'package:istanbul_metro_game/features/games/train_snake/domain/train_snake_state.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/presentation/train_snake_screen.dart';
 import 'package:istanbul_metro_game/features/journey/models/journey.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
@@ -55,14 +56,12 @@ void main() {
   testWidgets('oyun ekranı hatasız açılır ve HUD gösterilir', (tester) async {
     await pumpGame(tester);
 
-    // Sahnedeki canlı skor tablosu + merdivendeki M1 madalyonu.
+    // Hat rozeti ve hedef sayacı: sahne görseli kaldırıldıktan sonra
+    // oyuncunun hangi hatta olduğunu ve hedefe ne kadar kaldığını
+    // söyleyen tek yer bu satır.
     expect(find.text('M1'), findsWidgets);
-    // Skor tablosunun üç kutusu da görselin üstüne canlı basılır; görseldeki
-    // boyalı "HAT / YOLCU / SKOR" değerleri hiç değişmediği için bunlar
-    // olmazsa oyuncu skorunun sabit kaldığını görür.
-    expect(find.text('YOLCU'), findsOneWidget);
-    expect(find.text('SKOR'), findsOneWidget);
-    expect(find.text('0 / 3'), findsOneWidget);
+    expect(find.text('0 / $trainSnakeGoalPassengers'), findsOneWidget);
+    expect(find.textContaining('Hedefe'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -133,10 +132,12 @@ void main() {
   testWidgets('duvara çarpınca oyun biter ve sonuç ekranı çıkar', (
     tester,
   ) async {
-    // Sol duvara doğru döndürüp bırakırsak tren birkaç adımda çarpar.
+    // Tren ilk girdiye kadar bekler; sol tuş başlangıç yönüne (sağ) tam
+    // ters olduğu için reddedilir ve treni başlatmaz. Yukarı geçerli bir
+    // dönüş: tren sekiz adımda üst duvara varır.
     await pumpGame(tester);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump(const Duration(seconds: 3));
 
     expect(find.text('Tren durdu'), findsOneWidget);
