@@ -203,4 +203,43 @@ void main() {
       );
     });
   });
+
+  group('arka plan akışı', () {
+    // Regresyon: arka planın fazı `geçen süre × anlık hız` idi. Hız kapı
+    // geçtikçe değişince çarpım sıçrıyor, kavisli çizgiler bir iki birim
+    // geriye ışınlanıyordu. Mesafe artık kare kare toplanıyor.
+    test('hız kapıyla değişse de mesafe sıçramadan ilerler', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      const dt = 1 / 60;
+
+      var previous = controller.scrollDistance;
+      for (var frame = 0; frame < 600; frame++) {
+        if (frame % 60 == 0) {
+          // Her saniye bir kapı geçilmiş gibi: hız her seferinde değişir.
+          controller.debugSetFlight(
+            trainY: 0.5,
+            velocity: 0,
+            obstacles: passedObstacles(1),
+          );
+        } else {
+          // Tren düşüp ölmesin.
+          controller.debugSetFlight(trainY: 0.5, velocity: 0);
+        }
+        final speed = controller.config.speed;
+        controller.debugStep(dt);
+        if (controller.status != GameStatus.playing) break;
+
+        final step = controller.scrollDistance - previous;
+        expect(step, greaterThan(0), reason: 'kare $frame: geri gitti');
+        expect(
+          step,
+          lessThanOrEqualTo(speed * dt + 1e-9),
+          reason: 'kare $frame: ileri sıçradı',
+        );
+        previous = controller.scrollDistance;
+      }
+      expect(controller.gatesPassed, greaterThan(5));
+    });
+  });
 }

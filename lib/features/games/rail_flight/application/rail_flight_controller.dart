@@ -41,9 +41,20 @@ class RailFlightController extends JourneyGameController {
   int _gatesPassed = 0;
   List<RailObstacle> _obstacles = const <RailObstacle>[];
   double _pendingSpawnGap = 0;
+  double _scrollDistance = 0;
 
   double get trainY => _trainY;
   double get velocity => _velocity;
+
+  /// Arka planın bugüne kadar kaydığı mesafe (ekran genişliği birimi).
+  ///
+  /// Kare kare **toplanır**. Önceden `geçen süre × anlık hız` olarak
+  /// hesaplanıyordu; hız kapı geçtikçe değişince çarpım birden sıçrıyor,
+  /// arka plandaki çizgiler bir iki birim geriye ışınlanıyordu. Geçen süre
+  /// de yolculuğun saati olduğu için oyun seçiminde geçen süre de faza
+  /// karışıyordu. Engellerle aynı adımda ilerlediği için arka plan artık
+  /// onlarla birebir aynı akıyor.
+  double get scrollDistance => _scrollDistance;
   int get gatesPassed => _gatesPassed;
   int get lineLevel => railFlightLineLevelForPasses(_gatesPassed);
   String get lineLabel => railFlightLineLabelForPasses(_gatesPassed);
@@ -111,9 +122,11 @@ class RailFlightController extends JourneyGameController {
     _velocity += config.gravity * dt;
     _trainY += _velocity * dt;
 
+    final step = config.speed * dt;
+    _scrollDistance += step;
     _obstacles = <RailObstacle>[
       for (final obstacle in _obstacles)
-        obstacle.copyWith(x: obstacle.x - config.speed * dt),
+        obstacle.copyWith(x: obstacle.x - step),
     ];
     _scorePassedGates();
     _trimAndSpawnObstacles();

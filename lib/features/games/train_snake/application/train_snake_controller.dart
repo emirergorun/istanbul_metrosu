@@ -231,15 +231,15 @@ class TrainSnakeController extends JourneyGameController {
     }
 
     final delta = _direction.delta;
-    final next = Point<int>(head.x + delta.x, head.y + delta.y);
-
-    if (next.x < 0 ||
-        next.x >= trainSnakeColumns ||
-        next.y < 0 ||
-        next.y >= trainSnakeRows) {
-      endGame();
-      return;
-    }
+    // Kenar duvar değil, tünel: sağdan çıkan soldan, üstten çıkan alttan
+    // girer (klasik yılan). Duvara çarpıp bitmek, dar tahtada oyunun
+    // çoğunu "kenardan dönmeye" harcatıyordu. Oyunu yalnızca trenin kendi
+    // vagonlarına çarpması bitirir. Dart'ta `%` eksi sayıda da pozitif
+    // döner, yani sol/üst kenar da doğru sarılır.
+    final next = Point<int>(
+      (head.x + delta.x) % trainSnakeColumns,
+      (head.y + delta.y) % trainSnakeRows,
+    );
 
     final eating = next == _passenger;
     final growing = eating || _pendingGrowth > 0;

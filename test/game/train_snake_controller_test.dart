@@ -155,7 +155,9 @@ void main() {
       },
     );
 
-    test('sol duvara çarpınca oyun biter (ekranın diğer ucuna çıkmaz)', () {
+    // Kenar duvar değil, tünel: tren karşı kenardan geri girer, oyun
+    // sürer (klasik yılan). Eskiden kenara çarpmak oyunu bitiriyordu.
+    test('soldan çıkan tren sağdan girer, oyun sürer', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);
       controller.debugSetBody(const <Point<int>>[
@@ -167,42 +169,66 @@ void main() {
 
       controller.step();
 
-      expect(controller.status, GameStatus.gameOver);
+      expect(controller.status, GameStatus.playing);
+      expect(controller.head, const Point<int>(trainSnakeColumns - 1, 8));
     });
 
-    test('sağ/alt/üst duvara çarpınca da oyun biter', () {
-      final rightWall = controllerFor()
+    test('sağdan, üstten ve alttan çıkan tren karşı kenardan girer', () {
+      final rightEdge = controllerFor()
         ..debugSetBody(<Point<int>>[
           Point<int>(trainSnakeColumns - 1, 8),
           Point<int>(trainSnakeColumns - 2, 8),
           Point<int>(trainSnakeColumns - 3, 8),
         ], direction: SnakeDirection.right)
-        ..debugSetPassenger(const Point<int>(0, 0));
-      addTearDown(rightWall.dispose);
-      rightWall.step();
-      expect(rightWall.status, GameStatus.gameOver);
+        ..debugSetPassenger(const Point<int>(5, 0));
+      addTearDown(rightEdge.dispose);
+      rightEdge.step();
+      expect(rightEdge.status, GameStatus.playing);
+      expect(rightEdge.head, const Point<int>(0, 8));
 
-      final topWall = controllerFor()
+      final topEdge = controllerFor()
         ..debugSetBody(const <Point<int>>[
           Point<int>(5, 0),
           Point<int>(5, 1),
           Point<int>(5, 2),
         ], direction: SnakeDirection.up)
         ..debugSetPassenger(const Point<int>(0, 0));
-      addTearDown(topWall.dispose);
-      topWall.step();
-      expect(topWall.status, GameStatus.gameOver);
+      addTearDown(topEdge.dispose);
+      topEdge.step();
+      expect(topEdge.status, GameStatus.playing);
+      expect(topEdge.head, const Point<int>(5, trainSnakeRows - 1));
 
-      final bottomWall = controllerFor()
+      final bottomEdge = controllerFor()
         ..debugSetBody(<Point<int>>[
           Point<int>(5, trainSnakeRows - 1),
           Point<int>(5, trainSnakeRows - 2),
           Point<int>(5, trainSnakeRows - 3),
         ], direction: SnakeDirection.down)
         ..debugSetPassenger(const Point<int>(0, 0));
-      addTearDown(bottomWall.dispose);
-      bottomWall.step();
-      expect(bottomWall.status, GameStatus.gameOver);
+      addTearDown(bottomEdge.dispose);
+      bottomEdge.step();
+      expect(bottomEdge.status, GameStatus.playing);
+      expect(bottomEdge.head, const Point<int>(5, 0));
+    });
+
+    test('karşı kenarda kendi vagonu varsa çarpar', () {
+      // Sarılma çarpışmayı atlatmamalı: girilen hücrede vagon varsa biter.
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      controller.debugSetBody(const <Point<int>>[
+        Point<int>(0, 8),
+        Point<int>(1, 8),
+        Point<int>(1, 9),
+        Point<int>(0, 9),
+        Point<int>(trainSnakeColumns - 1, 9),
+        Point<int>(trainSnakeColumns - 1, 8),
+        Point<int>(trainSnakeColumns - 2, 8),
+      ], direction: SnakeDirection.left);
+      controller.debugSetPassenger(const Point<int>(5, 0));
+
+      controller.step();
+
+      expect(controller.status, GameStatus.gameOver);
     });
 
     test('kendi vagonuna çarpınca oyun biter', () {

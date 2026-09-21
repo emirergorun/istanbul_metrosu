@@ -238,12 +238,12 @@ class MiniGames {
         'daha uza.',
     objective:
         'Toplanan her beş yolcu bir üst hatta taşır; elli yolcuda M11’e '
-        'ulaşıp yolculuğu kazanırsın. Duvara ya da kendi vagonlarına '
-        'çarptığında oyun biter.',
+        'ulaşıp yolculuğu kazanırsın. Kenardan çıkan tren karşıdan girer; '
+        'kendi vagonuna çarpınca biter.',
     howToPlay: <String>[
-      'Alttaki dört yön tuşundan birine bas; tren o yöne döner.',
+      'Alttaki yön pedinin bir koluna bas; tren o yöne döner.',
       'Tahtada parmağını kaydırmak da aynı işi yapar.',
-      'Geldiğin yönün tam tersine dönülemez; o tuş sönük durur.',
+      'Geldiğin yönün tam tersine dönülemez; o kol sönük durur.',
     ],
     isAvailable: true,
   );

@@ -269,4 +269,67 @@ void main() {
       }
     });
   });
+
+  group('karoların yolu (kayma animasyonu için)', () {
+    test('sola kaydırmada her karonun nereden nereye gittiği kaydedilir', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      final grid = emptyGrid(4);
+      grid[0][0] = const MetroTile(rank: 1);
+      grid[0][1] = const MetroTile(rank: 1);
+      grid[0][3] = const MetroTile(rank: 2);
+      controller.debugSetGrid(grid);
+      final before = controller.moveCount;
+
+      final outcome = controller.move(MetroMoveDirection.left);
+
+      expect(outcome.accepted, isTrue);
+      expect(controller.moveCount, before + 1);
+      // İki M1 aynı hedefe (0,0) kayar ve orada birleşir; M2 (0,3)'ten
+      // (0,1)'e kayar.
+      expect(
+        controller.lastMoves,
+        containsAll(const <MetroTileMove>[
+          MetroTileMove(fromRow: 0, fromCol: 0, toRow: 0, toCol: 0, rank: 1),
+          MetroTileMove(fromRow: 0, fromCol: 1, toRow: 0, toCol: 0, rank: 1),
+          MetroTileMove(fromRow: 0, fromCol: 3, toRow: 0, toCol: 1, rank: 2),
+        ]),
+      );
+      expect(controller.lastMoves, hasLength(3));
+      expect(controller.lastMerged, <(int, int)>{(0, 0)});
+      // Yeni karo boş bir hücrede doğdu.
+      final spawn = controller.lastSpawn!;
+      expect(spawn, isNot((0, 0)));
+      expect(spawn, isNot((0, 1)));
+    });
+
+    test('aşağı kaydırmada yol sütun boyunca kaydedilir', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      final grid = emptyGrid(4);
+      grid[0][2] = const MetroTile(rank: 3);
+      controller.debugSetGrid(grid);
+
+      controller.move(MetroMoveDirection.down);
+
+      expect(controller.lastMoves, const <MetroTileMove>[
+        MetroTileMove(fromRow: 0, fromCol: 2, toRow: 3, toCol: 2, rank: 3),
+      ]);
+      expect(controller.lastMerged, isEmpty);
+    });
+
+    test('tahtayı değiştirmeyen kaydırma animasyon tetiklemez', () {
+      final controller = controllerFor();
+      addTearDown(controller.dispose);
+      final grid = emptyGrid(4);
+      grid[0][0] = const MetroTile(rank: 1);
+      controller.debugSetGrid(grid);
+      final before = controller.moveCount;
+
+      final outcome = controller.move(MetroMoveDirection.left);
+
+      expect(outcome.accepted, isFalse);
+      expect(controller.moveCount, before);
+    });
+  });
 }

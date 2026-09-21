@@ -438,9 +438,11 @@ class TrainSnakeBot extends GameBot {
 
     bool safe(SnakeDirection direction) {
       final delta = direction.delta;
-      final next = Point<int>(head.x + delta.x, head.y + delta.y);
-      if (next.x < 0 || next.x >= trainSnakeColumns) return false;
-      if (next.y < 0 || next.y >= trainSnakeRows) return false;
+      // Kenar bir tünel: tren karşı kenardan girer.
+      final next = Point<int>(
+        (head.x + delta.x) % trainSnakeColumns,
+        (head.y + delta.y) % trainSnakeRows,
+      );
       // Kuyruğun son vagonu bu adımda boşalacak (yolcuya girmiyorsak).
       final blocking = next == passenger
           ? body

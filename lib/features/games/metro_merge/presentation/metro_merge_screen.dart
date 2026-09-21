@@ -379,11 +379,81 @@ class _MergeHud extends StatelessWidget {
   }
 }
 
-class _MetroMergeBoard extends StatelessWidget {
+/// Hat Birleştir tahtası — karolar 2048'deki gibi **kayar**.
+///
+/// Eskiden tahta her hamlede yeni ızgarayı hücre hücre çiziyordu; karolar
+/// kaydırılan yöne ışınlanıyordu. Controller artık her karonun nereden
+/// nereye gittiğini kaydediyor ([MetroMergeController.lastMoves]) ve çizim
+/// iki evrede oynuyor:
+///
+/// 1. **Kayma** (ilk ~110 ms): karolar eski hücrelerinden yenilerine,
+///    eski hatlarıyla kayar. Birleşecek iki karo aynı hücreye varır.
+/// 2. **Oturma** (sonraki ~120 ms): yeni ızgara çizilir; birleşen karo
+///    kısa bir büyüyüp oturma yapar, yeni doğan karo küçükten belirir.
+///
+/// Animasyon sürerken gelen kaydırma eskisini bekletmez, anında yenisini
+/// başlatır — hızlı oynayan 2048'de de beklemez.
+class _MetroMergeBoard extends StatefulWidget {
   const _MetroMergeBoard({required this.controller, required this.onMove});
 
   final MetroMergeController controller;
   final ValueChanged<MetroMoveDirection> onMove;
+
+  @override
+  State<_MetroMergeBoard> createState() => _MetroMergeBoardState();
+}
+
+class _MetroMergeBoardState extends State<_MetroMergeBoard>
+    with SingleTickerProviderStateMixin {
+  /// Kayma + oturma toplam süresi.
+  static const Duration _duration = Duration(milliseconds: 230);
+
+  /// Toplam sürenin kaymaya ayrılan payı (~110 ms).
+  static const double _slideShare = 0.48;
+
+  late final AnimationController _animation = AnimationController(
+    vsync: this,
+    duration: _duration,
+    value: 1,
+  );
+
+  late int _seenMove = widget.controller.moveCount;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MetroMergeBoard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+      _seenMove = widget.controller.moveCount;
+      _animation.value = 1;
+    }
+  }
+
+  void _onControllerChanged() {
+    final move = widget.controller.moveCount;
+    if (move == _seenMove) return;
+    _seenMove = move;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduceMotion || widget.controller.lastMoves.isEmpty) {
+      _animation.value = 1;
+      return;
+    }
+    _animation.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    _animation.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -397,13 +467,13 @@ class _MetroMergeBoard extends StatelessWidget {
               final velocity = details.velocity.pixelsPerSecond;
               if (velocity.distance < 60) return;
               if (velocity.dx.abs() > velocity.dy.abs()) {
-                onMove(
+                widget.onMove(
                   velocity.dx > 0
                       ? MetroMoveDirection.right
                       : MetroMoveDirection.left,
                 );
               } else {
-                onMove(
+                widget.onMove(
                   velocity.dy > 0
                       ? MetroMoveDirection.down
                       : MetroMoveDirection.up,
@@ -419,27 +489,12 @@ class _MetroMergeBoard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                   border: Border.all(color: AppColors.outline),
                 ),
-                child: Column(
-                  children: <Widget>[
-                    for (var row = 0; row < controller.config.gridSize; row++)
-                      Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            for (
-                              var col = 0;
-                              col < controller.config.gridSize;
-                              col++
-                            )
-                              Expanded(
-                                child: _BoardCell(
-                                  tile: controller.grid[row][col],
-                                  dense: false,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, inner) => AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, _) =>
+                        _buildTiles(inner.maxWidth / _gridSize),
+                  ),
                 ),
               ),
             ),
@@ -447,6 +502,90 @@ class _MetroMergeBoard extends StatelessWidget {
         );
       },
     );
+  }
+
+  int get _gridSize => widget.controller.config.gridSize;
+
+  Widget _buildTiles(double cell) {
+    final controller = widget.controller;
+    final t = _animation.value;
+    final sliding = t < _slideShare && controller.lastMoves.isNotEmpty;
+
+    Widget place(
+      double row,
+      double col,
+      MetroTile? tile, {
+      required Key key,
+      double scale = 1,
+    }) {
+      return Positioned(
+        key: key,
+        left: col * cell,
+        top: row * cell,
+        width: cell,
+        height: cell,
+        child: Transform.scale(
+          scale: scale,
+          child: _BoardCell(tile: tile, dense: false),
+        ),
+      );
+    }
+
+    final children = <Widget>[
+      // Zemin: boş hücreler hiç kıpırdamaz, karolar üstlerinden kayar.
+      for (var row = 0; row < _gridSize; row++)
+        for (var col = 0; col < _gridSize; col++)
+          place(
+            row.toDouble(),
+            col.toDouble(),
+            null,
+            key: ValueKey<String>('bos-$row-$col'),
+          ),
+    ];
+
+    if (sliding) {
+      final p = Curves.easeOutCubic.transform(t / _slideShare);
+      final moves = controller.lastMoves;
+      for (var i = 0; i < moves.length; i++) {
+        final move = moves[i];
+        children.add(
+          place(
+            move.fromRow + (move.toRow - move.fromRow) * p,
+            move.fromCol + (move.toCol - move.fromCol) * p,
+            MetroTile(rank: move.rank),
+            key: ValueKey<String>('kayan-$i'),
+          ),
+        );
+      }
+    } else {
+      // Oturma evresi: 0 → 1.
+      final settle = ((t - _slideShare) / (1 - _slideShare)).clamp(0.0, 1.0);
+      for (var row = 0; row < _gridSize; row++) {
+        for (var col = 0; col < _gridSize; col++) {
+          final tile = controller.grid[row][col];
+          if (tile == null) continue;
+          var scale = 1.0;
+          if (controller.lastMerged.contains((row, col))) {
+            // Birleşen karo bir an büyüyüp yerine oturur.
+            scale = 1 + 0.12 * math.sin(math.pi * settle);
+          } else if (controller.lastSpawn == (row, col)) {
+            // Yeni karo küçükten belirir.
+            scale = Curves.easeOutBack.transform(settle).clamp(0.0, 1.1);
+          }
+          children.add(
+            place(
+              row.toDouble(),
+              col.toDouble(),
+              tile,
+              key: ValueKey<String>('karo-$row-$col'),
+              scale: scale,
+            ),
+          );
+        }
+      }
+    }
+
+    return Stack(clipBehavior: Clip.none, children: children);
   }
 }
 

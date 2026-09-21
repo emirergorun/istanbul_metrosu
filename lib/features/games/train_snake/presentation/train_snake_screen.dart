@@ -14,7 +14,6 @@ import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../../core/widgets/line_badge.dart';
-import '../../../../core/widgets/pressable.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -413,7 +412,7 @@ class _TrainSnakeScreenState extends State<TrainSnakeScreen>
       gameOverSubtitle: controller.isVictory
           ? 'M1\'den M11\'e kadar bütün hatları topladın. '
                 'Trenin ${controller.body.length} vagon uzunluğunda.'
-          : 'Duvara ya da kendi vagonlarına çarptın.',
+          : 'Kendi vagonlarına çarptın.',
       onRestart: controller.restart,
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
@@ -622,7 +621,12 @@ class _TrainSnakePainter extends CustomPainter {
     final cellH = size.height / trainSnakeRows;
     _drawBoard(canvas, size, cellW, cellH);
     _drawPassenger(canvas, cellW, cellH);
+    // Kenardan geçen vagon yarısı bir kenarda, yarısı karşısında çizilir;
+    // tahtanın dışına taşan yarılar kırpılır.
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
     _drawBody(canvas, cellW, cellH);
+    canvas.restore();
   }
 
   void _drawBoard(Canvas canvas, Size size, double cellW, double cellH) {
@@ -696,53 +700,54 @@ class _TrainSnakePainter extends CustomPainter {
     for (var i = body.length - 1; i >= 0; i--) {
       final isTail = i == body.length - 1 && body.length > 1;
       final isHead = i == 0;
-      final center = _interpolatedCenter(i, cellW, cellH);
-      final scaleW = isTail ? 0.62 : 0.96;
-      final scaleH = isTail ? 0.62 : 0.92;
-      final rect = Rect.fromCenter(
-        center: center,
-        width: cellW * scaleW,
-        height: cellH * scaleH,
-      );
-      final rrect = isHead
-          ? _leadingRoundedRect(rect, dir, cell * 0.16, cell * 0.46)
-          : RRect.fromRectAndRadius(
-              rect,
-              Radius.circular(cell * (isTail ? 0.5 : 0.14)),
-            );
+      for (final center in _interpolatedCenters(i, cellW, cellH)) {
+        final scaleW = isTail ? 0.62 : 0.96;
+        final scaleH = isTail ? 0.62 : 0.92;
+        final rect = Rect.fromCenter(
+          center: center,
+          width: cellW * scaleW,
+          height: cellH * scaleH,
+        );
+        final rrect = isHead
+            ? _leadingRoundedRect(rect, dir, cell * 0.16, cell * 0.46)
+            : RRect.fromRectAndRadius(
+                rect,
+                Radius.circular(cell * (isTail ? 0.5 : 0.14)),
+              );
 
-      canvas.drawRRect(rrect, bodyFill);
+        canvas.drawRRect(rrect, bodyFill);
 
-      if (!isTail) {
-        canvas.save();
-        canvas.clipRRect(rrect);
-        // Pencere bandı.
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              rect.left + cell * 0.1,
-              rect.top + cell * 0.1,
-              rect.width - cell * 0.2,
-              cell * 0.26,
+        if (!isTail) {
+          canvas.save();
+          canvas.clipRRect(rrect);
+          // Pencere bandı.
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(
+                rect.left + cell * 0.1,
+                rect.top + cell * 0.1,
+                rect.width - cell * 0.2,
+                cell * 0.26,
+              ),
+              Radius.circular(cell * 0.08),
             ),
-            Radius.circular(cell * 0.08),
-          ),
-          windowFill,
-        );
-        // Kimlik şeridi: gövdenin alt kısmında baştan kuyruğa aynı renk
-        // devam eder — tek bir trenin parçası olduklarını gösterir.
-        canvas.drawRect(
-          Rect.fromLTWH(
-            rect.left,
-            rect.bottom - cell * 0.14,
-            rect.width,
-            cell * 0.14,
-          ),
-          stripeFill,
-        );
-        canvas.restore();
+            windowFill,
+          );
+          // Kimlik şeridi: gövdenin alt kısmında baştan kuyruğa aynı renk
+          // devam eder — tek bir trenin parçası olduklarını gösterir.
+          canvas.drawRect(
+            Rect.fromLTWH(
+              rect.left,
+              rect.bottom - cell * 0.14,
+              rect.width,
+              cell * 0.14,
+            ),
+            stripeFill,
+          );
+          canvas.restore();
+        }
+        canvas.drawRRect(rrect, outline);
       }
-      canvas.drawRRect(rrect, outline);
     }
   }
 
@@ -752,7 +757,13 @@ class _TrainSnakePainter extends CustomPainter {
   /// `previousBody[i-1] == body[i]` ilişkisi (bkz. controller) sayesinde
   /// her vagon "eskiden neredeydi"den "şimdi nerede"ye doğru düzgün bir
   /// çizgide kayar; adım adım ışınlanmaz.
-  Offset _interpolatedCenter(int i, double cellW, double cellH) {
+  ///
+  /// Kenar bir tünel olduğu için vagon bir kenardan çıkıp karşısından
+  /// girebilir. O adımda iki hücre arası fark tahtanın genişliği kadar;
+  /// düz ara değer vagonu tahtanın bir ucundan öbürüne boydan boya
+  /// kaydırırdı. Fark tünelin içinden (en kısa yoldan) alınır ve kenarı
+  /// aşan vagon karşı kenarda da çizilir: biri çıkarken öbürü girer.
+  List<Offset> _interpolatedCenters(int i, double cellW, double cellH) {
     final current = controller.body[i];
     final previousBody = controller.previousBody;
     final prevIndex = i == 0 ? 0 : i - 1;
@@ -760,9 +771,30 @@ class _TrainSnakePainter extends CustomPainter {
         ? previousBody[prevIndex]
         : current;
     final t = controller.stepProgress;
-    final x = previous.x + (current.x - previous.x) * t;
-    final y = previous.y + (current.y - previous.y) * t;
-    return Offset((x + 0.5) * cellW, (y + 0.5) * cellH);
+    final x =
+        previous.x +
+        _throughTunnel(current.x - previous.x, trainSnakeColumns) * t;
+    final y =
+        previous.y + _throughTunnel(current.y - previous.y, trainSnakeRows) * t;
+
+    Offset at(double cx, double cy) =>
+        Offset((cx + 0.5) * cellW, (cy + 0.5) * cellH);
+
+    final centers = <Offset>[at(x, y)];
+    // Kenardan taşan vagonun karşı kenardaki yarısı.
+    if (x < 0) centers.add(at(x + trainSnakeColumns, y));
+    if (x > trainSnakeColumns - 1) centers.add(at(x - trainSnakeColumns, y));
+    if (y < 0) centers.add(at(x, y + trainSnakeRows));
+    if (y > trainSnakeRows - 1) centers.add(at(x, y - trainSnakeRows));
+    return centers;
+  }
+
+  /// İki hücre arasındaki farkı tünelden geçen en kısa yola çevirir:
+  /// 0 → 10 (11 sütunda) bir adım sola demektir, on adım sağa değil.
+  static int _throughTunnel(int delta, int size) {
+    if (delta > size ~/ 2) return delta - size;
+    if (delta < -(size ~/ 2)) return delta + size;
+    return delta;
   }
 
   /// Dikdörtgeni, verilen yönde "ilerleyen" iki köşesi büyük yarıçapla
@@ -787,8 +819,9 @@ class _TrainSnakePainter extends CustomPainter {
     if (controller.body.length < 2) return const Offset(1, 0);
     final head = controller.body[0];
     final neck = controller.body[1];
-    final dx = (head.x - neck.x).toDouble();
-    final dy = (head.y - neck.y).toDouble();
+    // Baş kenardan yeni geçtiyse boynu karşı kenarda: yön tünelden okunur.
+    final dx = _throughTunnel(head.x - neck.x, trainSnakeColumns).toDouble();
+    final dy = _throughTunnel(head.y - neck.y, trainSnakeRows).toDouble();
     if (dx == 0 && dy == 0) return const Offset(1, 0);
     return Offset(dx, dy);
   }
@@ -871,7 +904,7 @@ Color _snakeLineColor(int level) {
   return colors[(level - 1).clamp(0, colors.length - 1)];
 }
 
-/// Trenin yönünü veren dört tuş.
+/// Trenin yönünü veren yön pedi (artı biçiminde).
 ///
 /// **Mutlak yön**, göreli dönüş değil. Önce iki göreli tuş denendi
 /// ("sola dön / sağa dön"): ölü tuş bırakmıyordu ve hedefler daha
@@ -880,13 +913,20 @@ Color _snakeLineColor(int level) {
 /// oturumlar kısa — ilk oturumdaki kafa karışıklığı doğrudan silme
 /// sebebi.
 ///
-/// Dört tuşun klasik itirazı "biri her zaman ölü": tam ters yön yasak.
-/// Bunu gizlemek yerine **gösteriyoruz** — o tuş sönük çizilir ve
-/// dokunmayı yok sayar. Oyuncu "oraya basamam" bilgisini bedava alır.
+/// Önce dört tuş yan yana bir satırdı. Başparmak hangi okun hangi yöne
+/// gittiğini okumak zorundaydı; artı biçiminde yön oku **yerinden**
+/// okunuyor, oyun kumandası alışkanlığı işi yapıyor.
 ///
-/// Tuşlar kaydırmanın yerine geçmiyor, yanında duruyor; ikisi de artık
-/// aynı dili konuşuyor (mutlak yön).
-class _TurnPad extends StatelessWidget {
+/// - Trenin o an gittiği yönün kolu hat renginde yanar: oyuncu yönünü
+///   tahtaya bakmadan da görür.
+/// - Tam ters yön yasak; o kol sönük çizilir ve dokunmayı yok sayar.
+///   Oyuncu "oraya basamam" bilgisini bedava alır.
+/// - Dönüş parmak **değdiği anda** verilir, kalkınca değil: yılan
+///   oyununda 100 ms geç dönüş, bir sonraki hücreyi kaçırmak demek.
+///
+/// Ped kaydırmanın yerine geçmiyor, yanında duruyor; ikisi de aynı dili
+/// konuşuyor (mutlak yön).
+class _TurnPad extends StatefulWidget {
   const _TurnPad({
     required this.accent,
     required this.enabled,
@@ -898,117 +938,297 @@ class _TurnPad extends StatelessWidget {
   final Color accent;
   final bool enabled;
 
-  /// Tren henüz başlamadıysa tuşlar "başlat" görevini de görüyor.
+  /// Tren henüz başlamadıysa ped "başlat" görevini de görüyor.
   final bool hint;
 
-  /// Trenin o an baktığı yön; tam tersi sönük çizilir.
+  /// Trenin o an baktığı yön; kolu yanar, tam tersi sönük çizilir.
   final SnakeDirection current;
 
   final ValueChanged<SnakeDirection> onTurn;
 
+  /// Bir kolun kenarı. 46 pt: Apple'ın 44 pt eşiğinin üstünde, pedin
+  /// tamamı (3 kol) ise tahtadan fazla yer çalmıyor.
+  static const double arm = 46;
+  static const double size = arm * 3;
+
+  @override
+  State<_TurnPad> createState() => _TurnPadState();
+}
+
+class _TurnPadState extends State<_TurnPad> {
+  SnakeDirection? _pressed;
+
   static const List<({SnakeDirection direction, IconData icon, String label})>
-  _buttons = <({SnakeDirection direction, IconData icon, String label})>[
-    (
-      direction: SnakeDirection.left,
-      icon: Icons.keyboard_arrow_left_rounded,
-      label: 'Sola',
-    ),
+  _arms = <({SnakeDirection direction, IconData icon, String label})>[
     (
       direction: SnakeDirection.up,
       icon: Icons.keyboard_arrow_up_rounded,
       label: 'Yukarı',
     ),
     (
-      direction: SnakeDirection.down,
-      icon: Icons.keyboard_arrow_down_rounded,
-      label: 'Aşağı',
+      direction: SnakeDirection.left,
+      icon: Icons.keyboard_arrow_left_rounded,
+      label: 'Sola',
     ),
     (
       direction: SnakeDirection.right,
       icon: Icons.keyboard_arrow_right_rounded,
       label: 'Sağa',
     ),
+    (
+      direction: SnakeDirection.down,
+      icon: Icons.keyboard_arrow_down_rounded,
+      label: 'Aşağı',
+    ),
   ];
+
+  bool _usable(SnakeDirection direction) =>
+      widget.enabled && !direction.isOppositeOf(widget.current);
+
+  void _down(SnakeDirection direction) {
+    if (!_usable(direction)) return;
+    setState(() => _pressed = direction);
+    widget.onTurn(direction);
+  }
+
+  void _release() {
+    if (_pressed == null) return;
+    setState(() => _pressed = null);
+  }
 
   @override
   Widget build(BuildContext context) {
+    const arm = _TurnPad.arm;
     return Column(
       children: <Widget>[
         // İpucu satırı yer kaplamasın diye yüksekliği sabit: tren
-        // başlayınca tuşlar zıplamıyor.
+        // başlayınca ped zıplamıyor.
         SizedBox(
           height: 18,
-          child: hint
+          child: widget.hint
               ? Center(
                   child: Text(
                     'BİR YÖNE BAS YA DA KAYDIR',
-                    style: AppText.micro.copyWith(color: accent),
+                    style: AppText.micro.copyWith(color: widget.accent),
                   ),
                 )
               : null,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Row(
-          children: <Widget>[
-            for (final button in _buttons) ...<Widget>[
-              Expanded(
-                child: _TurnButton(
-                  icon: button.icon,
-                  label: button.label,
-                  // Tam ters yön oynanamaz: tuş sönük ve dokunmaz.
-                  enabled: enabled && !button.direction.isOppositeOf(current),
-                  onTap: () => onTurn(button.direction),
+        SizedBox.square(
+          dimension: _TurnPad.size,
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _TurnPadPainter(
+                    accent: widget.accent,
+                    active: widget.enabled ? widget.current : null,
+                    pressed: _pressed,
+                    blocked: SnakeDirection.values.firstWhere(
+                      (d) => d.isOppositeOf(widget.current),
+                    ),
+                  ),
                 ),
               ),
-              if (button != _buttons.last) const SizedBox(width: AppSpacing.sm),
+              for (final entry in _arms)
+                Positioned.fromRect(
+                  rect: _TurnPadPainter.armRect(entry.direction, arm),
+                  child: Semantics(
+                    button: true,
+                    enabled: _usable(entry.direction),
+                    label: entry.label,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) => _down(entry.direction),
+                      onTapUp: (_) => _release(),
+                      onTapCancel: _release,
+                      child: AnimatedSlide(
+                        // Basılan kol bir tık içe göçer.
+                        offset: _pressed == entry.direction
+                            ? Offset(
+                                entry.direction.delta.x * 0.04,
+                                entry.direction.delta.y * 0.04,
+                              )
+                            : Offset.zero,
+                        duration: const Duration(milliseconds: 60),
+                        child: Center(
+                          child: Icon(
+                            entry.icon,
+                            size: 26,
+                            color: _iconColor(entry.direction),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
-          ],
+          ),
         ),
       ],
     );
   }
+
+  Color _iconColor(SnakeDirection direction) {
+    if (!_usable(direction)) {
+      return AppColors.textMuted.withValues(alpha: 0.45);
+    }
+    if (widget.enabled && direction == widget.current) return widget.accent;
+    return AppColors.textPrimary;
+  }
 }
 
-class _TurnButton extends StatelessWidget {
-  const _TurnButton({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.onTap,
+/// Pedin gövdesi: tek parça artı, kabartma gölgesi, yanan kol ve göbek.
+class _TurnPadPainter extends CustomPainter {
+  const _TurnPadPainter({
+    required this.accent,
+    required this.active,
+    required this.pressed,
+    required this.blocked,
   });
 
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  final VoidCallback onTap;
+  final Color accent;
+
+  /// Yanan kol (trenin yönü); oyun durmuşsa `null`.
+  final SnakeDirection? active;
+
+  /// Parmağın altındaki kol.
+  final SnakeDirection? pressed;
+
+  /// Ters yön — sönük.
+  final SnakeDirection blocked;
+
+  /// Verilen kolun ped içindeki dikdörtgeni.
+  static Rect armRect(SnakeDirection direction, double arm) =>
+      switch (direction) {
+        SnakeDirection.up => Rect.fromLTWH(arm, 0, arm, arm),
+        SnakeDirection.down => Rect.fromLTWH(arm, arm * 2, arm, arm),
+        SnakeDirection.left => Rect.fromLTWH(0, arm, arm, arm),
+        SnakeDirection.right => Rect.fromLTWH(arm * 2, arm, arm, arm),
+      };
 
   @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-      semanticLabel: label,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        // 60: hareket eden vagonda 48 bile ıskalanıyor. Dört tuş satırı
-        // paylaşınca her biri 375 px ekranda ~80 px genişlikte kalıyor,
-        // yani 44 pt eşiğinin çok üstünde.
-        height: 60,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: enabled ? AppColors.surface : AppColors.background,
-          borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-          border: Border.all(
-            color: enabled ? AppColors.outline : AppColors.surface,
-            width: 1.4,
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: 32,
-          color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+  void paint(Canvas canvas, Size size) {
+    final arm = size.width / 3;
+    const radius = Radius.circular(12);
+    final body = Path.combine(
+      PathOperation.union,
+      Path()..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(arm, 0, arm, size.height),
+          radius,
         ),
       ),
+      Path()..addRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(0, arm, size.width, arm), radius),
+      ),
     );
+
+    // Kabartma: yüzeyin üstünde duran bir kumanda gibi gölge düşürür.
+    canvas.drawShadow(body, Colors.black, 6, false);
+
+    // Üstten ışık alan yüzey.
+    canvas.drawPath(
+      body,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFF3A3F48), AppColors.surface],
+        ).createShader(Offset.zero & size),
+    );
+
+    canvas.save();
+    canvas.clipPath(body);
+
+    // Trenin yönü: kol hat renginde yanar.
+    final lit = active;
+    if (lit != null) {
+      final rect = armRect(lit, arm);
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..shader = LinearGradient(
+            begin: _towardsCenter(lit).$1,
+            end: _towardsCenter(lit).$2,
+            colors: <Color>[
+              accent.withValues(alpha: 0.38),
+              accent.withValues(alpha: 0.08),
+            ],
+          ).createShader(rect),
+      );
+    }
+
+    // Ters yön: sönük.
+    canvas.drawRect(
+      armRect(blocked, arm),
+      Paint()..color = AppColors.background.withValues(alpha: 0.35),
+    );
+
+    // Basılan kol: bir ton aydınlanır (koyu yüzeyde basılı durum).
+    final down = pressed;
+    if (down != null) {
+      canvas.drawRect(
+        armRect(down, arm),
+        Paint()..color = Colors.white.withValues(alpha: 0.08),
+      );
+    }
+
+    // Kolları göbekten ayıran ince oyuklar.
+    final groove = Paint()
+      ..color = AppColors.background.withValues(alpha: 0.45)
+      ..strokeWidth = 1.2;
+    canvas
+      ..drawLine(Offset(arm, arm + 6), Offset(arm, arm * 2 - 6), groove)
+      ..drawLine(Offset(arm * 2, arm + 6), Offset(arm * 2, arm * 2 - 6), groove)
+      ..drawLine(Offset(arm + 6, arm), Offset(arm * 2 - 6, arm), groove)
+      ..drawLine(
+        Offset(arm + 6, arm * 2),
+        Offset(arm * 2 - 6, arm * 2),
+        groove,
+      );
+    canvas.restore();
+
+    canvas.drawPath(
+      body,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4
+        ..color = AppColors.outline,
+    );
+
+    // Göbek: dokunma almaz, pedin merkezini işaretler.
+    final center = size.center(Offset.zero);
+    canvas
+      ..drawCircle(
+        center,
+        arm * 0.3,
+        Paint()..color = AppColors.background.withValues(alpha: 0.55),
+      )
+      ..drawCircle(
+        center,
+        arm * 0.3,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = AppColors.outline,
+      );
   }
+
+  /// Yanan kolun gradyanı: dış uçta parlak, göbeğe doğru söner.
+  static (Alignment, Alignment) _towardsCenter(SnakeDirection direction) =>
+      switch (direction) {
+        SnakeDirection.up => (Alignment.topCenter, Alignment.bottomCenter),
+        SnakeDirection.down => (Alignment.bottomCenter, Alignment.topCenter),
+        SnakeDirection.left => (Alignment.centerLeft, Alignment.centerRight),
+        SnakeDirection.right => (Alignment.centerRight, Alignment.centerLeft),
+      };
+
+  @override
+  bool shouldRepaint(covariant _TurnPadPainter old) =>
+      old.accent != accent ||
+      old.active != active ||
+      old.pressed != pressed ||
+      old.blocked != blocked;
 }

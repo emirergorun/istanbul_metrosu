@@ -42,6 +42,46 @@ class MetroTile {
 
 enum MetroMoveDirection { left, up, right, down }
 
+/// Bir kaydırmada tek bir karonun yolculuğu: nereden nereye.
+///
+/// Tahta yalnızca hamle **sonrasını** bilseydi karolar yeni yerlerine
+/// ışınlanırdı. 2048'in hissi, karoların eski hücrelerinden yenilerine
+/// kaymasından geliyor; çizim bunun için her karonun iki ucunu bilmeli.
+/// Birleşen iki karo aynı hedefe gider.
+@immutable
+class MetroTileMove {
+  const MetroTileMove({
+    required this.fromRow,
+    required this.fromCol,
+    required this.toRow,
+    required this.toCol,
+    required this.rank,
+  });
+
+  final int fromRow;
+  final int fromCol;
+  final int toRow;
+  final int toCol;
+
+  /// Kayarken taşıdığı hat (birleşmeden **önceki** değer).
+  final int rank;
+
+  @override
+  bool operator ==(Object other) =>
+      other is MetroTileMove &&
+      other.fromRow == fromRow &&
+      other.fromCol == fromCol &&
+      other.toRow == toRow &&
+      other.toCol == toCol &&
+      other.rank == rank;
+
+  @override
+  int get hashCode => Object.hash(fromRow, fromCol, toRow, toCol, rank);
+
+  @override
+  String toString() => 'M$rank ($fromRow,$fromCol)→($toRow,$toCol)';
+}
+
 @immutable
 class MetroMergeConfig {
   const MetroMergeConfig({this.gridSize = metroMergeGridSize});

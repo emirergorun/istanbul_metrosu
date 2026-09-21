@@ -53,7 +53,28 @@ class MetroMergeController extends JourneyGameController {
   int _highestRank = 1;
   bool _reachedTarget = false;
 
+  List<MetroTileMove> _lastMoves = const <MetroTileMove>[];
+  Set<(int, int)> _lastMerged = const <(int, int)>{};
+  (int, int)? _lastSpawn;
+  int _moveCount = 0;
+
   List<List<MetroTile?>> get grid => _grid;
+
+  /// Son kabul edilen kaydırmada her karonun nereden nereye gittiği.
+  ///
+  /// Tahta çizimi karoları buradan **kaydırır**; yeni ızgara yalnızca
+  /// hamlenin sonucunu söylüyor, yolunu değil.
+  List<MetroTileMove> get lastMoves => _lastMoves;
+
+  /// Son kaydırmada birleşmenin oluştuğu hücreler (satır, sütun).
+  Set<(int, int)> get lastMerged => _lastMerged;
+
+  /// Son kaydırmadan sonra doğan karonun hücresi.
+  (int, int)? get lastSpawn => _lastSpawn;
+
+  /// Tahtanın her değişiminde artar; çizim yeni bir kayma başlatmak için
+  /// buna bakar. Reddedilen kaydırmada artmaz.
+  int get moveCount => _moveCount;
   int get totalMerges => _totalMerges;
 
   /// Tahtada ulaşılan en yüksek hat.
@@ -76,6 +97,7 @@ class MetroMergeController extends JourneyGameController {
       for (final row in grid) List<MetroTile?>.of(row),
     ];
     _highestRank = _computeHighestRank();
+    _clearLastMove();
     notifyListeners();
   }
 
@@ -85,6 +107,16 @@ class MetroMergeController extends JourneyGameController {
     _highestRank = 1;
     _reachedTarget = false;
     _resetBoard();
+    _clearLastMove();
+  }
+
+  /// Tahta kaymadan değişti (yeniden başlama, test kurulumu): kayacak bir
+  /// şey yok, çizim doğrudan yeni ızgarayı göstersin.
+  void _clearLastMove() {
+    _lastMoves = const <MetroTileMove>[];
+    _lastMerged = const <(int, int)>{};
+    _lastSpawn = null;
+    _moveCount++;
   }
 
   MetroMoveOutcome move(MetroMoveDirection direction) {
@@ -100,6 +132,8 @@ class MetroMergeController extends JourneyGameController {
     var moved = false;
     var gained = 0;
     var merges = 0;
+    final moves = <MetroTileMove>[];
+    final mergedAt = <(int, int)>{};
 
     for (var i = 0; i < n; i++) {
       // Satırı/sütunu hareket yönüne doğru sırala: ilk eleman, karoların
@@ -115,11 +149,32 @@ class MetroMergeController extends JourneyGameController {
           },
       ];
 
-      final source = <MetroTile>[
+      final sourceCells = <(int, int)>[
         for (final (row, col) in cells)
-          if (_grid[row][col] != null) _grid[row][col]!,
+          if (_grid[row][col] != null) (row, col),
+      ];
+      final source = <MetroTile>[
+        for (final (row, col) in sourceCells) _grid[row][col]!,
       ];
       final collapsed = _collapse(source);
+
+      // Her karonun yolu: kaynak hücresinden, sıkıştırmada düştüğü yere.
+      for (var k = 0; k < source.length; k++) {
+        final (fromRow, fromCol) = sourceCells[k];
+        final (toRow, toCol) = cells[collapsed.targets[k]];
+        moves.add(
+          MetroTileMove(
+            fromRow: fromRow,
+            fromCol: fromCol,
+            toRow: toRow,
+            toCol: toCol,
+            rank: source[k].rank,
+          ),
+        );
+      }
+      for (final index in collapsed.mergedAt) {
+        mergedAt.add(cells[index]);
+      }
 
       for (var j = 0; j < n; j++) {
         final (row, col) = cells[j];
@@ -135,7 +190,10 @@ class MetroMergeController extends JourneyGameController {
     if (!moved) return const MetroMoveOutcome.rejected();
 
     _grid = next;
-    _spawnTile();
+    _lastMoves = List<MetroTileMove>.unmodifiable(moves);
+    _lastMerged = Set<(int, int)>.unmodifiable(mergedAt);
+    _lastSpawn = _spawnTile();
+    _moveCount++;
 
     final previousHighest = _highestRank;
     _highestRank = _computeHighestRank();
@@ -167,6 +225,8 @@ class MetroMergeController extends JourneyGameController {
   /// [M1 M1 M1 M1] soldan kaydırılınca [M2 M2] olur, [M3] olmaz.
   _Collapsed _collapse(List<MetroTile> source) {
     final tiles = <MetroTile>[];
+    final targets = <int>[];
+    final mergedAt = <int>[];
     var points = 0;
     var merges = 0;
 
@@ -176,6 +236,11 @@ class MetroMergeController extends JourneyGameController {
       final next = k + 1 < source.length ? source[k + 1] : null;
       if (next != null && _canMerge(current, next)) {
         final merged = MetroTile(rank: current.rank + 1);
+        // İki kaynak karo da birleşik karonun yerine kayar.
+        targets
+          ..add(tiles.length)
+          ..add(tiles.length);
+        mergedAt.add(tiles.length);
         tiles.add(merged);
         // 2048'de puan, oluşan karonun değeri kadardır (iki "2" birleşince
         // +4 yazılır).
@@ -183,12 +248,19 @@ class MetroMergeController extends JourneyGameController {
         merges++;
         k += 2;
       } else {
+        targets.add(tiles.length);
         tiles.add(current);
         k++;
       }
     }
 
-    return _Collapsed(tiles: tiles, points: points, merges: merges);
+    return _Collapsed(
+      tiles: tiles,
+      points: points,
+      merges: merges,
+      targets: targets,
+      mergedAt: mergedAt,
+    );
   }
 
   /// Aynı hat mı ve tavana ulaşılmamış mı?
@@ -205,19 +277,20 @@ class MetroMergeController extends JourneyGameController {
     _highestRank = _computeHighestRank();
   }
 
-  bool _spawnTile() {
+  /// Boş bir hücreye yeni karo koyar; hücreyi döner, yer yoksa `null`.
+  (int, int)? _spawnTile() {
     final empty = <(int, int)>[];
     for (var row = 0; row < config.gridSize; row++) {
       for (var col = 0; col < config.gridSize; col++) {
         if (_grid[row][col] == null) empty.add((row, col));
       }
     }
-    if (empty.isEmpty) return false;
+    if (empty.isEmpty) return null;
     final (row, col) = empty[_random.nextInt(empty.length)];
     _grid[row][col] = MetroTile(
       rank: _random.nextDouble() < _fourChance ? 2 : 1,
     );
-    return true;
+    return (row, col);
   }
 
   int _computeHighestRank() {
@@ -270,9 +343,17 @@ class _Collapsed {
     required this.tiles,
     required this.points,
     required this.merges,
+    required this.targets,
+    required this.mergedAt,
   });
 
   final List<MetroTile> tiles;
   final int points;
   final int merges;
+
+  /// Her kaynak karonun sıkıştırılmış satırdaki yeri (kaynak sırasıyla).
+  final List<int> targets;
+
+  /// Birleşmenin oluştuğu yerler.
+  final List<int> mergedAt;
 }

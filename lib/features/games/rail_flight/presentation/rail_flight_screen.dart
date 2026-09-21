@@ -619,12 +619,11 @@ class _RailFlightPainter extends CustomPainter {
     }
   }
 
-  /// Oyun süresine ve tünel hızına göre 0..period aralığında döngüsel bir
+  /// Trenin kat ettiği mesafeye göre 0..period aralığında döngüsel bir
   /// kaydırma fazı. `speedFactor` < 1 daha yakın/yavaş (uzak) katmanlar,
   /// 1.0 travers gibi tam hızda ön-plan katmanları için.
   double _scrollPhase(double period, {required double speedFactor}) {
-    final distance =
-        controller.elapsedSeconds * controller.config.speed * speedFactor;
+    final distance = controller.scrollDistance * speedFactor;
     return distance % period;
   }
 

@@ -129,20 +129,38 @@ void main() {
     await disposeGame(tester);
   });
 
-  testWidgets('duvara çarpınca oyun biter ve sonuç ekranı çıkar', (
+  testWidgets('kenardan çıkan tren karşıdan girer, oyun bitmez', (
     tester,
   ) async {
-    // Tren ilk girdiye kadar bekler; sol tuş başlangıç yönüne (sağ) tam
-    // ters olduğu için reddedilir ve treni başlatmaz. Yukarı geçerli bir
-    // dönüş: tren sekiz adımda üst duvara varır.
+    // Eskiden üst duvara varmak oyunu bitiriyordu. Kenar artık bir tünel:
+    // tren alttan geri girer ve oyun sürer.
     await pumpGame(tester);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    // Üst kenara varmaya ve karşıdan geri girmeye yetecek süre.
     await tester.pump(const Duration(seconds: 3));
 
-    expect(find.text('Tren durdu'), findsOneWidget);
-    expect(find.textContaining('Toplanan yolcu'), findsOneWidget);
-    expect(find.textContaining('Ulaşılan hat'), findsOneWidget);
+    expect(find.text('Tren durdu'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await disposeGame(tester);
+  });
+
+  testWidgets('yön pedi: kol dokunulduğu anda treni döndürür', (tester) async {
+    await pumpGame(tester);
+
+    // Tren sağa bakarak bekliyor; ters kol (sol) treni başlatmaz.
+    await tester.tap(find.bySemanticsLabel('Sola'));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('BİR YÖNE BAS YA DA KAYDIR'), findsOneWidget);
+
+    // Yukarı kolu treni başlatır: ipucu kalkar.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.bySemanticsLabel('Yukarı')),
+    );
+    await tester.pump();
+    expect(find.text('BİR YÖNE BAS YA DA KAYDIR'), findsNothing);
+    await gesture.up();
     expect(tester.takeException(), isNull);
 
     await disposeGame(tester);
