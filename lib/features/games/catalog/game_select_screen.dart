@@ -6,23 +6,39 @@ import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../discovery/presentation/widgets/discovery_progress_track.dart';
 import '../../journey/models/journey.dart';
-import 'game_glyph.dart';
+import 'game_cover.dart';
 import 'mini_game.dart';
 
-/// Rota seçildikten sonra gelen oyun seçim ekranı.
+/// Rota seçildikten sonra gelen **oyun galerisi**.
 ///
-/// Akış bilinçli olarak **önce rota, sonra oyun**: rota yolculuğun ne kadar
-/// süreceğini belirler, oyun ise o süreyi neyle geçireceğini. Bu yüzden
-/// yolculuk özeti üstte sabit durur — oyuncu neyi seçtiğini unutmasın.
+/// Akış bilinçli olarak önce rota, sonra oyun: rota yolculuğun ne kadar
+/// süreceğini belirler, oyun o süreyi neyle geçireceğini.
+///
+/// Ekran eskiden alt alta metin kartlarından oluşan bir listeydi; her kart
+/// ad, tanım, rekor ve bir oynat oku taşıyordu ve sonuç bir oyun
+/// koleksiyonundan çok bir ayar menüsü gibi okunuyordu. Artık kararı
+/// **görsel** veriyor: iki sütun kapak, altında yalnız oyunun adı. "Bu oyun
+/// ne?" sorusunu kapak, "ne yapacağım?" sorusunu detay ekranı yanıtlıyor.
+///
+/// Kapağa dokunmak oyunu **başlatmaz**, detayını açar. Yolculuk sayacı ve
+/// İstanbul Keşfi yalnızca detaydaki OYNA ile başlar.
 class GameSelectScreen extends StatelessWidget {
   const GameSelectScreen({super.key, required this.journey});
 
   final Journey journey;
 
-  Future<void> _start(BuildContext context, MiniGame game) async {
+  /// İki sütuna geçmek için gereken en küçük genişlik.
+  ///
+  /// Altında tek sütuna düşülür: 320 piksellik bir ekranda iki kapak, kenar
+  /// boşlukları düşüldükten sonra 130 pikselin altına iner ve başlık
+  /// okunmaz olur.
+  static const double _twoColumnMinWidth = 340;
+
+  void _openDetail(BuildContext context, MiniGame game) {
     if (!game.isAvailable) return;
-    await AppRoutes.openGame(context, journey, gameId: game.id);
+    AppRoutes.openGameDetail(context, journey, gameId: game.id);
   }
 
   @override
@@ -30,313 +46,261 @@ class GameSelectScreen extends StatelessWidget {
     final scope = AppScope.of(context);
     final line = scope.metro.lineById(journey.lineId);
     final lineTheme = LineTheme.from(line?.color ?? AppColors.brandNavy);
+    final games = MiniGames.all;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Oyun seç', style: AppText.title),
+        title: const Text('OYUNUNU SEÇ', style: AppText.title),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          0,
-          AppSpacing.lg,
-          AppSpacing.xxl,
-        ),
-        children: <Widget>[
-          _JourneySummary(journey: journey, lineTheme: lineTheme),
-          const SizedBox(height: AppSpacing.xl),
-          const _SectionTitle('OYUNLAR'),
-          for (final game in MiniGames.all) ...<Widget>[
-            _GameCard(
-              game: game,
-              // Rekor **oyuna ve rotaya** birlikte bağlı: aynı rotada Blok
-              // Metro'daki rekor, Ray Uçuşu'ndakiyle karşılaştırılamaz.
-              record: scope.store.bestScoreForGameRoute(
-                gameId: game.id,
-                originId: journey.origin.id,
-                destinationId: journey.destination.id,
-              ),
-              onTap: () => _start(context, game),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ],
-      ),
-    );
-  }
-}
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final columns = constraints.maxWidth >= _twoColumnMinWidth ? 2 : 1;
 
-/// Hangi yolculuk için oyun seçildiğini hatırlatan üst şerit.
-class _JourneySummary extends StatelessWidget {
-  const _JourneySummary({required this.journey, required this.lineTheme});
-
-  final Journey journey;
-  final LineTheme lineTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-            color: AppColors.brandNavy,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            child: Row(
-              children: <Widget>[
-                LineBadge(label: journey.lineId, color: lineTheme.color),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    '${journey.origin.name} → ${journey.destination.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.lead.copyWith(color: Colors.white),
+            return CustomScrollView(
+              slivers: <Widget>[
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            // Süre ve açıklama alt alta: yan yana konsaydı ikisi de esnek
-            // olmadığı için dar ekranda ve büyük yazı ölçeğinde (uygulama
-            // 1.6'ya kadar destekliyor) satır taşardı.
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Icon(
-                      Icons.schedule_rounded,
-                      size: 16,
-                      color: AppColors.textMuted,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        '${Formatters.approxMinutes(journey.estimatedMinutes)}'
-                        ' · ${journey.stopCount} durak',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.caption.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Seçtiğin oyun bu süre kadar sürecek.',
-                  style: AppText.caption.copyWith(
-                    color: AppColors.textMuted.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(height: 3, color: lineTheme.accent),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tek bir oyun kartı. Kilitliyse soluk ve tıklanamaz.
-class _GameCard extends StatelessWidget {
-  const _GameCard({
-    required this.game,
-    required this.record,
-    required this.onTap,
-  });
-
-  final MiniGame game;
-
-  /// Bu oyunun **bu rotadaki** rekoru; 0 ise rotada henüz oynanmamış.
-  final int record;
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final locked = !game.isAvailable;
-    final foreground = locked ? AppColors.textMuted : AppColors.textPrimary;
-
-    return Semantics(
-      button: !locked,
-      enabled: !locked,
-      label: locked
-          ? '${game.name}, yakında eklenecek, henüz oynanamaz'
-          : '${game.name}. ${game.tagline}',
-      child: ExcludeSemantics(
-        child: Opacity(
-          opacity: locked ? 0.55 : 1,
-          child: Pressable(
-            // Kilitli kartta `onTap: null` — dokunma geri bildirimi de olmaz,
-            // böylece "bozuk mu?" hissi vermez.
-            onTap: locked ? null : onTap,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                // Kenarlık nötr: altı kartın da hat renginde çerçevesi
-                // olunca hepsi "seçili" gibi görünüyor ve aralarında
-                // hiyerarşi kalmıyordu. Hat kimliği yukarıdaki yolculuk
-                // şeridinde zaten var; kart burada içeriğiyle ayrışmalı.
-                border: Border.all(
-                  color: locked ? AppColors.outline : AppColors.surfaceHigh,
-                  width: locked ? 1 : 1.6,
-                ),
-              ),
-              child: Row(
-                children: <Widget>[
-                  // Kutu ve glif **nötr**. Altı oyuna altı ayrı pastel ton
-                  // verilmişti; hepsi aynı ağırlıktaydı, hiçbiri bir şey
-                  // söylemiyordu ve ekrandaki gerçek renk sistemiyle —
-                  // hat kimliğiyle — yarışıyordu. Ayrımı glif ve ad yapar.
-                  Container(
-                    width: 48,
-                    height: 48,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.gameGlyphBox,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: GameGlyphIcon(
-                      glyph: locked ? GameGlyph.locked : game.glyph,
-                      color: locked ? AppColors.gameGlyphLocked : game.color,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.lg),
-                  Expanded(
+                  sliver: SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Flexible(
-                              child: Text(
-                                game.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                // Oyun adı tabela fontunda: ekran başlığı
-                                // ("OYUN SEÇ") ile aynı ses. Kart adı gövde
-                                // fontundayken başlıkla aynı hiyerarşide
-                                // duruyor ve liste bir ayar ekranı gibi
-                                // okunuyordu.
-                                style: AppText.tileTitle.copyWith(
-                                  color: foreground,
-                                ),
-                              ),
-                            ),
-                            if (locked) ...<Widget>[
-                              const SizedBox(width: AppSpacing.sm),
-                              const _SoonBadge(),
-                            ],
-                          ],
+                        _JourneyStrip(
+                          journey: journey,
+                          lineTheme: lineTheme,
+                          onChangeRoute: () => Navigator.of(context).pop(),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          game.tagline,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.caption,
-                        ),
-                        // Seçim körlemesine yapılmasın: oyuncu bu oyunu bu
-                        // rotada oynadıysa geçmesi gereken sayı kartta yazar.
-                        // Rekor oyunun kendi renginde — hangi oyuna ait
-                        // olduğu bir bakışta anlaşılır.
-                        if (!locked) ...<Widget>[
-                          const SizedBox(height: 5),
-                          Text(
-                            record > 0
-                                ? 'BU ROTADA REKORUN  ${Formatters.score(record)}'
-                                : 'BU ROTADA İLK KEZ',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.micro.copyWith(
-                              fontFeatures: kTabularFigures,
-                              color: record > 0
-                                  ? game.color
-                                  : AppColors.textMuted.withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: AppSpacing.md),
+                        const _DiscoveryRow(),
                       ],
                     ),
                   ),
-                  if (!locked) ...<Widget>[
-                    const SizedBox(width: AppSpacing.sm),
-                    // Oynat oku bir eylem çağrısı, kimlik değil: hattan
-                    // bağımsız sabit aksiyon renginde kalır.
-                    const Icon(
-                      Icons.play_arrow_rounded,
-                      size: 28,
-                      color: AppColors.action,
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.xxl,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      mainAxisSpacing: AppSpacing.md,
+                      crossAxisSpacing: AppSpacing.md,
+                      childAspectRatio: GameCoverCard.aspectRatio,
                     ),
-                  ],
+                    delegate: SliverChildBuilderDelegate((
+                      BuildContext context,
+                      int index,
+                    ) {
+                      final game = games[index];
+                      return GameCoverCard(
+                        game: game,
+                        onTap: () => _openDetail(context, game),
+                      );
+                    }, childCount: games.length),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Yolculuğu hatırlatan **ince** şerit.
+///
+/// Oyuncu rotayı az önce seçti; ekranı bir kez daha rota kartına vermek
+/// gerekmiyor. Hat, iki uç ve süre tek satırda; asıl alan oyunların.
+class _JourneyStrip extends StatelessWidget {
+  const _JourneyStrip({
+    required this.journey,
+    required this.lineTheme,
+    required this.onChangeRoute,
+  });
+
+  final Journey journey;
+  final LineTheme lineTheme;
+  final VoidCallback onChangeRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label:
+          'Yolculuğun: ${journey.lineId} hattı, ${journey.origin.name} '
+          'durağından ${journey.destination.name} durağına, '
+          'yaklaşık ${journey.estimatedMinutes} dakika',
+      // Hat rengi kenarlık değil **şerit**: tek kenarı kalın bir kenarlık
+      // yuvarlatılmış köşeyle birlikte çizilemiyor (Flutter üniform kenarlık
+      // şart koşuyor). Şerit aynı işi yapıyor, köşeler duruyor.
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: Border.all(color: AppColors.outline),
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(width: 3, color: lineTheme.accent),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      ExcludeSemantics(
+                        child: Row(
+                          children: <Widget>[
+                            LineBadge(
+                              label: journey.lineId,
+                              color: lineTheme.color,
+                              compact: true,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                '${journey.origin.name} → '
+                                '${journey.destination.name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.bodyStrong,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              Formatters.approxMinutes(
+                                journey.estimatedMinutes,
+                              ),
+                              style: AppText.micro.copyWith(
+                                color: AppColors.textSecondary,
+                                fontFeatures: kTabularFigures,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                              vertical: AppSpacing.xs,
+                            ),
+                            minimumSize: const Size(0, 36),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: AppFeedback.onTap(context, onChangeRoute),
+                          child: Text(
+                            'Rotayı değiştir',
+                            style: AppText.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// İstanbul Keşfi girişi — oyun seçimini gölgelemeyen tek satır.
+///
+/// Galeri bir pano değil: rota, keşif ve oyunlar aynı ağırlıkta olsaydı
+/// ekranın asıl işi (oyun seçmek) kaybolurdu. Keşif burada yalnızca
+/// erişilebilir kalıyor.
+class _DiscoveryRow extends StatelessWidget {
+  const _DiscoveryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final discovery = AppScope.of(context).discovery;
+    if (discovery == null) return const SizedBox.shrink();
+
+    return AnimatedBuilder(
+      animation: discovery,
+      builder: (BuildContext context, _) {
+        final total = discovery.totalCount;
+        if (total == 0) return const SizedBox.shrink();
+
+        return Pressable(
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.discovery),
+          borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
+          semanticLabel:
+              'İstanbul keşfi: $total durağın ${discovery.discoveredCount} '
+              'tanesi keşfedildi. Keşfi gör',
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.sm,
+            ),
+            child: ExcludeSemantics(
+              // Etiket ve sayaç üstte, çubuk altta. Üçü tek satırdayken en
+              // dar ekranda 1.6× yazı ölçeğinde taşıyordu: Bungee etiket
+              // 194 px, sayaç ve ok 76 px, kullanılabilir 280 px.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          'İSTANBUL KEŞFİ',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.sectionTitle,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '${discovery.discoveredCount} / $total',
+                        style: AppText.captionStrong.copyWith(
+                          color: AppColors.textPrimary,
+                          fontFeatures: kTabularFigures,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  DiscoveryProgressTrack(
+                    value: discovery.progress,
+                    background: AppColors.surface,
+                    thickness: 5,
+                  ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SoonBadge extends StatelessWidget {
-  const _SoonBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceHigh,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: const Text('YAKINDA', style: AppText.micro),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSpacing.xs,
-        bottom: AppSpacing.sm,
-      ),
-      child: Text(
-        text,
-        style: AppText.micro.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.1,
-        ),
-      ),
+        );
+      },
     );
   }
 }

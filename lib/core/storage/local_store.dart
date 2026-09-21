@@ -46,6 +46,16 @@ class LocalStore extends ChangeNotifier {
   static const String _usageStatsKey = 'usage_stats';
   static const String _errorLogKey = 'error_log';
   static const String _statsEnabledKey = 'stats_enabled';
+  static const String _discoveredStationsKey = 'discovered_stations';
+  static const String _discoverySeenTotalKey = 'discovery_seen_total';
+  static const String _dailyCountersKey = 'daily_counters';
+  static const String _dailyStreakKey = 'daily_streak';
+  static const String _achievementsKey = 'achievements_unlocked';
+  static const String _playerStatsKey = 'player_stats';
+  static const String _friendCodeKey = 'friend_code';
+  static const String _friendsKey = 'friends_v1';
+  static const String _challengeHistoryKey = 'challenge_history_v1';
+  static const String _platformNameKey = 'platform_display_name';
 
   SharedPreferences? _prefs;
   bool _ready = false;
@@ -185,6 +195,21 @@ class LocalStore extends ChangeNotifier {
 
   int get overallBest => _prefs?.getInt(_overallBestKey) ?? 0;
 
+  /// Bir oyunda, **herhangi bir rotada** kurulmuş en yüksek skor.
+  ///
+  /// Rekorlar rota bazında tutuluyor; "bu oyunda ne kadar iyisin" sorusunun
+  /// cevabı ise rotadan bağımsız. Pasaport başarımı bunu okuyor. Ayrı bir
+  /// sayaç tutulmuyor: kayıtlı rekorlar zaten bu bilginin kaynağı.
+  int bestScoreForGame(String gameId) {
+    var best = 0;
+    for (final record in allRecords()) {
+      final owner = record.gameId ?? legacyRouteGameId;
+      if (owner != gameId) continue;
+      if (record.score > best) best = record.score;
+    }
+    return best;
+  }
+
   String _runKey(
     String prefix,
     String gameId,
@@ -303,6 +328,160 @@ class LocalStore extends ChangeNotifier {
     }
     if (isNewBest || score > previous) notifyListeners();
     return isNewBest;
+  }
+
+  /// Keşfedilmiş fiziksel durak kimlikleri.
+  ///
+  /// Saklanan tek keşif verisi budur. Sayaç, yüzde ve "hat tamamlandı"
+  /// bilgisi **türetilir**; yazılsalardı metro.json'a bir hat eklendiğinde
+  /// kayıtlı yüzde yalan söylerdi.
+  ///
+  /// Okunamayan veya bozuk kayıt boş liste olarak döner — keşif kaybolur ama
+  /// uygulama açılır ve başka hiçbir kayıt etkilenmez.
+  Set<String> get discoveredStationIds {
+    try {
+      final raw = _prefs?.getStringList(_discoveredStationsKey);
+      if (raw == null) return <String>{};
+      return <String>{
+        for (final id in raw)
+          if (id.isNotEmpty) id,
+      };
+    } catch (error) {
+      debugPrint('Keşif kaydı okunamadı: $error');
+      return <String>{};
+    }
+  }
+
+  /// Keşif kümesinin tamamını yazar.
+  ///
+  /// Ekleme değil değiştirme: küme bellekte tutulur, disk yalnızca onun
+  /// kopyasıdır. Sıralı yazılır ki iki cihaz kaydı `diff`'lenebilsin.
+  Future<void> saveDiscoveredStations(Set<String> ids) async {
+    final sorted = ids.toList()..sort();
+    await _prefs?.setStringList(_discoveredStationsKey, sorted);
+    notifyListeners();
+  }
+
+  /// Oyuncunun keşif ekranında **en son gördüğü** toplam durak sayısı.
+  ///
+  /// Keşif durumu değil, arayüzün okunma durumu — `onboarding_seen` ile aynı
+  /// kategoride. Tamamlanma hâlâ keşfedilen duraklardan türetiliyor; bu sayı
+  /// yalnızca "ağ büyüdü" anını yakalamak için var.
+  ///
+  /// Gerekçesi: keşfi bitiren bir oyuncu, metro.json'a yeni bir hat
+  /// eklendiğinde ekranı açtığında %100'ün sessizce %88'e düştüğünü görürdü.
+  /// Türetilmiş durumun doğru davranışı bu, ama açıklaması olmadan hata
+  /// gibi okunuyor.
+  int get discoverySeenTotal => _prefs?.getInt(_discoverySeenTotalKey) ?? 0;
+
+  Future<void> markDiscoveryTotalSeen(int total) async {
+    if (total <= discoverySeenTotal) return;
+    await _prefs?.setInt(_discoverySeenTotalKey, total);
+  }
+
+  /// Bugünün günlük sayaçları (JSON). Yoksa `null`.
+  ///
+  /// Günün **planı** saklanmaz: rota, oyun ve görevler takvim gününden
+  /// yeniden üretilir. Burada duran tek şey oyuncunun o gün ne yaptığı.
+  /// Kayıt kendi tarihini taşır; başka bir güne aitse okuyan taraf atar.
+  String? get dailyCountersRaw => _prefs?.getString(_dailyCountersKey);
+
+  Future<void> saveDailyCounters(String raw) async {
+    await _prefs?.setString(_dailyCountersKey, raw);
+    notifyListeners();
+  }
+
+  /// Seri kaydı (JSON): son tamamlanan gün, seri uzunluğu, en uzun seri.
+  ///
+  /// Günlük sayaçlardan ayrı tutulur çünkü ömrü farklı: sayaçlar her gece
+  /// atılır, seri **günler boyunca** yaşar.
+  String? get dailyStreakRaw => _prefs?.getString(_dailyStreakKey);
+
+  Future<void> saveDailyStreak(String raw) async {
+    await _prefs?.setString(_dailyStreakKey, raw);
+    notifyListeners();
+  }
+
+  /// Açılmış başarımların kimlikleri.
+  ///
+  /// Yalnızca **açılma olayı** saklanır, ilerleme değil: "kaç durak
+  /// keşfedildi" sorusunun tek doğru cevabı keşif kaydında duruyor ve
+  /// ikinci bir sayaç zamanla ondan ayrı düşerdi.
+  Set<String> get unlockedAchievementIds {
+    try {
+      final raw = _prefs?.getStringList(_achievementsKey);
+      if (raw == null) return <String>{};
+      return <String>{
+        for (final id in raw)
+          if (id.isNotEmpty) id,
+      };
+    } catch (error) {
+      debugPrint('Başarım kaydı okunamadı: $error');
+      return <String>{};
+    }
+  }
+
+  Future<void> saveUnlockedAchievements(Set<String> ids) async {
+    final sorted = ids.toList()..sort();
+    await _prefs?.setStringList(_achievementsKey, sorted);
+    notifyListeners();
+  }
+
+  /// Ömür boyu biriken oyunculuk kaydı (JSON).
+  ///
+  /// Yalnızca **türetilemeyen** iki şey: tamamlanan yolculuk sayısı ve
+  /// bitirilen oyunlar. Keşif, hat ve seri bilgisi buraya kopyalanmaz.
+  String? get playerStatsRaw => _prefs?.getString(_playerStatsKey);
+
+  Future<void> savePlayerStats(String raw) async {
+    await _prefs?.setString(_playerStatsKey, raw);
+    notifyListeners();
+  }
+
+  /// Bu cihazın arkadaş kodu.
+  ///
+  /// Ömründe **bir kez** üretilir ve değişmez: kod paylaşıldıktan sonra
+  /// değişirse karşı tarafın listesindeki kayıt sahipsiz kalır.
+  String? get friendCode => _prefs?.getString(_friendCodeKey);
+
+  Future<void> saveFriendCode(String code) async {
+    await _prefs?.setString(_friendCodeKey, code);
+  }
+
+  /// Arkadaş listesi (JSON).
+  ///
+  /// Anahtar sürümlü (`_v1`): kayıt biçimi değişirse eski anahtar okunmaz
+  /// ve bozuk veri yeni sürüme sızmaz.
+  String? get friendsRaw => _prefs?.getString(_friendsKey);
+
+  Future<void> saveFriends(String raw) async {
+    await _prefs?.setString(_friendsKey, raw);
+    notifyListeners();
+  }
+
+  /// Tamamlanmış meydan okumaların yerel geçmişi (JSON).
+  String? get challengeHistoryRaw => _prefs?.getString(_challengeHistoryKey);
+
+  Future<void> saveChallengeHistory(String raw) async {
+    await _prefs?.setString(_challengeHistoryKey, raw);
+    notifyListeners();
+  }
+
+  /// Platform oyun servisinden gelen görünen ad (Game Center takma adı).
+  ///
+  /// Saklanıyor çünkü oyun **tünelde** açılıyor: her açılışta Game Center'a
+  /// bağlanmayı beklemek kimliği ağa bağlamak olurdu. Bir kez alınıyor,
+  /// çevrimdışı oturumlarda da aynı ad görünüyor ve karekoda aynı ad
+  /// giriyor. Bağlantı kaldırılırsa kayıt siliniyor ve yerel ada dönülüyor.
+  String? get platformDisplayName => _prefs?.getString(_platformNameKey);
+
+  Future<void> savePlatformDisplayName(String? name) async {
+    if (name == null || name.isEmpty) {
+      await _prefs?.remove(_platformNameKey);
+    } else {
+      await _prefs?.setString(_platformNameKey, name);
+    }
+    notifyListeners();
   }
 
   /// İlk açılış tanıtımı gösterildi mi?

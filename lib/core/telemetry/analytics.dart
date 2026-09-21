@@ -24,7 +24,62 @@ enum AnalyticsEvent {
   gameAbandoned('game_abandoned'),
 
   /// Sonuç paylaşıldı.
-  resultShared('result_shared');
+  resultShared('result_shared'),
+
+  /// İlk kez bir durağa ulaşıldı.
+  ///
+  /// Durağın kendisi taşınmaz, hattı taşınır: 143 durak adı panoyu
+  /// sayılamaz hâle getirir, oysa "hangi oyun hangi hattı keşfettiriyor"
+  /// on satırda okunur.
+  stationDiscovered('station_discovered'),
+
+  /// Bir hattın tüm durakları keşfedildi.
+  lineCompleted('line_completed'),
+
+  /// Keşif ekranı açıldı.
+  discoveryScreenViewed('discovery_screen_viewed'),
+
+  /// Günün yolculuğu ekranda görüldü.
+  dailyJourneyViewed('daily_journey_viewed'),
+
+  /// Günün yolculuğu başlatıldı.
+  dailyJourneyStarted('daily_journey_started'),
+
+  /// Günün yolculuğu tamamlandı.
+  dailyJourneyCompleted('daily_journey_completed'),
+
+  /// Bir günlük görev tamamlandı.
+  dailyMissionCompleted('daily_mission_completed'),
+
+  /// Seri ilerledi ya da baştan başladı.
+  streakAdvanced('streak_advanced'),
+
+  /// Bir başarım açıldı.
+  achievementUnlocked('achievement_unlocked'),
+
+  /// Arkadaşlar ekranı açıldı.
+  friendsOpened('friends_opened'),
+
+  /// Arkadaş eklendi.
+  ///
+  /// Kimlik taşınmaz: ne kod ne ad. Sayılabilir olan tek şey olayın
+  /// kendisi; kimin kimi eklediği ölçümün işi değil.
+  friendAdded('friend_added'),
+
+  /// Meydan okuma üretildi.
+  challengeCreated('challenge_created'),
+
+  /// Meydan okuma karesi okundu.
+  challengeScanned('challenge_scanned'),
+
+  /// Meydan okuma kabul edildi.
+  challengeAccepted('challenge_accepted'),
+
+  /// Meydan okuma tamamlandı.
+  challengeCompleted('challenge_completed'),
+
+  /// Rövanş üretildi.
+  rematchCreated('rematch_created');
 
   const AnalyticsEvent(this.id);
 

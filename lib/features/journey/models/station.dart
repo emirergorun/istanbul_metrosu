@@ -12,12 +12,24 @@ class Station {
   const Station({
     required this.id,
     required this.name,
+    required this.canonicalId,
     required this.lineId,
     required this.order,
   });
 
   final String id;
   final String name;
+
+  /// Fiziksel durağın kimliği — [id] ile karıştırılmamalı.
+  ///
+  /// [id] hat kapsamlıdır: Yenikapı'nın üç kaydı vardır (`m1a_yenikapi`,
+  /// `m1b_yenikapi`, `m2_yenikapi`) çünkü hat üzerindeki sırası her hatta
+  /// farklıdır. Keşif ise fiziksel durağı sayar; oyuncu Yenikapı'ya M2 ile
+  /// uğradıysa onu M1A'da yeniden keşfetmez.
+  ///
+  /// Veri dosyasından okunur, addan türetilmez: ileride aynı adı taşıyan
+  /// iki ayrı durak çıkarsa karar kodda değil veride verilir.
+  final String canonicalId;
   final String lineId;
   final int order;
 

@@ -12,75 +12,93 @@
       "stations": [
         {
           "id": "m1a_yenikapi",
-          "name": "Yenikapı"
+          "name": "Yenikapı",
+          "canonicalId": "yenikapi"
         },
         {
           "id": "m1a_aksaray",
-          "name": "Aksaray"
+          "name": "Aksaray",
+          "canonicalId": "aksaray"
         },
         {
           "id": "m1a_emniyet_fatih",
-          "name": "Emniyet-Fatih"
+          "name": "Emniyet-Fatih",
+          "canonicalId": "emniyet_fatih"
         },
         {
           "id": "m1a_topkapi_ulubatli",
-          "name": "Topkapı-Ulubatlı"
+          "name": "Topkapı-Ulubatlı",
+          "canonicalId": "topkapi_ulubatli"
         },
         {
           "id": "m1a_bayrampasa_maltepe",
-          "name": "Bayrampaşa-Maltepe"
+          "name": "Bayrampaşa-Maltepe",
+          "canonicalId": "bayrampasa_maltepe"
         },
         {
           "id": "m1a_sagmalcilar",
-          "name": "Sağmalcılar"
+          "name": "Sağmalcılar",
+          "canonicalId": "sagmalcilar"
         },
         {
           "id": "m1a_kocatepe",
-          "name": "Kocatepe"
+          "name": "Kocatepe",
+          "canonicalId": "kocatepe"
         },
         {
           "id": "m1a_otogar",
-          "name": "Otogar"
+          "name": "Otogar",
+          "canonicalId": "otogar"
         },
         {
           "id": "m1a_terazidere",
-          "name": "Terazidere"
+          "name": "Terazidere",
+          "canonicalId": "terazidere"
         },
         {
           "id": "m1a_davutpasa_ytu",
-          "name": "Davutpaşa-YTÜ"
+          "name": "Davutpaşa-YTÜ",
+          "canonicalId": "davutpasa_ytu"
         },
         {
           "id": "m1a_merter",
-          "name": "Merter"
+          "name": "Merter",
+          "canonicalId": "merter"
         },
         {
           "id": "m1a_zeytinburnu",
-          "name": "Zeytinburnu"
+          "name": "Zeytinburnu",
+          "canonicalId": "zeytinburnu"
         },
         {
           "id": "m1a_bakirkoy_incirli",
-          "name": "Bakırköy-İncirli"
+          "name": "Bakırköy-İncirli",
+          "canonicalId": "bakirkoy_incirli"
         },
         {
           "id": "m1a_bahcelievler",
-          "name": "Bahçelievler"
+          "name": "Bahçelievler",
+          "canonicalId": "bahcelievler"
         },
         {
           "id": "m1a_atakoy_sirinevler",
-          "name": "Ataköy-Şirinevler"
+          "name": "Ataköy-Şirinevler",
+          "canonicalId": "atakoy_sirinevler"
         },
         {
           "id": "m1a_yenibosna",
-          "name": "Yenibosna"
+          "name": "Yenibosna",
+          "canonicalId": "yenibosna"
         },
         {
           "id": "m1a_dtm_istanbul_fuar_merkezi",
-          "name": "DTM-İstanbul Fuar Merkezi"
+          "name": "DTM-İstanbul Fuar Merkezi",
+          "canonicalId": "dtm_istanbul_fuar_merkezi"
         },
         {
           "id": "m1a_ataturk_havalimani",
-          "name": "Atatürk Havalimanı"
+          "name": "Atatürk Havalimanı",
+          "canonicalId": "ataturk_havalimani"
         }
       ]
     },
@@ -93,55 +111,68 @@
       "stations": [
         {
           "id": "m1b_yenikapi",
-          "name": "Yenikapı"
+          "name": "Yenikapı",
+          "canonicalId": "yenikapi"
         },
         {
           "id": "m1b_aksaray",
-          "name": "Aksaray"
+          "name": "Aksaray",
+          "canonicalId": "aksaray"
         },
         {
           "id": "m1b_emniyet_fatih",
-          "name": "Emniyet-Fatih"
+          "name": "Emniyet-Fatih",
+          "canonicalId": "emniyet_fatih"
         },
         {
           "id": "m1b_topkapi_ulubatli",
-          "name": "Topkapı-Ulubatlı"
+          "name": "Topkapı-Ulubatlı",
+          "canonicalId": "topkapi_ulubatli"
         },
         {
           "id": "m1b_bayrampasa_maltepe",
-          "name": "Bayrampaşa-Maltepe"
+          "name": "Bayrampaşa-Maltepe",
+          "canonicalId": "bayrampasa_maltepe"
         },
         {
           "id": "m1b_sagmalcilar",
-          "name": "Sağmalcılar"
+          "name": "Sağmalcılar",
+          "canonicalId": "sagmalcilar"
         },
         {
           "id": "m1b_kocatepe",
-          "name": "Kocatepe"
+          "name": "Kocatepe",
+          "canonicalId": "kocatepe"
         },
         {
           "id": "m1b_otogar",
-          "name": "Otogar"
+          "name": "Otogar",
+          "canonicalId": "otogar"
         },
         {
           "id": "m1b_esenler",
-          "name": "Esenler"
+          "name": "Esenler",
+          "canonicalId": "esenler"
         },
         {
           "id": "m1b_menderes",
-          "name": "Menderes"
+          "name": "Menderes",
+          "canonicalId": "menderes"
         },
         {
           "id": "m1b_ucyuzlu",
-          "name": "Üçyüzlü"
+          "name": "Üçyüzlü",
+          "canonicalId": "ucyuzlu"
         },
         {
           "id": "m1b_bagcilar_meydan",
-          "name": "Bağcılar Meydan"
+          "name": "Bağcılar Meydan",
+          "canonicalId": "bagcilar_meydan"
         },
         {
           "id": "m1b_kirazli_bagcilar",
-          "name": "Kirazlı-Bağcılar"
+          "name": "Kirazlı-Bağcılar",
+          "canonicalId": "kirazli_bagcilar"
         }
       ]
     },
@@ -154,63 +185,78 @@
       "stations": [
         {
           "id": "m2_yenikapi",
-          "name": "Yenikapı"
+          "name": "Yenikapı",
+          "canonicalId": "yenikapi"
         },
         {
           "id": "m2_vezneciler_istanbul_u",
-          "name": "Vezneciler-İstanbul Ü."
+          "name": "Vezneciler-İstanbul Ü.",
+          "canonicalId": "vezneciler_istanbul_u"
         },
         {
           "id": "m2_halic",
-          "name": "Haliç"
+          "name": "Haliç",
+          "canonicalId": "halic"
         },
         {
           "id": "m2_sishane",
-          "name": "Şişhane"
+          "name": "Şişhane",
+          "canonicalId": "sishane"
         },
         {
           "id": "m2_taksim",
-          "name": "Taksim"
+          "name": "Taksim",
+          "canonicalId": "taksim"
         },
         {
           "id": "m2_osmanbey",
-          "name": "Osmanbey"
+          "name": "Osmanbey",
+          "canonicalId": "osmanbey"
         },
         {
           "id": "m2_sisli_mecidiyekoy",
-          "name": "Şişli-Mecidiyeköy"
+          "name": "Şişli-Mecidiyeköy",
+          "canonicalId": "sisli_mecidiyekoy"
         },
         {
           "id": "m2_gayrettepe",
-          "name": "Gayrettepe"
+          "name": "Gayrettepe",
+          "canonicalId": "gayrettepe"
         },
         {
           "id": "m2_levent",
-          "name": "Levent"
+          "name": "Levent",
+          "canonicalId": "levent"
         },
         {
           "id": "m2_4_levent",
-          "name": "4. Levent"
+          "name": "4. Levent",
+          "canonicalId": "4_levent"
         },
         {
           "id": "m2_sanayi_mahallesi",
-          "name": "Sanayi Mahallesi"
+          "name": "Sanayi Mahallesi",
+          "canonicalId": "sanayi_mahallesi"
         },
         {
           "id": "m2_itu_ayazaga",
-          "name": "İTÜ-Ayazağa"
+          "name": "İTÜ-Ayazağa",
+          "canonicalId": "itu_ayazaga"
         },
         {
           "id": "m2_ataturk_oto_sanayi",
-          "name": "Atatürk Oto Sanayi"
+          "name": "Atatürk Oto Sanayi",
+          "canonicalId": "ataturk_oto_sanayi"
         },
         {
           "id": "m2_darussafaka",
-          "name": "Darüşşafaka"
+          "name": "Darüşşafaka",
+          "canonicalId": "darussafaka"
         },
         {
           "id": "m2_haciosman",
-          "name": "Hacıosman"
+          "name": "Hacıosman",
+          "canonicalId": "haciosman"
         }
       ]
     },
@@ -223,83 +269,103 @@
       "stations": [
         {
           "id": "m3_bakirkoy_sahil",
-          "name": "Bakırköy Sahil"
+          "name": "Bakırköy Sahil",
+          "canonicalId": "bakirkoy_sahil"
         },
         {
           "id": "m3_ozgurluk_meydani",
-          "name": "Özgürlük Meydanı"
+          "name": "Özgürlük Meydanı",
+          "canonicalId": "ozgurluk_meydani"
         },
         {
           "id": "m3_incirli",
-          "name": "İncirli"
+          "name": "İncirli",
+          "canonicalId": "incirli"
         },
         {
           "id": "m3_haznedar",
-          "name": "Haznedar"
+          "name": "Haznedar",
+          "canonicalId": "haznedar"
         },
         {
           "id": "m3_ilkyuva",
-          "name": "İlkyuva"
+          "name": "İlkyuva",
+          "canonicalId": "ilkyuva"
         },
         {
           "id": "m3_yildiztepe",
-          "name": "Yıldıztepe"
+          "name": "Yıldıztepe",
+          "canonicalId": "yildiztepe"
         },
         {
           "id": "m3_molla_gurani",
-          "name": "Molla Gürani"
+          "name": "Molla Gürani",
+          "canonicalId": "molla_gurani"
         },
         {
           "id": "m3_kirazli_bagcilar",
-          "name": "Kirazlı-Bağcılar"
+          "name": "Kirazlı-Bağcılar",
+          "canonicalId": "kirazli_bagcilar"
         },
         {
           "id": "m3_yenimahalle",
-          "name": "Yenimahalle"
+          "name": "Yenimahalle",
+          "canonicalId": "yenimahalle"
         },
         {
           "id": "m3_mahmutbey",
-          "name": "Mahmutbey"
+          "name": "Mahmutbey",
+          "canonicalId": "mahmutbey"
         },
         {
           "id": "m3_istoc",
-          "name": "İSTOÇ"
+          "name": "İSTOÇ",
+          "canonicalId": "istoc"
         },
         {
           "id": "m3_ikitelli_sanayi",
-          "name": "İkitelli Sanayi"
+          "name": "İkitelli Sanayi",
+          "canonicalId": "ikitelli_sanayi"
         },
         {
           "id": "m3_turgut_ozal",
-          "name": "Turgut Özal"
+          "name": "Turgut Özal",
+          "canonicalId": "turgut_ozal"
         },
         {
           "id": "m3_siteler",
-          "name": "Siteler"
+          "name": "Siteler",
+          "canonicalId": "siteler"
         },
         {
           "id": "m3_basak_konutlari",
-          "name": "Başak Konutları"
+          "name": "Başak Konutları",
+          "canonicalId": "basak_konutlari"
         },
         {
           "id": "m3_basaksehir_metrokent",
-          "name": "Başakşehir-Metrokent"
+          "name": "Başakşehir-Metrokent",
+          "canonicalId": "basaksehir_metrokent"
         },
         {
           "id": "m3_onurkent",
-          "name": "Onurkent"
+          "name": "Onurkent",
+          "canonicalId": "onurkent"
         },
         {
           "id": "m3_sehir_hastanesi",
-          "name": "Şehir Hastanesi"
+          "name": "Şehir Hastanesi",
+          "canonicalId": "sehir_hastanesi"
         },
         {
           "id": "m3_toplu_konutlar",
-          "name": "Toplu Konutlar"
+          "name": "Toplu Konutlar",
+          "canonicalId": "toplu_konutlar"
         },
         {
           "id": "m3_kayasehir_merkez",
-          "name": "Kayaşehir Merkez"
+          "name": "Kayaşehir Merkez",
+          "canonicalId": "kayasehir_merkez"
         }
       ]
     },
@@ -312,95 +378,118 @@
       "stations": [
         {
           "id": "m4_kadikoy",
-          "name": "Kadıköy"
+          "name": "Kadıköy",
+          "canonicalId": "kadikoy"
         },
         {
           "id": "m4_ayrilik_cesmesi",
-          "name": "Ayrılık Çeşmesi"
+          "name": "Ayrılık Çeşmesi",
+          "canonicalId": "ayrilik_cesmesi"
         },
         {
           "id": "m4_acibadem",
-          "name": "Acıbadem"
+          "name": "Acıbadem",
+          "canonicalId": "acibadem"
         },
         {
           "id": "m4_unalan",
-          "name": "Ünalan"
+          "name": "Ünalan",
+          "canonicalId": "unalan"
         },
         {
           "id": "m4_goztepe",
-          "name": "Göztepe"
+          "name": "Göztepe",
+          "canonicalId": "goztepe"
         },
         {
           "id": "m4_yenisahra",
-          "name": "Yenisahra"
+          "name": "Yenisahra",
+          "canonicalId": "yenisahra"
         },
         {
           "id": "m4_kozyatagi",
-          "name": "Kozyatağı"
+          "name": "Kozyatağı",
+          "canonicalId": "kozyatagi"
         },
         {
           "id": "m4_bostanci",
-          "name": "Bostancı"
+          "name": "Bostancı",
+          "canonicalId": "bostanci"
         },
         {
           "id": "m4_kucukyali",
-          "name": "Küçükyalı"
+          "name": "Küçükyalı",
+          "canonicalId": "kucukyali"
         },
         {
           "id": "m4_maltepe",
-          "name": "Maltepe"
+          "name": "Maltepe",
+          "canonicalId": "maltepe"
         },
         {
           "id": "m4_huzurevi",
-          "name": "Huzurevi"
+          "name": "Huzurevi",
+          "canonicalId": "huzurevi"
         },
         {
           "id": "m4_gulsuyu",
-          "name": "Gülsuyu"
+          "name": "Gülsuyu",
+          "canonicalId": "gulsuyu"
         },
         {
           "id": "m4_esenkent",
-          "name": "Esenkent"
+          "name": "Esenkent",
+          "canonicalId": "esenkent"
         },
         {
           "id": "m4_hastane_adliye",
-          "name": "Hastane-Adliye"
+          "name": "Hastane-Adliye",
+          "canonicalId": "hastane_adliye"
         },
         {
           "id": "m4_soganlik",
-          "name": "Soğanlık"
+          "name": "Soğanlık",
+          "canonicalId": "soganlik"
         },
         {
           "id": "m4_kartal",
-          "name": "Kartal"
+          "name": "Kartal",
+          "canonicalId": "kartal"
         },
         {
           "id": "m4_yakacik_adnan_kahveci",
-          "name": "Yakacık-Adnan Kahveci"
+          "name": "Yakacık-Adnan Kahveci",
+          "canonicalId": "yakacik_adnan_kahveci"
         },
         {
           "id": "m4_pendik",
-          "name": "Pendik"
+          "name": "Pendik",
+          "canonicalId": "pendik"
         },
         {
           "id": "m4_tavsantepe",
-          "name": "Tavşantepe"
+          "name": "Tavşantepe",
+          "canonicalId": "tavsantepe"
         },
         {
           "id": "m4_fevzi_cakmak_hastane",
-          "name": "Fevzi Çakmak-Hastane"
+          "name": "Fevzi Çakmak-Hastane",
+          "canonicalId": "fevzi_cakmak_hastane"
         },
         {
           "id": "m4_yayalar_seyhli",
-          "name": "Yayalar-Şeyhli"
+          "name": "Yayalar-Şeyhli",
+          "canonicalId": "yayalar_seyhli"
         },
         {
           "id": "m4_kurtkoy",
-          "name": "Kurtköy"
+          "name": "Kurtköy",
+          "canonicalId": "kurtkoy"
         },
         {
           "id": "m4_sabiha_gokcen_havalimani",
-          "name": "Sabiha Gökçen Havalimanı"
+          "name": "Sabiha Gökçen Havalimanı",
+          "canonicalId": "sabiha_gokcen_havalimani"
         }
       ]
     },
@@ -413,99 +502,123 @@
       "stations": [
         {
           "id": "m5_uskudar",
-          "name": "Üsküdar"
+          "name": "Üsküdar",
+          "canonicalId": "uskudar"
         },
         {
           "id": "m5_fistikagaci",
-          "name": "Fıstıkağacı"
+          "name": "Fıstıkağacı",
+          "canonicalId": "fistikagaci"
         },
         {
           "id": "m5_baglarbasi",
-          "name": "Bağlarbaşı"
+          "name": "Bağlarbaşı",
+          "canonicalId": "baglarbasi"
         },
         {
           "id": "m5_altunizade",
-          "name": "Altunizade"
+          "name": "Altunizade",
+          "canonicalId": "altunizade"
         },
         {
           "id": "m5_kisikli",
-          "name": "Kısıklı"
+          "name": "Kısıklı",
+          "canonicalId": "kisikli"
         },
         {
           "id": "m5_bulgurlu",
-          "name": "Bulgurlu"
+          "name": "Bulgurlu",
+          "canonicalId": "bulgurlu"
         },
         {
           "id": "m5_umraniye",
-          "name": "Ümraniye"
+          "name": "Ümraniye",
+          "canonicalId": "umraniye"
         },
         {
           "id": "m5_carsi",
-          "name": "Çarşı"
+          "name": "Çarşı",
+          "canonicalId": "carsi"
         },
         {
           "id": "m5_yamanevler",
-          "name": "Yamanevler"
+          "name": "Yamanevler",
+          "canonicalId": "yamanevler"
         },
         {
           "id": "m5_cakmak",
-          "name": "Çakmak"
+          "name": "Çakmak",
+          "canonicalId": "cakmak"
         },
         {
           "id": "m5_ihlamurkuyu",
-          "name": "Ihlamurkuyu"
+          "name": "Ihlamurkuyu",
+          "canonicalId": "ihlamurkuyu"
         },
         {
           "id": "m5_altinsehir",
-          "name": "Altınşehir"
+          "name": "Altınşehir",
+          "canonicalId": "altinsehir"
         },
         {
           "id": "m5_imam_hatip_lisesi",
-          "name": "İmam Hatip Lisesi"
+          "name": "İmam Hatip Lisesi",
+          "canonicalId": "imam_hatip_lisesi"
         },
         {
           "id": "m5_dudullu",
-          "name": "Dudullu"
+          "name": "Dudullu",
+          "canonicalId": "dudullu"
         },
         {
           "id": "m5_necip_fazil",
-          "name": "Necip Fazıl"
+          "name": "Necip Fazıl",
+          "canonicalId": "necip_fazil"
         },
         {
           "id": "m5_cekmekoy",
-          "name": "Çekmeköy"
+          "name": "Çekmeköy",
+          "canonicalId": "cekmekoy"
         },
         {
           "id": "m5_meclis",
-          "name": "Meclis"
+          "name": "Meclis",
+          "canonicalId": "meclis"
         },
         {
           "id": "m5_sarigazi",
-          "name": "Sarıgazi"
+          "name": "Sarıgazi",
+          "canonicalId": "sarigazi"
         },
         {
           "id": "m5_sancaktepe_sehir_hastanesi",
-          "name": "Sancaktepe Şehir Hastanesi"
+          "name": "Sancaktepe Şehir Hastanesi",
+          "canonicalId": "sancaktepe_sehir_hastanesi"
         },
         {
           "id": "m5_sancaktepe",
-          "name": "Sancaktepe"
+          "name": "Sancaktepe",
+          "canonicalId": "sancaktepe"
         },
         {
           "id": "m5_samandira_merkez",
-          "name": "Samandıra Merkez"
+          "name": "Samandıra Merkez",
+          "canonicalId": "samandira_merkez"
         },
         {
           "id": "m5_veysel_karani",
-          "name": "Veysel Karani"
+          "name": "Veysel Karani",
+          "canonicalId": "veysel_karani"
         },
         {
           "id": "m5_hasanpasa",
-          "name": "Hasanpaşa"
+          "name": "Hasanpaşa",
+          "canonicalId": "hasanpasa"
         },
         {
           "id": "m5_sultanbeyli",
-          "name": "Sultanbeyli"
+          "name": "Sultanbeyli",
+          "canonicalId": "sultanbeyli"
         }
       ]
     },
@@ -518,19 +631,23 @@
       "stations": [
         {
           "id": "m6_levent",
-          "name": "Levent"
+          "name": "Levent",
+          "canonicalId": "levent"
         },
         {
           "id": "m6_nispetiye",
-          "name": "Nispetiye"
+          "name": "Nispetiye",
+          "canonicalId": "nispetiye"
         },
         {
           "id": "m6_etiler",
-          "name": "Etiler"
+          "name": "Etiler",
+          "canonicalId": "etiler"
         },
         {
           "id": "m6_bogazici_u_hisarustu",
-          "name": "Boğaziçi Ü.-Hisarüstü"
+          "name": "Boğaziçi Ü.-Hisarüstü",
+          "canonicalId": "bogazici_u_hisarustu"
         }
       ]
     },
@@ -543,71 +660,88 @@
       "stations": [
         {
           "id": "m7_yildiz",
-          "name": "Yıldız"
+          "name": "Yıldız",
+          "canonicalId": "yildiz"
         },
         {
           "id": "m7_fulya",
-          "name": "Fulya"
+          "name": "Fulya",
+          "canonicalId": "fulya"
         },
         {
           "id": "m7_mecidiyekoy",
-          "name": "Mecidiyeköy"
+          "name": "Mecidiyeköy",
+          "canonicalId": "mecidiyekoy"
         },
         {
           "id": "m7_caglayan",
-          "name": "Çağlayan"
+          "name": "Çağlayan",
+          "canonicalId": "caglayan"
         },
         {
           "id": "m7_kagithane",
-          "name": "Kağıthane"
+          "name": "Kağıthane",
+          "canonicalId": "kagithane"
         },
         {
           "id": "m7_nurtepe",
-          "name": "Nurtepe"
+          "name": "Nurtepe",
+          "canonicalId": "nurtepe"
         },
         {
           "id": "m7_alibeykoy",
-          "name": "Alibeyköy"
+          "name": "Alibeyköy",
+          "canonicalId": "alibeykoy"
         },
         {
           "id": "m7_circir_mahallesi",
-          "name": "Çırçır Mahallesi"
+          "name": "Çırçır Mahallesi",
+          "canonicalId": "circir_mahallesi"
         },
         {
           "id": "m7_veysel_karani_aksemsettin",
-          "name": "Veysel Karani-Akşemsettin"
+          "name": "Veysel Karani-Akşemsettin",
+          "canonicalId": "veysel_karani_aksemsettin"
         },
         {
           "id": "m7_yesilpinar",
-          "name": "Yeşilpınar"
+          "name": "Yeşilpınar",
+          "canonicalId": "yesilpinar"
         },
         {
           "id": "m7_kazim_karabekir",
-          "name": "Kazım Karabekir"
+          "name": "Kazım Karabekir",
+          "canonicalId": "kazim_karabekir"
         },
         {
           "id": "m7_yenimahalle",
-          "name": "Yenimahalle"
+          "name": "Yenimahalle",
+          "canonicalId": "yenimahalle"
         },
         {
           "id": "m7_karadeniz_mahallesi",
-          "name": "Karadeniz Mahallesi"
+          "name": "Karadeniz Mahallesi",
+          "canonicalId": "karadeniz_mahallesi"
         },
         {
           "id": "m7_giyimkent_tekstilkent",
-          "name": "Giyimkent-Tekstilkent"
+          "name": "Giyimkent-Tekstilkent",
+          "canonicalId": "giyimkent_tekstilkent"
         },
         {
           "id": "m7_oruc_reis",
-          "name": "Oruç Reis"
+          "name": "Oruç Reis",
+          "canonicalId": "oruc_reis"
         },
         {
           "id": "m7_goztepe_mahallesi",
-          "name": "Göztepe Mahallesi"
+          "name": "Göztepe Mahallesi",
+          "canonicalId": "goztepe_mahallesi"
         },
         {
           "id": "m7_mahmutbey",
-          "name": "Mahmutbey"
+          "name": "Mahmutbey",
+          "canonicalId": "mahmutbey"
         }
       ]
     },
@@ -620,55 +754,68 @@
       "stations": [
         {
           "id": "m8_bostanci",
-          "name": "Bostancı"
+          "name": "Bostancı",
+          "canonicalId": "bostanci"
         },
         {
           "id": "m8_emin_ali_pasa",
-          "name": "Emin Ali Paşa"
+          "name": "Emin Ali Paşa",
+          "canonicalId": "emin_ali_pasa"
         },
         {
           "id": "m8_aysekadin",
-          "name": "Ayşekadın"
+          "name": "Ayşekadın",
+          "canonicalId": "aysekadin"
         },
         {
           "id": "m8_kozyatagi",
-          "name": "Kozyatağı"
+          "name": "Kozyatağı",
+          "canonicalId": "kozyatagi"
         },
         {
           "id": "m8_kucukbakkalkoy",
-          "name": "Küçükbakkalköy"
+          "name": "Küçükbakkalköy",
+          "canonicalId": "kucukbakkalkoy"
         },
         {
           "id": "m8_icerenkoy",
-          "name": "İçerenköy"
+          "name": "İçerenköy",
+          "canonicalId": "icerenkoy"
         },
         {
           "id": "m8_kayisdagi",
-          "name": "Kayışdağı"
+          "name": "Kayışdağı",
+          "canonicalId": "kayisdagi"
         },
         {
           "id": "m8_mevlana",
-          "name": "Mevlana"
+          "name": "Mevlana",
+          "canonicalId": "mevlana"
         },
         {
           "id": "m8_imes",
-          "name": "İMES"
+          "name": "İMES",
+          "canonicalId": "imes"
         },
         {
           "id": "m8_modoko_keyap",
-          "name": "MODOKO-KEYAP"
+          "name": "MODOKO-KEYAP",
+          "canonicalId": "modoko_keyap"
         },
         {
           "id": "m8_dudullu",
-          "name": "Dudullu"
+          "name": "Dudullu",
+          "canonicalId": "dudullu"
         },
         {
           "id": "m8_huzur",
-          "name": "Huzur"
+          "name": "Huzur",
+          "canonicalId": "huzur"
         },
         {
           "id": "m8_parseller",
-          "name": "Parseller"
+          "name": "Parseller",
+          "canonicalId": "parseller"
         }
       ]
     },
@@ -681,59 +828,73 @@
       "stations": [
         {
           "id": "m9_atakoy",
-          "name": "Ataköy"
+          "name": "Ataköy",
+          "canonicalId": "atakoy"
         },
         {
           "id": "m9_yenibosna",
-          "name": "Yenibosna"
+          "name": "Yenibosna",
+          "canonicalId": "yenibosna"
         },
         {
           "id": "m9_cobancesme",
-          "name": "Çobançeşme"
+          "name": "Çobançeşme",
+          "canonicalId": "cobancesme"
         },
         {
           "id": "m9_29_ekim_cumhuriyet",
-          "name": "29 Ekim Cumhuriyet"
+          "name": "29 Ekim Cumhuriyet",
+          "canonicalId": "29_ekim_cumhuriyet"
         },
         {
           "id": "m9_dogu_sanayi",
-          "name": "Doğu Sanayi"
+          "name": "Doğu Sanayi",
+          "canonicalId": "dogu_sanayi"
         },
         {
           "id": "m9_mimar_sinan",
-          "name": "Mimar Sinan"
+          "name": "Mimar Sinan",
+          "canonicalId": "mimar_sinan"
         },
         {
           "id": "m9_15_temmuz",
-          "name": "15 Temmuz"
+          "name": "15 Temmuz",
+          "canonicalId": "15_temmuz"
         },
         {
           "id": "m9_halkali_caddesi",
-          "name": "Halkalı Caddesi"
+          "name": "Halkalı Caddesi",
+          "canonicalId": "halkali_caddesi"
         },
         {
           "id": "m9_ataturk_mahallesi",
-          "name": "Atatürk Mahallesi"
+          "name": "Atatürk Mahallesi",
+          "canonicalId": "ataturk_mahallesi"
         },
         {
           "id": "m9_bahariye",
-          "name": "Bahariye"
+          "name": "Bahariye",
+          "canonicalId": "bahariye"
         },
         {
           "id": "m9_masko",
-          "name": "MASKO"
+          "name": "MASKO",
+          "canonicalId": "masko"
         },
         {
           "id": "m9_ikitelli_sanayi",
-          "name": "İkitelli Sanayi"
+          "name": "İkitelli Sanayi",
+          "canonicalId": "ikitelli_sanayi"
         },
         {
           "id": "m9_ziya_gokalp_mahallesi",
-          "name": "Ziya Gökalp Mahallesi"
+          "name": "Ziya Gökalp Mahallesi",
+          "canonicalId": "ziya_gokalp_mahallesi"
         },
         {
           "id": "m9_olimpiyat",
-          "name": "Olimpiyat"
+          "name": "Olimpiyat",
+          "canonicalId": "olimpiyat"
         }
       ]
     }

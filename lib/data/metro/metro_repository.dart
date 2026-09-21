@@ -92,10 +92,27 @@ class MetroDataset implements MetroRepository {
 
       for (var i = 0; i < rawStations.length; i++) {
         final station = rawStations[i] as Map<String, dynamic>;
+        final stationId = station['id'] as String;
+
+        // Eksik `canonicalId` ham bir tip hatası olarak patlayıp kullanıcıya
+        // genel "veri yüklenemedi" ekranını gösteriyordu; hangi durağın
+        // sorunlu olduğu hiçbir yere yazılmıyordu. Keşif sistemi bu alana
+        // dayandığı için ad'dan türetilmiş bir yedek de konmuyor: sessizce
+        // yanlış saymaktansa açıkça durmak gerekir.
+        final canonicalId = station['canonicalId'];
+        if (canonicalId is! String || canonicalId.isEmpty) {
+          throw FormatException(
+            'metro.json: "$stationId" durağında canonicalId eksik. '
+            'Keşif sistemi fiziksel durak kimliğini bu alandan okuyor; '
+            'her durağa benzersiz bir canonicalId yazılmalı.',
+          );
+        }
+
         stations.add(
           Station(
-            id: station['id'] as String,
+            id: stationId,
             name: station['name'] as String,
+            canonicalId: canonicalId,
             lineId: id,
             order: i,
           ),

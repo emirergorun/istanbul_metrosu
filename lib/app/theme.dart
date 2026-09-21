@@ -339,13 +339,32 @@ class AppTheme {
           foregroundColor: AppColors.onAction,
           disabledBackgroundColor: AppColors.surfaceHigh,
           disabledForegroundColor: AppColors.textMuted,
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          minimumSize: const Size.fromHeight(56),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          // Birincil eylem tabela fontunda: ekranın en yüksek sesli ögesi
+          // ve metni kısa, büyük harf — Bungee'nin tam işi.
+          //
+          // 16 punto ölçülerek seçildi: en dar ekranda (320 px) ve en büyük
+          // yazı ölçeğinde (1.6×) "SONUCU PAYLAŞ" 221 px, kullanılabilir
+          // genişlik 240 px. Tek taşan metin "YOLCULUĞU BAŞLAT"tı (276 px);
+          // o yüzden "BAŞLA" olarak kısaltıldı.
           textStyle: const TextStyle(
-            fontFamily: AppFonts.body,
+            fontFamily: AppFonts.display,
             fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          minimumSize: const Size.fromHeight(50),
+          side: const BorderSide(color: AppColors.outline),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: const TextStyle(
+            fontFamily: AppFonts.display,
+            fontSize: 14,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -443,9 +462,14 @@ class AppText {
   );
 
   /// Gövde metni.
+  ///
+  /// 14'ten 15'e çıkarıldı ve satır arası açıldı: oyun tanıtım ekranındaki
+  /// açıklama ve AMAÇ metni 14 puntoda telefonu uzağa tutan bir oyuncu için
+  /// küçük kalıyordu. Ölçümde 15 punto, 320 px genişlikte en uzun amaç
+  /// metnini 4 satırda bitiriyor (16 puntoda 5 satır).
   static const TextStyle body = TextStyle(
-    fontSize: 14,
-    height: 1.35,
+    fontSize: 15,
+    height: 1.45,
     color: AppColors.textSecondary,
   );
 
@@ -475,12 +499,42 @@ class AppText {
     color: AppColors.textSecondary,
   );
 
-  /// Büyük harf bölüm etiketi. Metro tabelası dili: harf arası açık.
+  /// Ekran bölümü başlığı — **tabela fontunda ve okunur puntoda**.
+  ///
+  /// İSTANBUL KEŞFİ, HATLAR, AMAÇ, YOLCULUĞUN, YENİ KEŞİFLER: bunlar bir
+  /// rozet yazısı değil, ekranın bölümlerini ayıran başlıklar. [label] ile
+  /// aynı 13 puntodayken devasa sayaçların ve kartların yanında kayboluyor,
+  /// bölüm başlığı gibi değil dipnot gibi okunuyorlardı.
+  ///
+  /// 16 punto ölçüldü: en dar ekranda (320 px) 1.6× yazı ölçeğinde en uzun
+  /// başlık 239 px, kullanılabilir 288 px.
+  ///
+  /// [label]'dan ayrı tutuluyor çünkü o, oyun içi HUD'da ve ayarlarda da
+  /// kullanılıyor; oradaki dar satırları büyütmek taşma üretir.
+  static const TextStyle sectionTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 16,
+    letterSpacing: 0.2,
+    color: AppColors.textSecondary,
+  );
+
+  /// Küçük büyük harf etiket — **tabela fontunda**.
+  ///
+  /// AMAÇ, YOLCULUĞUN, İSTANBUL KEŞFİ, HATLAR, YENİ KEŞİFLER: hepsi kısa,
+  /// büyük harf ve kullanıcı verisi değil. Bungee'nin doğru kullanımı tam
+  /// olarak burası. Gövde fontundayken bölüm başlıkları metnin içinde
+  /// kayboluyordu.
+  ///
+  /// 13 punto ölçüldü: en dar ekranda (320 px) 1.6× ölçekte en uzun etiket
+  /// ("NASIL OYNANIR?") 194 px, kullanılabilir 288 px.
+  ///
+  /// Harf arası Bungee'de açılmıyor: font zaten geniş, 1.0 boşluk kelimeyi
+  /// dağıtıyordu.
   static const TextStyle label = TextStyle(
+    fontFamily: AppFonts.display,
     fontSize: 13,
-    fontWeight: FontWeight.w700,
-    letterSpacing: 1.0,
-    color: AppColors.textMuted,
+    letterSpacing: 0.2,
+    color: AppColors.textSecondary,
   );
 
   /// Rozet ve minik sayaç etiketi.
@@ -528,6 +582,24 @@ class AppSpacing {
   static const double lg = 16;
   static const double xl = 24;
   static const double xxl = 32;
+
+  /// Üst üste dizilen bloklar arasındaki **tek** boşluk.
+  ///
+  /// Kural: bir sütunda alt alta duran kartlar, şeritler ve düğmeler her
+  /// zaman bu değerle ayrılır. Ayrı ayrı seçilmiş boşluklar (8 burada, 24
+  /// şurada, 12 ötede) ekranda dağınık bir ritim üretiyordu — bloklar aynı
+  /// aileye ait görünmüyordu.
+  ///
+  /// Hiyerarşi boşlukla değil **başlıkla** kurulur: yeni bir bölüm
+  /// başlıyorsa araya [sectionGap] ve bir bölüm başlığı girer. Bir bloğu
+  /// öne çıkarmak için boşluğu büyütmek yerine bloğun kendi ağırlığı
+  /// (dolgu rengi, punto, kenarlık) kullanılır.
+  ///
+  /// Yeni ekran eklerken bu iki değerin dışına çıkma.
+  static const double stack = md;
+
+  /// Bölüm başlığıyla başlayan yeni bir bloğun üstündeki boşluk.
+  static const double sectionGap = xl;
 
   static const double cardRadius = 8;
   static const double fieldRadius = 6;

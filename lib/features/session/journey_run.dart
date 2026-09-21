@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'journey_status.dart';
+import '../discovery/application/journey_discovery.dart';
 import '../journey/models/journey.dart';
 
 export 'journey_status.dart';
@@ -21,6 +22,13 @@ abstract class JourneyRun implements Listenable {
 
   /// Oyuncunun bu oturumdaki puanı. Nasıl kazanıldığı oyunun bileceği iş.
   int get score;
+
+  /// Bu yolculuğun keşif defteri. Keşif kapalıysa `null`.
+  ///
+  /// Arayüz katmanı bunu **okur**, yazmaz: durak şeridi "bu durak yeni mi"
+  /// diye sorar, sonuç paneli koşunun yeni keşiflerini listeler. Keşfi
+  /// güncelleyen tek yer yolculuk motorudur.
+  JourneyDiscovery? get discovery;
 
   /// Bu rotada geçilmesi gereken rekor. 0 ise rotada ilk yolculuk.
   int get recordToBeat;

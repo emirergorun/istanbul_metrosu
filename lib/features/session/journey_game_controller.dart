@@ -4,9 +4,11 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/storage/local_store.dart';
+import '../discovery/application/journey_discovery.dart';
 import '../games/blocks/domain/scoring.dart' show ScoreRules;
 import '../journey/models/journey.dart';
 import 'journey_run.dart';
+import 'run_report.dart';
 
 /// Her oyunun paylaştığı yolculuk motoru.
 ///
@@ -28,6 +30,7 @@ abstract class JourneyGameController extends ChangeNotifier
     required int recordToBeat,
     required this.tick,
     this.store,
+    this.discovery,
     this.maxFrameSeconds,
     // Alan private + mutable (restart tazeliyor), parametre public kalmalı;
     // `this._recordToBeat` dışarıdan kullanılamayacak bir ad üretirdi.
@@ -38,6 +41,14 @@ abstract class JourneyGameController extends ChangeNotifier
   final String gameId;
 
   final LocalStore? store;
+
+  /// Bu yolculuğun keşif defteri.
+  ///
+  /// `null` olabilir: testler ve keşfin kapalı olduğu durum aynı yoldan
+  /// geçer. Oyunun kendisi bu alanı hiç kullanmaz — motor "kaç durak
+  /// geçildi" der, keşif kuralı [JourneyDiscovery] içinde kalır.
+  @override
+  final JourneyDiscovery? discovery;
 
   /// Sayaç periyodu. Sıra tabanlı oyunlarda 1 sn, gerçek zamanlıda ~16 ms.
   final Duration tick;
@@ -53,6 +64,17 @@ abstract class JourneyGameController extends ChangeNotifier
   /// kullanılır. (Ray Uçuşu / Ray Değiştir ekibinin düzeltmesi; motora
   /// taşındı ki her gerçek zamanlı oyun yararlansın.)
   final double? maxFrameSeconds;
+
+  /// Biten koşuyu dinleyen taraf — bugün günlük görevler.
+  ///
+  /// Kurucu parametresi değil **atanabilir alan**: yedi oyunun controller'ı
+  /// bu sınıftan türüyor ve hiçbirinin kurucusuna dokunmadan bağlanabilmesi
+  /// gerekiyordu. Ekran controller'ı kurduktan hemen sonra atar; atanmazsa
+  /// (testler, keşfin kapalı olduğu durum) koşu sessizce bildirilmez.
+  RunReporter? reporter;
+
+  /// Bu koşu bildirildi mi? Aynı koşu iki kez sayılmamalı.
+  bool _runReported = false;
 
   DateTime? _lastFrameTime;
 
@@ -151,6 +173,12 @@ abstract class JourneyGameController extends ChangeNotifier
   void start() {
     if (_status == GameStatus.playing) return;
     _status = GameStatus.playing;
+    // Sıra önemli: bekleyen kutlamalar **biniş durağı keşfedilmeden**
+    // temizlenir, yoksa bu koşunun ilk keşfi de silinirdi.
+    if (!_runReported) reporter?.reportRunStarted();
+    // Biniş durağı **oyun başlayınca** keşfedilir; rota seçmek, oyun seçmek
+    // veya ekranı açmak yetmez.
+    discovery?.reportReached(0);
     _startTimer();
     notifyListeners();
   }
@@ -184,6 +212,10 @@ abstract class JourneyGameController extends ChangeNotifier
     _stationsPassed = 0;
     _stationProgress = false;
     _pendingJourneySeconds = 0;
+    // Yeniden başlayan koşu **yeni** bir koşudur: bittiğinde yeniden
+    // bildirilir ve günlük sayaçlarda ayrı bir oyun olarak sayılır.
+    _runReported = false;
+    discovery?.reset();
     lastStationBonus = 0;
     stationPulse = 0;
     sprintPulse = 0;
@@ -446,6 +478,10 @@ abstract class JourneyGameController extends ChangeNotifier
     _stationProgress = false;
     _stationsPassed = passed;
 
+    // Keşif bonustan bağımsız: durak geçildiyse oraya ulaşılmıştır.
+    // Sıçrama güvenli — dört durak birden geçilse dördü de işlenir.
+    discovery?.reportReached(passed);
+
     // Durak geçişi **her hâlükârda** duyurulur; bonus ayrı bir şey.
     // Eskiden yalnızca bonuslu duraklar bildiriliyordu ve o duraktan beri
     // bir şey yapmamış oyuncu için yolculuk sessizce ilerliyordu.
@@ -482,7 +518,24 @@ abstract class JourneyGameController extends ChangeNotifier
   void _finish(GameStatus status) {
     _stopTimer();
     _status = status;
+    // Son durak yalnızca **gerçekten varıldığında** keşfedilir. Oyun sonu
+    // yolculuğun son saniyesinde gelse bile iniş durağı kilitli kalır.
+    if (status == GameStatus.arrived) discovery?.reportArrival();
     onFinish(status);
+    // Koşu bir kez bildirilir. Bir oyun kendi kuralıyla `endGame`'i iki kez
+    // çağırsa bile günlük sayaçlar iki kez büyümemeli.
+    if (!_runReported) {
+      _runReported = true;
+      reporter?.reportRun(
+        RunReport(
+          gameId: gameId,
+          journey: journey,
+          status: status,
+          score: _score,
+          stationsPassed: _stationsPassed,
+        ),
+      );
+    }
     notifyListeners();
     unawaited(_persistScore());
   }
