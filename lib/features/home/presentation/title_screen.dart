@@ -8,14 +8,15 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/metro_train.dart';
 import '../../../core/widgets/pressable.dart';
-import '../../games/blocks/application/game_snapshot.dart';
-import '../../games/catalog/mini_game.dart';
 import '../../daily/presentation/widgets/daily_entry_strip.dart';
 import '../../discovery/presentation/widgets/discovery_entry_strip.dart';
 import '../../journey/models/journey.dart';
 import '../../journey/models/station.dart';
 import '../../journey/presentation/widgets/onboarding_sheet.dart';
 import '../../player/presentation/name_picker_sheet.dart';
+import '../../session/journey_host.dart';
+import '../../session/journey_run.dart';
+import '../../session/journey_session.dart';
 
 /// Açılış ekranı.
 ///
@@ -108,20 +109,33 @@ class _TitleScreenState extends State<TitleScreen>
     super.dispose();
   }
 
-  /// Yarım kalan oyun varsa döner.
-  SavedGame? get _savedGame {
-    final scope = AppScope.of(context);
-    final raw = scope.store.savedGame;
-    if (raw == null || raw.isEmpty) return null;
-    return GameSnapshot.decode(raw, scope.routeService);
+  /// Süren yolculuk varsa döner.
+  ///
+  /// Kayıttan dönen yolculuk uygulama açılırken [JourneyHost] tarafından
+  /// diriltiliyor; başlık ekranı diske değil **canlı oturuma** bakıyor.
+  JourneySession? get _savedJourney {
+    final session = JourneyScope.sessionOf(context);
+    if (session == null) return null;
+    if (session.status == GameStatus.arrived) return null;
+    return session;
   }
 
-  Future<void> _resumeSaved(SavedGame saved) async {
-    await AppRoutes.resumeGame(context, saved);
+  /// Karta dokunmak oyun seçimine götürür.
+  ///
+  /// Doğrudan son oynanan oyuna girmiyor: yolculuk ortak, oyuncu kalan
+  /// süreyi istediği oyunda geçirebilir.
+  Future<void> _resumeSaved(JourneySession session) async {
+    final store = AppScope.of(context).store;
+    await store.rememberRoute(
+      session.journey.origin.id,
+      session.journey.destination.id,
+    );
+    if (!mounted) return;
+    await AppRoutes.openGameSelect(context, session.journey);
     if (mounted) setState(() {});
   }
 
-  /// Yarım kalan oyunu siler.
+  /// Süren yolculuğu kapatır.
   ///
   /// Onay isteniyor: kayıt geri getirilemez ve buton, oyuna devam eden
   /// birincil kartın hemen altında duruyor — yanlış dokunuşun bedeli
@@ -131,10 +145,10 @@ class _TitleScreenState extends State<TitleScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text('Yarım kalan oyun silinsin mi?'),
+        title: const Text('Yolculuk bitirilsin mi?'),
         content: const Text(
-          'Bu yolculuktaki skorun ve kalan süren silinecek. '
-          'Bu geri alınamaz.',
+          'Skorun bu rotanın rekoruna yazılacak ve yolculuk kapanacak. '
+          'Kalan süre geri gelmez.',
         ),
         actions: <Widget>[
           TextButton(
@@ -149,14 +163,17 @@ class _TitleScreenState extends State<TitleScreen>
               context,
               () => Navigator.of(context).pop(true),
             ),
-            child: const Text('Sil', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Bitir',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
 
-    await AppScope.of(context).store.clearSavedGame();
+    JourneyScope.maybeOf(context)?.close();
     if (mounted) setState(() {});
   }
 
@@ -199,7 +216,7 @@ class _TitleScreenState extends State<TitleScreen>
   @override
   Widget build(BuildContext context) {
     final scope = AppScope.of(context);
-    final saved = _savedGame;
+    final saved = _savedJourney;
     final last = _lastRoute;
 
     return Scaffold(
@@ -329,13 +346,11 @@ class _TitleScreenState extends State<TitleScreen>
                                 const DailyEntryStrip(),
                                 const SizedBox(height: AppSpacing.stack),
                                 if (saved != null) ...<Widget>[
-                                  _SavedGameCard(
-                                    saved: saved,
+                                  _SavedJourneyCard(
+                                    session: saved,
                                     lineTheme: LineTheme.from(
                                       scope.metro
-                                              .lineById(
-                                                saved.session.journey.lineId,
-                                              )
+                                              .lineById(saved.journey.lineId)
                                               ?.color ??
                                           AppColors.brandNavy,
                                     ),
@@ -355,7 +370,7 @@ class _TitleScreenState extends State<TitleScreen>
                                 ] else if (last != null) ...<Widget>[
                                   _ResumeButton(
                                     journey: last,
-                                    record: scope.store.bestRecordForRoute(
+                                    record: scope.store.bestJourneyScore(
                                       last.origin.id,
                                       last.destination.id,
                                     ),
@@ -511,34 +526,23 @@ class _SignStem extends StatelessWidget {
 ///
 /// Uygulama kapansa bile oyun kaybolmaz; metroda telefon sürekli cebe girip
 /// çıktığı için bu akış varsayılan davranış olmalı.
-class _SavedGameCard extends StatelessWidget {
-  const _SavedGameCard({
-    required this.saved,
+class _SavedJourneyCard extends StatelessWidget {
+  const _SavedJourneyCard({
+    required this.session,
     required this.lineTheme,
     required this.onResume,
     required this.onDiscard,
   });
 
-  final SavedGame saved;
+  final JourneySession session;
   final LineTheme lineTheme;
-
-  /// Kayıttaki kalan süre.
-  ///
-  /// Motorun [JourneyGameController.remainingSeconds] kuralıyla aynı:
-  /// `floor` kullanılır ki yolculuk tahmin edilen saniye dolmadan bitmiş
-  /// görünmesin.
-  int get _remainingSeconds {
-    final left =
-        saved.session.journey.estimatedSeconds - saved.progress.elapsedSeconds;
-    return left < 0 ? 0 : left;
-  }
 
   final VoidCallback onResume;
   final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
-    final journey = saved.session.journey;
+    final journey = session.journey;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -561,7 +565,7 @@ class _SavedGameCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'YARIM KALAN OYUN',
+                          'SÜREN YOLCULUK',
                           style: AppText.micro.copyWith(
                             letterSpacing: 0.9,
                             color: AppColors.onAction.withValues(alpha: 0.55),
@@ -577,11 +581,17 @@ class _SavedGameCard extends StatelessWidget {
                             color: AppColors.onAction,
                           ),
                         ),
-                        Text(
-                          'Skor ${Formatters.score(saved.progress.score)} · '
-                          '${Formatters.remaining(_remainingSeconds)} kaldı',
-                          style: AppText.caption.copyWith(
-                            color: AppColors.onAction.withValues(alpha: 0.7),
+                        // Saat akıyor: yalnızca bu satır yeniden kurulur,
+                        // kartın tamamı değil.
+                        ListenableBuilder(
+                          listenable: session,
+                          builder: (context, _) => Text(
+                            'Skor ${Formatters.score(session.score)} · '
+                            '${Formatters.remaining(session.remainingSeconds)}'
+                            ' kaldı',
+                            style: AppText.caption.copyWith(
+                              color: AppColors.onAction.withValues(alpha: 0.7),
+                            ),
                           ),
                         ),
                       ],
@@ -613,7 +623,7 @@ class _SavedGameCard extends StatelessWidget {
                 vertical: AppSpacing.sm,
               ),
             ),
-            child: const Text('Bu oyunu bırak'),
+            child: const Text('Yolculuğu bitir'),
           ),
         ),
       ],
@@ -621,13 +631,9 @@ class _SavedGameCard extends StatelessWidget {
   }
 }
 
-/// "Blok Metro rekorun 143" — rekor, kurulduğu oyunun adıyla gösterilir.
-String _recordText(RouteRecord? record) {
-  if (record == null) return 'ilk yolculuk';
-  final game = MiniGames.byId(record.gameId ?? LocalStore.legacyRouteGameId);
-  final score = Formatters.score(record.score);
-  return game == null ? 'rekorun $score' : '${game.name} rekorun $score';
-}
+/// "rekorun 143" — rekor rotanın, oyunun değil.
+String _recordText(int record) =>
+    record > 0 ? 'rekorun ${Formatters.score(record)}' : 'ilk yolculuk';
 
 class _ResumeButton extends StatelessWidget {
   const _ResumeButton({
@@ -639,8 +645,11 @@ class _ResumeButton extends StatelessWidget {
 
   final Journey journey;
 
-  /// Rotanın rekoru ve kurulduğu oyun; `null` ise rotada ilk yolculuk.
-  final RouteRecord? record;
+  /// Rotanın rekoru; 0 ise rotada ilk yolculuk.
+  ///
+  /// Rekor artık oyunun değil **rotanın**: aynı yolculukta hangi oyunlar
+  /// oynandıysa puan ortak, o yüzden rekorun yanında oyun adı yazmıyor.
+  final int record;
   final LineTheme lineTheme;
   final VoidCallback onTap;
 

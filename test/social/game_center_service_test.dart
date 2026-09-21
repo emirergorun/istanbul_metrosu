@@ -28,17 +28,13 @@ void main() {
 
   /// Köprüyü sahteleyip verilen cevabı döndürür.
   void mockBridge(Object? Function(MethodCall call) handler) {
-    TestDefaultBinaryMessengerBinding
-        .instance
-        .defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           GameCenterService.defaultChannel,
           (MethodCall call) async => handler(call),
         );
     addTearDown(() {
-      TestDefaultBinaryMessengerBinding
-          .instance
-          .defaultBinaryMessenger
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(GameCenterService.defaultChannel, null);
     });
   }

@@ -30,6 +30,7 @@ class MetroQuizController extends JourneyGameController {
     super.store,
     super.discovery,
     super.tick = AppConstants.playTick,
+    super.session,
     // Alan private, parametre public kalmalı; `this._pool` dışarıdan
     // kullanılamayacak bir ad üretirdi.
     // ignore: prefer_initializing_formals
@@ -52,6 +53,7 @@ class MetroQuizController extends JourneyGameController {
 
   late QuizQuestion _question;
   QuizPhase _phase = QuizPhase.answering;
+  Duration _revealDuration = QuizRules.revealTime;
   int _chosenIndex = -1;
   late double _questionRemaining;
 
@@ -69,6 +71,13 @@ class MetroQuizController extends JourneyGameController {
 
   QuizQuestion get question => _question;
   QuizPhase get phase => _phase;
+
+  /// Doğru şıkkın ekranda kalacağı süre (saniye).
+  ///
+  /// Sabit değil: erken cevaplayan doğru cevabı daha uzun görür
+  /// (bkz. [QuizRules.questionSlot]).
+  double get revealSeconds =>
+      _revealDuration.inMilliseconds / Duration.millisecondsPerSecond;
 
   /// Oyuncunun seçtiği şık; cevaplanmadıysa -1.
   int get chosenIndex => _chosenIndex;
@@ -284,6 +293,13 @@ class MetroQuizController extends JourneyGameController {
 
   void _resolve({required bool correct, required bool costsLife}) {
     _phase = QuizPhase.revealing;
+    // Soru ne kadar sürdü: kalan gösterim süresi buna göre uzuyor, böylece
+    // bir soru her zaman en az [QuizRules.questionSlot] kadar sürüyor.
+    _revealDuration = QuizRules.revealTimeFor(
+      Duration(
+        milliseconds: ((questionDuration - _questionRemaining) * 1000).round(),
+      ),
+    );
 
     if (correct) {
       _streak++;
@@ -332,7 +348,7 @@ class MetroQuizController extends JourneyGameController {
   void _scheduleAdvance() {
     _revealTimer?.cancel();
     if (status != GameStatus.playing) return;
-    _revealTimer = Timer(QuizRules.revealTime, _advance);
+    _revealTimer = Timer(_revealDuration, _advance);
   }
 
   void _advance() {

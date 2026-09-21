@@ -17,7 +17,8 @@ import '../helpers/metro_fixture.dart';
 void main() {
   final routeService = RouteService(MetroFixture.load());
 
-  /// Kaydı üretecek controller. Kayıt hem tahtayı hem motoru taşır.
+  /// Kaydı üretecek controller. Kayıt **yalnızca tahtayı** taşır; puan ve
+  /// süre yolculuğun zarfında (`JourneySave`).
   GameController sampleController() {
     final journey = routeService.estimate('m2_taksim', 'm2_levent').journey!;
     return GameController(
@@ -48,8 +49,8 @@ void main() {
 
       expect(restored, isNotNull);
       expect(restored!.session.tray.whereType<BlockPiece>().length, 3);
-      expect(restored.progress.score, 0);
-      expect(restored.progress.elapsedSeconds, 0);
+      // Yolculuk alanları artık kayıtta değil.
+      expect(restored.progress, isNull);
     });
 
     test('bilinmeyen şekil id’si tüm kaydı geçersiz kılar', () {
@@ -70,28 +71,42 @@ void main() {
       expect(GameSnapshot.decode('{bu json degil', routeService), isNull);
     });
 
-    test('kayıt motorun durumunu da taşır', () {
+    test('kayıt yolculuk alanlarını taşımaz', () {
       final controller = sampleController();
       addTearDown(controller.dispose);
       controller.start();
       controller.debugAdvanceSeconds(30);
 
-      final restored = GameSnapshot.decode(
-        GameSnapshot.encode(controller),
-        routeService,
-      )!;
+      final json =
+          jsonDecode(GameSnapshot.encode(controller)) as Map<String, dynamic>;
 
-      expect(
-        restored.progress.elapsedSeconds,
-        controller.elapsedSeconds.floor(),
-      );
-      expect(restored.progress.score, controller.score);
-      expect(restored.progress.stationsPassed, controller.stationsPassed);
+      // Puan ve süre yolculuğun; iki yerde tutulursa biri eskir.
+      expect(json.containsKey('score'), isFalse);
+      expect(json.containsKey('elapsed'), isFalse);
+      expect(json.containsKey('stationsPassed'), isFalse);
     });
 
-    test('eski sürüm kaydı atılır', () {
+    test('ortak yolculuktan önceki kayıt (v3) hâlâ okunur', () {
+      // Sürüm yükseltmesinde oyuncunun yarım kalan tahtası kaybolmamalı.
       final json = jsonDecode(sampleSnapshot()) as Map<String, dynamic>;
-      json['v'] = GameSnapshot.version - 1;
+      json['v'] = 3;
+      json['score'] = 120;
+      json['elapsed'] = 45;
+      json['stationsPassed'] = 1;
+      json['record'] = 300;
+      json['recordBeaten'] = false;
+
+      final restored = GameSnapshot.decode(jsonEncode(json), routeService);
+
+      expect(restored, isNotNull);
+      expect(restored!.session.tray.whereType<BlockPiece>().length, 3);
+      expect(restored.progress?.score, 120);
+      expect(restored.progress?.elapsedSeconds, 45);
+    });
+
+    test('okunamayan sürüm atılır', () {
+      final json = jsonDecode(sampleSnapshot()) as Map<String, dynamic>;
+      json['v'] = 2;
 
       expect(GameSnapshot.decode(jsonEncode(json), routeService), isNull);
     });

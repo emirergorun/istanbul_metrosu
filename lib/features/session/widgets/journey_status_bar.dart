@@ -27,9 +27,10 @@ class JourneyStatusBar extends StatelessWidget {
     this.isMoving = true,
     this.showStationBanner = true,
     this.gameId,
+    this.showScore = false,
   });
 
-  final JourneyRun run;
+  final JourneyView run;
 
   /// Hattın sıraya dizilmiş istasyonları (`MetroRepository.stationsOfLine`).
   final List<Station> lineStations;
@@ -50,6 +51,13 @@ class JourneyStatusBar extends StatelessWidget {
   /// Verilirse meydan okuma modunda çubuğun üstünde küçük bir hedef
   /// rozeti çıkar. Verilmezse HUD bugünkü hâlinde kalır.
   final String? gameId;
+
+  /// Yolculuğun toplam puanı çubuğun altında gösterilsin mi?
+  ///
+  /// Oyun seçim ekranına özel: orada skoru gösteren başka bir şey yok ve
+  /// oyuncu oyun değiştirirken "şu ana kadar kaç puanım var" diye soruyor.
+  /// Oyunların içinde skor zaten HUD'da.
+  final bool showScore;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +80,8 @@ class JourneyStatusBar extends StatelessWidget {
       arrivalPulse: arrivalPulse,
       accent: accent,
       isMoving: isMoving,
+      journeyScore: showScore ? run.score : null,
+      recordToBeat: run.recordToBeat,
     );
 
     // Meydan okuma rozeti çubuğun **üstünde**, sağa yaslı: oyun alanından

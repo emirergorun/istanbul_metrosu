@@ -102,7 +102,9 @@ class _AvatarPainter extends CustomPainter {
     // Tabelanın üst şeridi: dairenin üst üçte birini kaplayan koyu bant.
     // Peron tabelalarındaki hat renkli şeritle aynı işaret.
     canvas.save();
-    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
+    canvas.clipPath(
+      Path()..addOval(Rect.fromCircle(center: center, radius: radius)),
+    );
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height * 0.22),
       Paint()..color = AppColors.brandNavyDeep.withValues(alpha: 0.35),

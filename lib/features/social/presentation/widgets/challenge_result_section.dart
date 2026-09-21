@@ -33,8 +33,7 @@ class ChallengeResultSection extends StatefulWidget {
   final Color accent;
 
   @override
-  State<ChallengeResultSection> createState() =>
-      _ChallengeResultSectionState();
+  State<ChallengeResultSection> createState() => _ChallengeResultSectionState();
 }
 
 class _ChallengeResultSectionState extends State<ChallengeResultSection> {
@@ -222,13 +221,10 @@ class _ScoreColumn extends StatelessWidget {
           Text(
             Formatters.score(value),
             maxLines: 1,
-            style:
-                (strong ? AppText.stat : AppText.statSmall).copyWith(
-                  fontFeatures: kTabularFigures,
-                  color: strong
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
-                ),
+            style: (strong ? AppText.stat : AppText.statSmall).copyWith(
+              fontFeatures: kTabularFigures,
+              color: strong ? AppColors.textPrimary : AppColors.textSecondary,
+            ),
           ),
         ],
       ),

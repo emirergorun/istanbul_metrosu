@@ -42,8 +42,7 @@ void main() {
 
   group('oturum tohumu', () {
     test('rota ve oyun tutarsa tohum veriliyor', () {
-      final session = ChallengeSession()
-        ..begin(challenge(), journey());
+      final session = ChallengeSession()..begin(challenge(), journey());
       addTearDown(session.dispose);
 
       expect(session.randomFor('metro_merge', journey()), isNotNull);

@@ -198,8 +198,10 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // Oyun yarım bırakıldığı için açılışta "devam et" kartı çıkar.
-    expect(find.text('YARIM KALAN OYUN'), findsOneWidget);
+    // Yolculuk sürdüğü için açılışta "devam et" kartı çıkar. Kart artık
+    // oyunun değil yolculuğun: oyuncu kalan süreyi istediği oyunda
+    // geçirebilir.
+    expect(find.text('SÜREN YOLCULUK'), findsOneWidget);
     expect(find.text('Taksim → Levent'), findsOneWidget);
     expect(find.text('Yeni bir yolculuk başlat'), findsOneWidget);
   });

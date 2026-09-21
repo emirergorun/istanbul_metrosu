@@ -144,10 +144,10 @@ void main() {
       final social = build(await freshStore());
       social.addFriend(rawCode: 'ABCD1234', displayName: 'Zeynep');
       social.addFriend(rawCode: 'BBCD1234', displayName: 'Ahmet');
-      expect(
-        social.friends.map((Friend f) => f.displayName),
-        <String>['Ahmet', 'Zeynep'],
-      );
+      expect(social.friends.map((Friend f) => f.displayName), <String>[
+        'Ahmet',
+        'Zeynep',
+      ]);
     });
 
     test('çıkarma çalışıyor', () async {

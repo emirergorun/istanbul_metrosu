@@ -17,7 +17,7 @@ class ShareService {
   /// Sonucu paylaşır. Paylaşım sayfası açılıp tamamlandıysa `true`.
   static Future<bool> shareRun({
     required BuildContext context,
-    required JourneyRun run,
+    required JourneyView run,
     required Journey journey,
     required int passedStops,
     required String gameName,

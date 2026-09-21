@@ -14,9 +14,7 @@ void main() {
   Future<void> pumpIn(WidgetTester tester, Widget child) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: SizedBox(width: 300, child: child),
-        ),
+        home: Scaffold(body: SizedBox(width: 300, child: child)),
       ),
     );
   }

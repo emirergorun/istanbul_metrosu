@@ -132,9 +132,7 @@ class StreakState {
         length: last == null || length is! int || length < 0 ? 0 : length,
         best: best is! int || best < 0 ? 0 : best,
         // Eski kayıtta yok: bir kez tamamlamış oyuncunun en az bir günü var.
-        totalDays: total is int && total >= 0
-            ? total
-            : (last == null ? 0 : 1),
+        totalDays: total is int && total >= 0 ? total : (last == null ? 0 : 1),
         graceUsed: map['grace'] == true,
       );
     } catch (error) {

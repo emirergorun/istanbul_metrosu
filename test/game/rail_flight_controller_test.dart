@@ -7,6 +7,7 @@ import 'package:istanbul_metro_game/features/journey/models/journey.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:istanbul_metro_game/features/session/journey_status.dart';
 
+import '../helpers/journey_points.dart';
 import '../helpers/metro_fixture.dart';
 
 Journey shortJourney() {
@@ -56,7 +57,9 @@ void main() {
       controller.debugStep(0.01);
 
       expect(controller.gatesPassed, 1);
-      expect(controller.score, 1);
+      // Ham puan hat seviyesi kadar (ilk kapıda 1), yolculuk skoruna ortak
+      // ölçekle yazılıyor.
+      expect(controller.score, journeyPoints('rail_flight', <int>[1]));
     });
 
     test('5 geçişten sonra M2 trenine dönüşür', () {

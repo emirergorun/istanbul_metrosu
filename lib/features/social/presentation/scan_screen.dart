@@ -51,8 +51,10 @@ class _ScanScreenState extends State<ScanScreen> {
     if (_handled) return;
     final raw = capture.barcodes
         .map((Barcode barcode) => barcode.rawValue)
-        .firstWhere((String? value) => value != null && value.isNotEmpty,
-            orElse: () => null);
+        .firstWhere(
+          (String? value) => value != null && value.isNotEmpty,
+          orElse: () => null,
+        );
     if (raw == null) return;
 
     // 1) Arkadaş kartı mı?
@@ -196,12 +198,13 @@ class _ScanFramePainter extends CustomPainter {
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
     const arm = 26.0;
-    for (final (Offset corner, double dx, double dy) in <(Offset, double, double)>[
-      (rect.topLeft, 1, 1),
-      (rect.topRight, -1, 1),
-      (rect.bottomLeft, 1, -1),
-      (rect.bottomRight, -1, -1),
-    ]) {
+    for (final (Offset corner, double dx, double dy)
+        in <(Offset, double, double)>[
+          (rect.topLeft, 1, 1),
+          (rect.topRight, -1, 1),
+          (rect.bottomLeft, 1, -1),
+          (rect.bottomRight, -1, -1),
+        ]) {
       canvas.drawLine(corner, corner.translate(arm * dx, 0), paint);
       canvas.drawLine(corner, corner.translate(0, arm * dy), paint);
     }

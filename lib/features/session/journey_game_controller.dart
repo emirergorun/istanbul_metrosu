@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/storage/local_store.dart';
 import '../discovery/application/journey_discovery.dart';
-import '../games/blocks/domain/scoring.dart' show ScoreRules;
 import '../journey/models/journey.dart';
 import 'journey_run.dart';
+import 'journey_session.dart';
 import 'run_report.dart';
 
 /// Her oyunun paylaştığı yolculuk motoru.
@@ -22,33 +22,108 @@ import 'run_report.dart';
 /// **Zaman modeli tek:** [advance] saniye cinsinden `dt` alır. Sıra tabanlı
 /// oyunlar saniyede bir 1.0 ile, gerçek zamanlı oyunlar 60 Hz'de ~0.016 ile
 /// ilerler; ikisi de aynı ilerleme ve varış mantığını kullanır.
+///
+/// **Yolculuğun kendisi burada durmaz.** Saat, puan, durak sayacı ve rekor
+/// [JourneySession] içindedir; bu sınıf onları yönetir ama sahiplenmez.
+/// Böylece aynı yolculuk birden çok oyunu peş peşe taşıyabilir: oyun
+/// ekranı kapanır, oturum yaşamaya devam eder.
 abstract class JourneyGameController extends ChangeNotifier
     implements JourneyRun {
   JourneyGameController({
     required this.gameId,
-    required this.journey,
+    required Journey journey,
     required int recordToBeat,
     required this.tick,
     this.store,
     this.discovery,
     this.maxFrameSeconds,
-    // Alan private + mutable (restart tazeliyor), parametre public kalmalı;
-    // `this._recordToBeat` dışarıdan kullanılamayacak bir ad üretirdi.
-    // ignore: prefer_initializing_formals
-  }) : _recordToBeat = recordToBeat;
+    this.onGamePayload,
+    JourneySession? session,
+  }) : _ownsSession = session == null,
+       _session =
+           session ??
+           JourneySession(journey: journey, recordToBeat: recordToBeat) {
+    assert(
+      session == null ||
+          (session.journey.origin.id == journey.origin.id &&
+              session.journey.destination.id == journey.destination.id),
+      'Oturum başka bir rotaya ait',
+    );
+  }
+
+  // Kimlik değil **rota** karşılaştırılıyor: kayıttan dönen yolculuk
+  // rotayı yeniden hesaplıyor, ekranın taşıdığı `Journey` ise başka bir
+  // nesne. İkisi aynı rotayı gösterdiği sürece aynı yolculuktur.
+
+  /// Yolculuğun kendisi: saat, puan, durak sayacı ve rekor.
+  ///
+  /// Dışarıdan verilmezse oyun kendi oturumunu kurar — tek oyunluk bir
+  /// yolculuk. Ortak oturum verildiğinde ise oyun, süren bir yolculuğun
+  /// içine girer.
+  final JourneySession _session;
+
+  /// Oturumu bu oyun mu kurdu?
+  ///
+  /// Kurduysa yolculuk tek oyunluktur: yeniden başlatmak yolculuğu da
+  /// sıfırlar, oyun bitince skor oyun bazlı rekora yazılır. Ortak bir
+  /// oturuma bağlandıysa ikisini de yapmaz — yolculuk oyundan bağımsız
+  /// sürer ve rekoru [JourneyController] yazar.
+  final bool _ownsSession;
+
+  /// Oyunun yarım kalan durumunu yolculuk kaydına yazan geri çağrı.
+  ///
+  /// Kayıt artık yolculuğun: puan, süre ve durak zarfta duruyor. Oyunun
+  /// kendi durumu (Blok Metro'nun tahtası gibi) oraya bir metin olarak
+  /// iliştiriliyor. `null` yük, "bu oyun bitti, sürdürülecek bir şey yok"
+  /// demek.
+  ///
+  /// Tüm oyunlar kullanmak zorunda değil: gerçek zamanlı oyunlar zaten
+  /// sıfırdan başlıyor, yolculuk puanı ve süresi onlar için yeterli.
+  final void Function(String gameId, String? payload)? onGamePayload;
+
+  JourneySession get journeySession => _session;
+
+  /// Bu oyunun **bu yolculukta** kazandırdığı puan.
+  ///
+  /// [score] yolculuğun toplamı; oyuncu ikinci oyuna geçtiğinde HUD'ın
+  /// neden yüksek bir sayıdan başladığını ancak bu ayrım açıklıyor.
+  int get scoreThisGame => _session.scoreOf(gameId);
+
+  /// Yolculuk başka oyunlarla paylaşılıyor mu?
+  ///
+  /// Paylaşılıyorsa bu oyunun bitmesi yolculuğu bitirmez: oyuncu puanını ve
+  /// kalan süresini koruyarak başka bir oyuna geçebilir.
+  bool get sharesJourney => !_ownsSession;
 
   /// Rekorlar oyun bazında tutulur; aynı rotanın her oyunda ayrı rekoru var.
   final String gameId;
 
   final LocalStore? store;
 
-  /// Bu yolculuğun keşif defteri.
+  /// Bu koşunun keşif defteri.
   ///
   /// `null` olabilir: testler ve keşfin kapalı olduğu durum aynı yoldan
   /// geçer. Oyunun kendisi bu alanı hiç kullanmaz — motor "kaç durak
   /// geçildi" der, keşif kuralı [JourneyDiscovery] içinde kalır.
   @override
   final JourneyDiscovery? discovery;
+
+  /// Biten koşuyu dinleyen taraf — bugün günlük görevler ve pasaport.
+  ///
+  /// Kurucu parametresi değil **atanabilir alan**: yedi oyunun controller'ı
+  /// bu sınıftan türüyor ve hiçbirinin kurucusuna dokunmadan bağlanabilmesi
+  /// gerekiyordu.
+  RunReporter? reporter;
+
+  /// Bu koşu bildirildi mi? Aynı koşu iki kez sayılmamalı.
+  bool _runReported = false;
+
+  /// Keşfe bildirilen son durak sayısı.
+  ///
+  /// Durak sayacı artık ortak oturumda tutuluyor; keşif onu buradan
+  /// izliyor. -1 "bu koşuda henüz bildirim yok" demek, 0 ise biniş durağı
+  /// bildirildi demek.
+  int _discoveredStations = -1;
 
   /// Sayaç periyodu. Sıra tabanlı oyunlarda 1 sn, gerçek zamanlıda ~16 ms.
   final Duration tick;
@@ -65,120 +140,81 @@ abstract class JourneyGameController extends ChangeNotifier
   /// taşındı ki her gerçek zamanlı oyun yararlansın.)
   final double? maxFrameSeconds;
 
-  /// Biten koşuyu dinleyen taraf — bugün günlük görevler.
-  ///
-  /// Kurucu parametresi değil **atanabilir alan**: yedi oyunun controller'ı
-  /// bu sınıftan türüyor ve hiçbirinin kurucusuna dokunmadan bağlanabilmesi
-  /// gerekiyordu. Ekran controller'ı kurduktan hemen sonra atar; atanmazsa
-  /// (testler, keşfin kapalı olduğu durum) koşu sessizce bildirilmez.
-  RunReporter? reporter;
-
-  /// Bu koşu bildirildi mi? Aynı koşu iki kez sayılmamalı.
-  bool _runReported = false;
-
   DateTime? _lastFrameTime;
 
-  @override
-  final Journey journey;
-
   GameStatus _status = GameStatus.ready;
-  double _elapsedSeconds = 0;
-  int _score = 0;
-  int _recordToBeat;
-  bool _recordBeaten = false;
-  bool _isNewBest = false;
   bool _scoreSaved = false;
-  int _stationsPassed = 0;
-
-  /// Son duraktan beri bonusu hak edecek bir şey oldu mu?
-  bool _stationProgress = false;
 
   Timer? _timer;
 
-  @override
-  int lastStationBonus = 0;
+  // --- JourneyRun: yolculuk yarısı oturuma devredilir ---
 
   @override
-  int stationBonusPulse = 0;
-
-  @override
-  int stationPulse = 0;
-
-  // --- JourneyRun ---
+  Journey get journey => _session.journey;
 
   @override
   GameStatus get status => _status;
 
   @override
-  int get score => _score;
+  int get score => _session.score;
 
   @override
-  int get recordToBeat => _recordToBeat;
+  int get recordToBeat => _session.recordToBeat;
 
   @override
-  bool get recordBeaten => _recordBeaten;
+  bool get recordBeaten => _session.recordBeaten;
 
   @override
-  bool get isFirstRun => _recordToBeat <= 0;
+  bool get isFirstRun => _session.isFirstRun;
 
   @override
-  bool get isNewBest => _isNewBest;
+  bool get isNewBest => _session.isNewBest;
 
   @override
-  double get progress {
-    final total = journey.estimatedSeconds;
-    if (total <= 0) return 1;
-    return (_elapsedSeconds / total).clamp(0.0, 1.0);
-  }
+  double get progress => _session.progress;
 
   @override
-  double get recordProgress {
-    if (isFirstRun) return 0;
-    return (_score / _recordToBeat).clamp(0.0, 1.0);
-  }
+  double get recordProgress => _session.recordProgress;
 
-  /// Kalan süre. `floor` kullanılır: yolculuk, tahmin edilen saniye gerçekten
-  /// dolmadan bitmez. (`ceil` bir saniye erken bitiriyordu.)
   @override
-  int get remainingSeconds {
-    final left = journey.estimatedSeconds - _elapsedSeconds.floor();
-    return left < 0 ? 0 : left;
-  }
+  int get remainingSeconds => _session.remainingSeconds;
+
+  @override
+  bool get isSprint => _session.isSprint;
+
+  @override
+  int get lastStationBonus => _session.lastStationBonus;
+
+  @override
+  int get stationBonusPulse => _session.stationBonusPulse;
+
+  @override
+  int get stationPulse => _session.stationPulse;
+
+  @override
+  int get sprintPulse => _session.sprintPulse;
 
   /// Sprintin açılması için gereken en az durak sayısı.
-  ///
-  /// Kısa yolculuklarda "son durak sprinti" anlamsız: iki duraklık bir
-  /// yolculuğun son %15'i birkaç saniye sürer ve oyuncu farkına bile varmaz.
-  static const int sprintMinStops = 5;
-
-  /// Yolculuğun son dilimi: puanlar iki katı.
-  @override
-  bool get isSprint =>
-      journey.stopCount >= sprintMinStops &&
-      progress >= ScoreRules.sprintStartsAt;
-
-  @override
-  int sprintPulse = 0;
-  bool _sprintAnnounced = false;
+  static const int sprintMinStops = JourneySession.sprintMinStops;
 
   /// Geçen süre (saniye). Gerçek zamanlı oyunlarda kesirli olabilir.
   ///
   /// Duraklatmada ilerlemez; ekranlar arka plan dokularını kaydırmak için
   /// de kullanır.
-  double get elapsedSeconds => _elapsedSeconds;
+  double get elapsedSeconds => _session.elapsedSeconds;
 
   // --- Yaşam döngüsü ---
 
   @override
   void start() {
     if (_status == GameStatus.playing) return;
-    _status = GameStatus.playing;
+    _setStatus(GameStatus.playing);
     // Sıra önemli: bekleyen kutlamalar **biniş durağı keşfedilmeden**
     // temizlenir, yoksa bu koşunun ilk keşfi de silinirdi.
     if (!_runReported) reporter?.reportRunStarted();
     // Biniş durağı **oyun başlayınca** keşfedilir; rota seçmek, oyun seçmek
     // veya ekranı açmak yetmez.
-    discovery?.reportReached(0);
+    _syncDiscovery();
     _startTimer();
     notifyListeners();
   }
@@ -187,7 +223,7 @@ abstract class JourneyGameController extends ChangeNotifier
   void pause() {
     if (_status != GameStatus.playing) return;
     _stopTimer();
-    _status = GameStatus.paused;
+    _setStatus(GameStatus.paused);
     onPause();
     notifyListeners();
   }
@@ -195,7 +231,7 @@ abstract class JourneyGameController extends ChangeNotifier
   @override
   void resume() {
     if (_status != GameStatus.paused) return;
-    _status = GameStatus.playing;
+    _setStatus(GameStatus.playing);
     _startTimer();
     onResume();
     notifyListeners();
@@ -204,23 +240,21 @@ abstract class JourneyGameController extends ChangeNotifier
   @override
   void restart() {
     _stopTimer();
-    _score = 0;
-    _elapsedSeconds = 0;
-    _recordBeaten = false;
-    _isNewBest = false;
     _scoreSaved = false;
-    _stationsPassed = 0;
-    _stationProgress = false;
-    _pendingJourneySeconds = 0;
+    // Ortak yolculukta yeniden başlatmak **yalnızca oyunu** sıfırlar: puan,
+    // kalan süre ve geçilen duraklar yolculuğa ait, tek bir oyunun yeniden
+    // başlaması onları silmez.
     // Yeniden başlayan koşu **yeni** bir koşudur: bittiğinde yeniden
     // bildirilir ve günlük sayaçlarda ayrı bir oyun olarak sayılır.
     _runReported = false;
-    discovery?.reset();
-    lastStationBonus = 0;
-    stationPulse = 0;
-    sprintPulse = 0;
-    _sprintAnnounced = false;
-    _refreshRecord();
+    if (_ownsSession) {
+      _session.reset();
+      _refreshRecord();
+      // Keşif defteri yolculuğa ait: yalnız yolculuğun kendisi sıfırlanınca
+      // sıfırlanır. Ortak yolculukta oyun değiştirmek keşfi silmemeli.
+      _discoveredStations = -1;
+      discovery?.reset();
+    }
     onRestart();
     start();
   }
@@ -229,23 +263,29 @@ abstract class JourneyGameController extends ChangeNotifier
   void abandon() {
     _stopTimer();
     if (_status.isFinished) return;
-    _status = GameStatus.abandoned;
+    _setStatus(GameStatus.abandoned);
     onAbandon();
     notifyListeners();
   }
 
   // --- Oyunun kullanacağı araçlar ---
 
-  /// Puan ekler ve rekor geçildiyse işaretler. Geçildiyse `true` döner.
+  /// Oyunun **ham** puanını yolculuğa ekler; rekor geçildiyse `true` döner.
   ///
-  /// Sprint çarpanı **burada** uygulanır; oyunların ayrı ayrı hatırlaması
-  /// gerekmez.
+  /// Oyun kendi kurallarıyla hesapladığı sayıyı verir. Oyunlar arası tempo
+  /// farkını kapatan ölçek ([GameScoreProfiles]) ve sprint çarpanı
+  /// oturumda uygulanır; oyunların ikisini de bilmesi gerekmez.
   @protected
-  bool addScore(int points) {
-    if (points == 0) return false;
-    _score += isSprint ? points * ScoreRules.sprintMultiplier : points;
-    return _checkRecord();
-  }
+  bool addScore(int points) =>
+      _session.addGameScore(gameId: gameId, raw: points);
+
+  /// Geri alınan hamlenin puanını ve kazandırdığı saniyeyi geri verir.
+  ///
+  /// [points] **verilmiş** puandır (ölçek ve sprint uygulanmış hâli); geri
+  /// alma, hamleden önceki toplamı hedefler.
+  @protected
+  void refundScore({required int points, double seconds = 0}) =>
+      _session.refund(points: points, seconds: seconds, gameId: gameId);
 
   /// "Bu duraktan beri kayda değer bir şey yaptım" — durak bonusunun koşulu.
   ///
@@ -255,7 +295,7 @@ abstract class JourneyGameController extends ChangeNotifier
   /// [journeySecondsPerGoodMove] tanımlamışsa tren o kadar hızlanır.
   @protected
   void markStationProgress() {
-    _stationProgress = true;
+    _session.markStationProgress();
     rewardJourney(journeySecondsPerGoodMove);
   }
 
@@ -283,23 +323,18 @@ abstract class JourneyGameController extends ChangeNotifier
   /// oyunun kendi karesi işlendikten hemen sonra saate ekleniyor; durak ve
   /// varış kontrolleri tek seferde, birleşmiş süreyle çalışıyor.
   @protected
-  void rewardJourney(double seconds) {
-    if (seconds <= 0) return;
-    _pendingJourneySeconds += seconds;
-  }
-
-  /// Oyunun bu karede kazandırdığı, henüz saate yazılmamış saniye.
-  double _pendingJourneySeconds = 0;
+  void rewardJourney(double seconds) => _session.rewardJourney(seconds);
 
   /// Durak bonusu hakkını geri alır (geri alınan bir hamle bonus vermemeli).
   @protected
-  void revokeStationProgress(bool previous) => _stationProgress = previous;
+  void revokeStationProgress(bool previous) =>
+      _session.revokeStationProgress(previous);
 
   @protected
-  bool get hasStationProgress => _stationProgress;
+  bool get hasStationProgress => _session.hasStationProgress;
 
   /// Tren kaç durağı geçti.
-  int get stationsPassed => _stationsPassed;
+  int get stationsPassed => _session.stationsPassed;
 
   /// Sayacı durdurur ama **durumu değiştirmez**.
   ///
@@ -335,13 +370,13 @@ abstract class JourneyGameController extends ChangeNotifier
     bool? recordBeaten,
     bool? stationProgress,
   }) {
-    if (score != null) _score = score < 0 ? 0 : score;
-    if (elapsedSeconds != null) {
-      _elapsedSeconds = elapsedSeconds < 0 ? 0 : elapsedSeconds;
-    }
-    if (stationsPassed != null) _stationsPassed = stationsPassed;
-    if (recordBeaten != null) _recordBeaten = recordBeaten;
-    if (stationProgress != null) _stationProgress = stationProgress;
+    _session.restore(
+      score: score,
+      elapsedSeconds: elapsedSeconds,
+      stationsPassed: stationsPassed,
+      recordBeaten: recordBeaten,
+      stationProgress: stationProgress,
+    );
   }
 
   /// Geçilecek rekoru doğrudan ayarlar.
@@ -349,13 +384,28 @@ abstract class JourneyGameController extends ChangeNotifier
   /// Kayıttan dönen oyun, kaydedildiği andaki rekoru taşır; depodaki değer
   /// bu arada yükselmiş olabilir. İkisinden **yüksek olan** hedeflenir.
   @protected
-  void raiseRecordToBeat(int value) {
-    if (value > _recordToBeat) _recordToBeat = value;
-  }
+  void raiseRecordToBeat(int value) => _session.raiseRecordToBeat(value);
 
   /// Oyunun durumunu doğrudan ayarlar (kayıttan `paused` dönmek gibi).
   @protected
-  void setStatus(GameStatus value) => _status = value;
+  void setStatus(GameStatus value) => _setStatus(value);
+
+  /// Durumu hem oyunda hem oturumda günceller.
+  ///
+  /// Oturumun durumu, oyun ekranı olmadan çizilen ortak parçalar için
+  /// gerekli: oyun seçim ekranındaki şerit treni durumu buradan okur.
+  void _setStatus(GameStatus value) {
+    _status = value;
+    // Yolculuğun durumu oyunun durumu değildir: oyun bittiğinde (hamle
+    // kalmadı, çarptın) yolculuk sürer, oyuncu başka bir oyuna geçip aynı
+    // puandan devam eder. Yalnızca varış ikisini birden bitirir.
+    if (_ownsSession ||
+        value == GameStatus.arrived ||
+        value == GameStatus.playing ||
+        value == GameStatus.paused) {
+      _session.setStatus(value);
+    }
+  }
 
   /// Oyun kendi kuralına takıldı: hamle kalmadı, çarpıştı, süre doldu…
   @protected
@@ -363,7 +413,7 @@ abstract class JourneyGameController extends ChangeNotifier
 
   /// Rekor bu anda geçildiyse işaretler ve geçildiğini döner.
   @protected
-  bool checkRecord() => _checkRecord();
+  bool checkRecord() => _session.checkRecord();
 
   // --- Oyunun dolduracağı kancalar ---
 
@@ -392,6 +442,9 @@ abstract class JourneyGameController extends ChangeNotifier
 
   void _startTimer() {
     _timer?.cancel();
+    // Saati artık bu oyun sürüyor; yolculuğun kalp atışı geri çekilir,
+    // yoksa süre iki kat hızlı akar.
+    _session.attachDriver(this);
     if (maxFrameSeconds == null) {
       _timer = Timer.periodic(tick, (_) {
         advance(tick.inMicroseconds / Duration.microsecondsPerSecond);
@@ -408,6 +461,7 @@ abstract class JourneyGameController extends ChangeNotifier
     _timer?.cancel();
     _timer = null;
     _lastFrameTime = null;
+    _session.detachDriver(this);
   }
 
   /// Son kareden bu yana ölçülen, [maxFrameSeconds] ile kırpılmış süre.
@@ -434,73 +488,29 @@ abstract class JourneyGameController extends ChangeNotifier
   void advance(double dt) {
     if (_status != GameStatus.playing) return;
 
-    _elapsedSeconds += dt;
+    _session.addElapsed(dt);
+    // Bu saniyeler bu oyunda geçti: puanın yanında süre de dursun ki
+    // "hangi oyun ne kazandırdı" sorusu tek sayıya bakarak yanıtlanmasın.
+    _session.creditPlaySeconds(gameId, dt);
     onTick(dt);
     if (_status != GameStatus.playing) return; // oyun bu karede bitmiş olabilir
 
-    // Oyunun bu karede kazandırdığı saniye; durak ve varış kontrolünden
-    // **önce** yazılır ki kazanç bir durağı geçirebilsin.
-    if (_pendingJourneySeconds > 0) {
-      _elapsedSeconds += _pendingJourneySeconds;
-      _pendingJourneySeconds = 0;
-    }
-
-    _announceSprintIfStarted();
-    _awardStationBonusIfPassed();
-
-    if (remainingSeconds <= 0) {
+    // Bekleyen kazanç saniyeleri, durak ve varış kontrolünden **önce**
+    // yazılır ki kazanç bir durağı geçirebilsin.
+    final arrived = _session.settle();
+    // Keşif bonustan bağımsız: durak geçildiyse oraya ulaşılmıştır.
+    // Sıçrama güvenli — dört durak birden geçilse dördü de işlenir.
+    _syncDiscovery();
+    if (arrived) {
       _finish(GameStatus.arrived);
       return;
     }
     notifyListeners();
   }
 
-  /// Sprint bu karede başladıysa bir kez bildirir.
-  void _announceSprintIfStarted() {
-    if (_sprintAnnounced || !isSprint) return;
-    _sprintAnnounced = true;
-    sprintPulse++;
-  }
-
   /// Testte yolculuğu elle ilerletmek için.
   @visibleForTesting
   void debugAdvance(double dt) => advance(dt);
-
-  /// Tren yeni bir durağı geçtiyse ve o duraktan beri ilerleme olduysa bonus.
-  void _awardStationBonusIfPassed() {
-    final stops = journey.stopCount;
-    if (stops <= 0) return;
-
-    final passed = (progress * stops).floor();
-    if (passed <= _stationsPassed) return;
-
-    final earned = _stationProgress;
-    _stationProgress = false;
-    _stationsPassed = passed;
-
-    // Keşif bonustan bağımsız: durak geçildiyse oraya ulaşılmıştır.
-    // Sıçrama güvenli — dört durak birden geçilse dördü de işlenir.
-    discovery?.reportReached(passed);
-
-    // Durak geçişi **her hâlükârda** duyurulur; bonus ayrı bir şey.
-    // Eskiden yalnızca bonuslu duraklar bildiriliyordu ve o duraktan beri
-    // bir şey yapmamış oyuncu için yolculuk sessizce ilerliyordu.
-    stationPulse++;
-
-    if (earned) {
-      _score += ScoreRules.stationBonus;
-      lastStationBonus = ScoreRules.stationBonus;
-      stationBonusPulse++;
-      _checkRecord();
-    }
-  }
-
-  bool _checkRecord() {
-    if (_recordBeaten || isFirstRun) return false;
-    if (_score <= _recordToBeat) return false;
-    _recordBeaten = true;
-    return true;
-  }
 
   /// Geçilecek rekoru depodan tazeler.
   ///
@@ -512,12 +522,12 @@ abstract class JourneyGameController extends ChangeNotifier
       originId: journey.origin.id,
       destinationId: journey.destination.id,
     );
-    if (stored != null && stored > _recordToBeat) _recordToBeat = stored;
+    if (stored != null) _session.raiseRecordToBeat(stored);
   }
 
   void _finish(GameStatus status) {
     _stopTimer();
-    _status = status;
+    _setStatus(status);
     // Son durak yalnızca **gerçekten varıldığında** keşfedilir. Oyun sonu
     // yolculuğun son saniyesinde gelse bile iniş durağı kilitli kalır.
     if (status == GameStatus.arrived) discovery?.reportArrival();
@@ -531,8 +541,8 @@ abstract class JourneyGameController extends ChangeNotifier
           gameId: gameId,
           journey: journey,
           status: status,
-          score: _score,
-          stationsPassed: _stationsPassed,
+          score: score,
+          stationsPassed: stationsPassed,
         ),
       );
     }
@@ -540,15 +550,32 @@ abstract class JourneyGameController extends ChangeNotifier
     unawaited(_persistScore());
   }
 
+  /// Ortak oturumdaki durak sayacını keşif defterine aktarır.
+  ///
+  /// Sayacı motor değil oturum yürütüyor; burada yalnız **fark** okunuyor.
+  /// Aynı sayı iki kez bildirilmez, atlanan durak da kaybolmaz.
+  void _syncDiscovery() {
+    final ledger = discovery;
+    if (ledger == null) return;
+    final passed = stationsPassed;
+    if (passed <= _discoveredStations) return;
+    _discoveredStations = passed;
+    ledger.reportReached(passed);
+  }
+
   Future<void> _persistScore() async {
+    // Ortak yolculukta rekoru yolculuk yazar; oyun kendi başına yazsaydı
+    // aynı rotaya iki farklı ölçüden iki rekor girerdi.
+    if (!_ownsSession) return;
     final target = store;
     if (target == null || _scoreSaved) return;
-    _isNewBest = await target.submitGameRouteScore(
+    final isNewBest = await target.submitGameRouteScore(
       gameId: gameId,
       originId: journey.origin.id,
       destinationId: journey.destination.id,
-      score: _score,
+      score: score,
     );
+    _session.markNewBest(isNewBest);
     _scoreSaved = true;
     notifyListeners();
   }

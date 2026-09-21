@@ -125,8 +125,7 @@ class DailyGenerator {
   ///    kolaylaştırır; tamamlanmış bir ilerlemeyi geçersizleştiremez.
   List<DailyMission> missionsFor(DayStamp day, {int? undiscoveredStations}) {
     final seed = DailySeed.forDay(day, salt: 'missions');
-    final exhausted =
-        undiscoveredStations != null && undiscoveredStations <= 0;
+    final exhausted = undiscoveredStations != null && undiscoveredStations <= 0;
     final pool = <DailyMissionType>[
       DailyMissionType.completeJourney,
       DailyMissionType.playGames,

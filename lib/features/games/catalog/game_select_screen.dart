@@ -8,6 +8,14 @@ import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../discovery/presentation/widgets/discovery_progress_track.dart';
 import '../../journey/models/journey.dart';
+import '../../session/journey_host.dart';
+import '../../session/journey_run.dart';
+import '../../session/journey_session.dart';
+import '../../session/widgets/arrival_sequence.dart';
+import '../../session/widgets/journey_breakdown.dart';
+import '../../session/widgets/journey_status_bar.dart';
+import '../../session/widgets/result_overlay.dart';
+import '../../../core/audio/audio_service.dart';
 import 'game_cover.dart';
 import 'mini_game.dart';
 
@@ -24,7 +32,7 @@ import 'mini_game.dart';
 ///
 /// Kapağa dokunmak oyunu **başlatmaz**, detayını açar. Yolculuk sayacı ve
 /// İstanbul Keşfi yalnızca detaydaki OYNA ile başlar.
-class GameSelectScreen extends StatelessWidget {
+class GameSelectScreen extends StatefulWidget {
   const GameSelectScreen({super.key, required this.journey});
 
   final Journey journey;
@@ -36,9 +44,70 @@ class GameSelectScreen extends StatelessWidget {
   /// okunmaz olur.
   static const double _twoColumnMinWidth = 340;
 
+  @override
+  State<GameSelectScreen> createState() => _GameSelectScreenState();
+}
+
+class _GameSelectScreenState extends State<GameSelectScreen> {
+  JourneySession? _session;
+  bool _playedArrivalSound = false;
+
+  Journey get journey => widget.journey;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Yolculuk burada başlar ve oyunlar arasında **sürer**: oyuncu oyun
+    // değiştirince saat sıfırlanmaz, puan sıfırlanmaz. Aynı rota için
+    // ikinci kez gelindiğinde var olan yolculuk döner.
+    final session = JourneyScope.of(context).start(journey);
+    if (identical(session, _session)) return;
+    _session?.removeListener(_onSessionChanged);
+    _session = session..addListener(_onSessionChanged);
+  }
+
+  @override
+  void dispose() {
+    _session?.removeListener(_onSessionChanged);
+    super.dispose();
+  }
+
+  void _onSessionChanged() {
+    if (!mounted) return;
+    // Süre oyun seçerken de akıyor; burada bitebilir. Kapı sesi bir kez.
+    if (_session?.status == GameStatus.arrived && !_playedArrivalSound) {
+      _playedArrivalSound = true;
+      AppScope.of(context).audio.play(GameSound.arrival);
+    }
+    setState(() {});
+  }
+
+  /// Yolculuğu kapatır ve başlığa döner.
+  void _finishJourney() {
+    JourneyScope.of(context).close();
+    Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
+  }
+
   void _openDetail(BuildContext context, MiniGame game) {
     if (!game.isAvailable) return;
     AppRoutes.openGameDetail(context, journey, gameId: game.id);
+  }
+
+  Widget _buildResult(JourneySession session, Color accent) {
+    return ResultOverlay(
+      isArrival: true,
+      destinationName: journey.destination.name,
+      score: session.score,
+      recordToBeat: session.recordToBeat,
+      isFirstRun: session.isFirstRun,
+      recordBeaten: session.recordBeaten,
+      accent: accent,
+      isNewBest: session.isNewBest,
+      showBackdrop: false,
+      extraStats: <Widget>[...journeyBreakdownRows(session)],
+      onRestart: _finishJourney,
+      onExit: _finishJourney,
+    );
   }
 
   @override
@@ -47,6 +116,7 @@ class GameSelectScreen extends StatelessWidget {
     final line = scope.metro.lineById(journey.lineId);
     final lineTheme = LineTheme.from(line?.color ?? AppColors.brandNavy);
     final games = MiniGames.all;
+    final session = _session;
 
     return Scaffold(
       appBar: AppBar(
@@ -54,66 +124,103 @@ class GameSelectScreen extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         title: const Text('OYUNUNU SEÇ', style: AppText.title),
       ),
-      body: SafeArea(
-        top: false,
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final columns = constraints.maxWidth >= _twoColumnMinWidth ? 2 : 1;
+      body: Stack(
+        children: <Widget>[
+          SafeArea(
+            top: false,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final columns =
+                    constraints.maxWidth >= GameSelectScreen._twoColumnMinWidth
+                    ? 2
+                    : 1;
 
-            return CustomScrollView(
-              slivers: <Widget>[
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    0,
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                  ),
-                  sliver: SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        _JourneyStrip(
-                          journey: journey,
-                          lineTheme: lineTheme,
-                          onChangeRoute: () => Navigator.of(context).pop(),
+                return CustomScrollView(
+                  slivers: <Widget>[
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        0,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            _JourneyStrip(
+                              journey: journey,
+                              lineTheme: lineTheme,
+                              onChangeRoute: () => Navigator.of(context).pop(),
+                            ),
+                            const SizedBox(height: AppSpacing.stack),
+                            const _DiscoveryRow(),
+                            if (session != null) ...<Widget>[
+                              const SizedBox(height: AppSpacing.stack),
+                              // Yolculuk oyun seçerken de sürüyor; tren, kalan
+                              // süre ve geçilen duraklar burada da görünmeli.
+                              // Oyunların içindeki şeridin aynısı: yolculuk
+                              // ortak olduğu için widget da ortak.
+                              JourneyStatusBar(
+                                run: session,
+                                lineStations: scope.metro.stationsOfLine(
+                                  journey.lineId,
+                                ),
+                                accent: lineTheme.accent,
+                                isMoving: session.status != GameStatus.arrived,
+                                // Durak şeridi üstteki kartın üzerine taşardı;
+                                // adı zaten şeridin kendi satırında yazıyor.
+                                showStationBanner: false,
+                                // Oyun değiştirirken toplam puan görünsün.
+                                showScore: true,
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        const _DiscoveryRow(),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    0,
-                    AppSpacing.lg,
-                    AppSpacing.xxl,
-                  ),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: GameCoverCard.aspectRatio,
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        0,
+                        AppSpacing.lg,
+                        AppSpacing.xxl,
+                      ),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: AppSpacing.md,
+                          crossAxisSpacing: AppSpacing.md,
+                          childAspectRatio: GameCoverCard.aspectRatio,
+                        ),
+                        delegate: SliverChildBuilderDelegate((
+                          BuildContext context,
+                          int index,
+                        ) {
+                          final game = games[index];
+                          return GameCoverCard(
+                            game: game,
+                            onTap: () => _openDetail(context, game),
+                          );
+                        }, childCount: games.length),
+                      ),
                     ),
-                    delegate: SliverChildBuilderDelegate((
-                      BuildContext context,
-                      int index,
-                    ) {
-                      final game = games[index];
-                      return GameCoverCard(
-                        game: game,
-                        onTap: () => _openDetail(context, game),
-                      );
-                    }, childCount: games.length),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  ],
+                );
+              },
+            ),
+          ),
+          // Süre oyun seçerken dolduysa tören burada oynar: yolculuk
+          // nerede biterse orada kutlanır.
+          if (session != null && session.status == GameStatus.arrived)
+            ArrivalSequence(
+              accent: lineTheme.accent,
+              lineId: journey.lineId,
+              stationName: journey.destination.name,
+              onSkipped: () => AppScope.of(context).audio.stopLongForm(),
+              child: _buildResult(session, lineTheme.accent),
+            ),
+        ],
       ),
     );
   }

@@ -129,8 +129,9 @@ class AppRoutes {
       case challengePreview:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) =>
-              ChallengePreviewScreen(challenge: settings.arguments! as Challenge),
+          builder: (_) => ChallengePreviewScreen(
+            challenge: settings.arguments! as Challenge,
+          ),
         );
       case challengeShare:
         final args = settings.arguments! as ChallengeShareArgs;
@@ -221,26 +222,6 @@ class AppRoutes {
         resumeFrom: resumeFrom,
       ),
     );
-  }
-
-  /// Yarım kalan oyunu açar; altına o yolculuğun oyun seçim ekranını koyar.
-  ///
-  /// Oyundaki "Başka oyun seç" düğmesi ekranı kapatır. Oyun başlık
-  /// ekranındaki kayıttan açılınca altta oyun seçimi olmadığı için düğme
-  /// adının söylediği yere değil başlık ekranına dönüyordu.
-  ///
-  /// Dönen `Future`, oyun seçim ekranı da kapanınca tamamlanır.
-  static Future<void> resumeGame(BuildContext context, SavedGame saved) {
-    final navigator = Navigator.of(context);
-    final gameSelectClosed = navigator.pushNamed<void>(
-      gameSelect,
-      arguments: saved.session.journey,
-    );
-    navigator.pushNamed<void>(
-      game,
-      arguments: GameLaunch(journey: saved.session.journey, resumeFrom: saved),
-    );
-    return gameSelectClosed;
   }
 
   /// Rota planlayıcıyı açar.

@@ -9,6 +9,10 @@ import '../../../core/widgets/pressable.dart';
 ///
 /// Uygulama arka plana alındığında oyun otomatik duraklar ve dönüşte
 /// kullanıcıdan açık bir "devam et" hamlesi istenir.
+///
+/// **Duraklatmak treni durdurmaz.** Yolculuk oyundan bağımsız yaşıyor;
+/// duran yalnızca oyun. Panel bunu açıkça söylüyor, yoksa oyuncu
+/// döndüğünde kalan sürenin azalmış olmasını hata sanar.
 class PauseOverlay extends StatelessWidget {
   const PauseOverlay({
     super.key,
@@ -35,9 +39,13 @@ class PauseOverlay extends StatelessWidget {
       icon: Icons.pause_rounded,
       accent: accent,
       title: 'Duraklatıldı',
-      subtitle: 'Yolculuk sayacı da durdu. Hazır olduğunda devam et.',
+      subtitle: 'Oyun durdu ama tren yol almaya devam ediyor.',
       children: <Widget>[
-        StatRow(label: 'Skor', value: Formatters.score(score), highlight: true),
+        StatRow(
+          label: 'Yolculuk skoru',
+          value: Formatters.score(score),
+          highlight: true,
+        ),
         StatRow(
           label: 'Kalan yolculuk',
           value: Formatters.remaining(remainingSeconds),
@@ -54,7 +62,7 @@ class PauseOverlay extends StatelessWidget {
         const SizedBox(height: AppSpacing.stack),
         TextButton(
           onPressed: AppFeedback.onTap(context, onRestart),
-          child: const Text('Yeniden başlat'),
+          child: const Text('Oyunu yeniden başlat'),
         ),
         TextButton(
           onPressed: AppFeedback.onTap(context, onSettings),

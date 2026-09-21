@@ -62,11 +62,7 @@ void main() {
     );
     addTearDown(achievements.dispose);
     addTearDown(discovery.dispose);
-    return (
-      achievements: achievements,
-      discovery: discovery,
-      store: store,
-    );
+    return (achievements: achievements, discovery: discovery, store: store);
   }
 
   test('yeni oyuncuda hiçbir başarım açık değil', () async {

@@ -99,8 +99,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     return List<AchievementDefinition>.unmodifiable(sorted);
   }
 
-  int get unlockedCount =>
-      definitions.where(isUnlocked).length;
+  int get unlockedCount => definitions.where(isUnlocked).length;
 
   int get totalCount => definitions.length;
 
@@ -154,8 +153,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     // [RunReport.isMeaningful].
     if (!report.isMeaningful) return;
     _stats = _stats.copyWith(
-      journeysCompleted:
-          _stats.journeysCompleted + (report.arrived ? 1 : 0),
+      journeysCompleted: _stats.journeysCompleted + (report.arrived ? 1 : 0),
       playedGameIds: <String>{..._stats.playedGameIds, report.gameId},
     );
     unawaited(_persistStats());

@@ -4,10 +4,8 @@ import '../../../app/app_scope.dart';
 import '../../../app/routes.dart';
 import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/storage/local_store.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/pressable.dart';
-import '../../games/catalog/mini_game.dart';
 import '../models/journey.dart';
 import '../models/station.dart';
 import '../services/route_service.dart';
@@ -182,9 +180,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           origin: _origin,
                           destination: _destination,
                           route: route,
+                          // Rekor rotanın: hangi oyunda kurulduğu artık
+                          // yazılmıyor, puan yolculuğun tamamının.
                           bestRecord: journey == null
-                              ? null
-                              : scope.store.bestRecordForRoute(
+                              ? 0
+                              : scope.store.bestJourneyScore(
                                   journey.origin.id,
                                   journey.destination.id,
                                 ),
@@ -289,7 +289,9 @@ class _PlannerCard extends StatelessWidget {
   final Station? origin;
   final Station? destination;
   final RouteResult? route;
-  final RouteRecord? bestRecord;
+
+  /// Rotanın yolculuk rekoru; 0 ise ilk yolculuk.
+  final int bestRecord;
   final VoidCallback onPickOrigin;
   final VoidCallback onPickDestination;
   final VoidCallback? onSwap;
@@ -571,8 +573,8 @@ class _JourneySummary extends StatelessWidget {
   final RouteResult? route;
   final bool hasSelection;
 
-  /// Rotadaki en yüksek rekor ve kurulduğu oyun; `null` ise ilk yolculuk.
-  final RouteRecord? bestRecord;
+  /// Rotanın yolculuk rekoru; 0 ise ilk yolculuk.
+  final int bestRecord;
 
   @override
   Widget build(BuildContext context) {
@@ -609,13 +611,11 @@ class _JourneySummary extends StatelessWidget {
               // oyunların puanı karşılaştırılamaz; her oyunun kendi rekoru
               // oyun seçim kartında.
               child: _Metric(
-                label: bestRecord != null ? 'ROTA REKORUN' : 'BU ROTADA',
-                value: bestRecord != null
-                    ? Formatters.score(bestRecord!.score)
+                label: bestRecord > 0 ? 'ROTA REKORUN' : 'BU ROTADA',
+                value: bestRecord > 0
+                    ? Formatters.score(bestRecord)
                     : 'İlk yolculuk',
-                caption: bestRecord == null
-                    ? null
-                    : MiniGames.byId(bestRecord!.gameId!)?.name,
+                caption: bestRecord > 0 ? 'yolculuk rekoru' : null,
               ),
             ),
           ],

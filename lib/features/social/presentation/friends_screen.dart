@@ -231,9 +231,7 @@ class _PlatformIdentityRow extends StatelessWidget {
           : 'Game Center hesabını bağla',
       child: ExcludeSemantics(
         child: Pressable(
-          onTap: busy
-              ? null
-              : () => linked ? _unlink(context) : _link(context),
+          onTap: busy ? null : () => linked ? _unlink(context) : _link(context),
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           child: Container(
             constraints: const BoxConstraints(minHeight: 44),
@@ -249,9 +247,7 @@ class _PlatformIdentityRow extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Icon(
-                  linked
-                      ? Icons.link_rounded
-                      : Icons.sports_esports_outlined,
+                  linked ? Icons.link_rounded : Icons.sports_esports_outlined,
                   size: 18,
                   color: linked ? AppColors.success : AppColors.textSecondary,
                 ),

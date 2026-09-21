@@ -11,15 +11,17 @@ import '../domain/piece_shapes.dart';
 import '../domain/streak.dart';
 import 'game_controller.dart';
 
-/// Kayıttan çözülmüş oyun: tahta durumu + motor durumu.
+/// Kayıttan çözülmüş oyun: tahta durumu (+ eski kayıtlarda motor durumu).
 ///
-/// İkisi ayrı katmanda yaşıyor, kayıt da ikisini ayrı taşıyor.
+/// [progress] yalnızca ortak yolculuktan **önceki** kayıtlarda dolu: puan,
+/// süre ve geçilen durak artık oyunun değil yolculuğun (bkz.
+/// `JourneySave`), kayıtta da orada duruyor.
 @immutable
 class SavedGame {
-  const SavedGame({required this.session, required this.progress});
+  const SavedGame({required this.session, this.progress});
 
   final GameSession session;
-  final ResumedProgress progress;
+  final ResumedProgress? progress;
 }
 
 /// Yarım kalan oyunun diske yazılabilir hâli.
@@ -35,10 +37,16 @@ class GameSnapshot {
 
   /// Kayıt biçimi değişirse eski kayıtlar atılır.
   ///
-  /// v3 skoru ve süreyi motordan okur; tahta durumu artık bunları
-  /// içermiyor.
-  static const int version = 3;
+  /// v4 **yalnızca tahtayı** taşır: puan, süre ve geçilen durak yolculuğun
+  /// zarfına (`JourneySave`) taşındı. v3 hâlâ okunuyor — oyuncunun yarım
+  /// kalan oyunu sürüm yükseltmesinde kaybolmasın.
+  static const int version = 4;
 
+  /// Okunabilen sürümler.
+  static const Set<int> readableVersions = <int>{3, 4};
+
+  /// [GameController.session] tahtanın kendisi; zarf onu metin olarak
+  /// taşır.
   static String encode(GameController controller) {
     final session = controller.session;
     return jsonEncode(<String, dynamic>{
@@ -64,13 +72,6 @@ class GameSnapshot {
       'clearedColumns': session.clearedColumns,
       'undoLeft': session.undoLeft,
       'placedPieces': session.placedPieces,
-
-      // --- motor ---
-      'score': controller.score,
-      'elapsed': controller.elapsedSeconds.floor(),
-      'stationsPassed': controller.stationsPassed,
-      'record': controller.recordToBeat,
-      'recordBeaten': controller.recordBeaten,
     });
   }
 
@@ -78,7 +79,7 @@ class GameSnapshot {
   static SavedGame? decode(String raw, RouteService routeService) {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
-      if (json['v'] != version) return null;
+      if (!readableVersions.contains(json['v'])) return null;
 
       final journey = routeService
           .estimate(json['origin'] as String, json['destination'] as String)
@@ -128,13 +129,16 @@ class GameSnapshot {
           undoLeft: json['undoLeft'] as int,
           placedPieces: json['placedPieces'] as int,
         ),
-        progress: ResumedProgress(
-          score: json['score'] as int,
-          elapsedSeconds: json['elapsed'] as int,
-          stationsPassed: json['stationsPassed'] as int,
-          recordToBeat: json['record'] as int,
-          recordBeaten: json['recordBeaten'] as bool,
-        ),
+        // Eski kayıtta yolculuk alanları da vardı; yenisinde zarfta.
+        progress: json['v'] == 3
+            ? ResumedProgress(
+                score: json['score'] as int,
+                elapsedSeconds: json['elapsed'] as int,
+                stationsPassed: json['stationsPassed'] as int,
+                recordToBeat: json['record'] as int,
+                recordBeaten: json['recordBeaten'] as bool,
+              )
+            : null,
       );
     } catch (error, stack) {
       debugPrint('Kayıtlı oyun okunamadı: $error\n$stack');

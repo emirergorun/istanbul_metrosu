@@ -84,8 +84,10 @@ void main() {
 
       expect(find.text(store.playerName), findsOneWidget);
       // Kod tireli biçimde: ABCD-1234.
-      expect(find.textContaining(RegExp(r'^[0-9A-Z]{4}-[0-9A-Z]{4}$')),
-          findsOneWidget);
+      expect(
+        find.textContaining(RegExp(r'^[0-9A-Z]{4}-[0-9A-Z]{4}$')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('boş durumda davet çıkıyor, ölü ekran yok', (tester) async {
@@ -223,10 +225,9 @@ void main() {
   group('Meydan okuma önizleme', () {
     // Süre gerçek rotadan alınıyor: doğrulayıcı karekodtaki süreyi yerel
     // hesapla karşılaştırıyor ve uydurma bir süre reddedilirdi.
-    final realSeconds = RouteService(metro)
-        .estimate('m2_taksim', 'm2_levent')
-        .journey!
-        .estimatedSeconds;
+    final realSeconds = RouteService(
+      metro,
+    ).estimate('m2_taksim', 'm2_levent').journey!.estimatedSeconds;
 
     Challenge build({String gameId = 'blocks', String originId = 'taksim'}) =>
         Challenge(
@@ -303,9 +304,7 @@ void main() {
       expect(find.text('MEYDAN OKUMA HAZIR'), findsOneWidget);
       expect(find.byType(ChallengeQrView), findsOneWidget);
       // Karekodun içeriği gerçekten çözülebilir olmalı.
-      final view = tester.widget<ChallengeQrView>(
-        find.byType(ChallengeQrView),
-      );
+      final view = tester.widget<ChallengeQrView>(find.byType(ChallengeQrView));
       expect(ChallengeCodec.decode(view.data).isValid, isTrue);
     });
   });

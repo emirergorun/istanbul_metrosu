@@ -14,15 +14,18 @@ import 'package:istanbul_metro_game/features/games/blocks/domain/streak.dart';
 import 'package:istanbul_metro_game/features/journey/models/difficulty_profile.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 
-import 'helpers/metro_fixture.dart';
+import '../helpers/metro_fixture.dart';
 
-/// Denge ölçüm koşumu — ürün kodu değil, rapor üreten bir araçtır.
+/// Blok Metro'nun kendi denge raporu — ürün kodu değil, bir araç.
+///
+/// Oyunlar arası tempo karşılaştırması ayrı dosyada:
+/// `test/balance/points_per_minute_test.dart`.
 ///
 /// Oyun kurallarının kendisi (`calculateScore`, `ScoreRules`, board
 /// fonksiyonları, `PieceGenerator`) gerçek koddan gelir; yalnızca zaman
 /// döngüsü ve oyuncu davranışı burada modellenir.
 ///
-/// Çalıştırmak için:  flutter test test/balance_report_test.dart
+/// Çalıştırmak için:  flutter test test/balance/blocks_report_test.dart
 void main() {
   final metro = MetroFixture.load();
   final routeService = RouteService(metro);

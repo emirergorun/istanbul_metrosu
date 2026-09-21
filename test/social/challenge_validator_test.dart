@@ -41,10 +41,10 @@ void main() {
   );
 
   test('geçerli meydan okuma oynanabilir yolculuğa çevriliyor', () {
-    final real = RouteService(metro).estimate('m2_taksim', 'm2_levent').journey!;
-    final resolution = validator.resolve(
-      build(seconds: real.estimatedSeconds),
-    );
+    final real = RouteService(
+      metro,
+    ).estimate('m2_taksim', 'm2_levent').journey!;
+    final resolution = validator.resolve(build(seconds: real.estimatedSeconds));
 
     expect(resolution.isValid, isTrue);
     expect(resolution.journey!.origin.id, 'm2_taksim');
@@ -101,7 +101,9 @@ void main() {
   });
 
   test('küçük süre farkı kabul ediliyor', () {
-    final real = RouteService(metro).estimate('m2_taksim', 'm2_levent').journey!;
+    final real = RouteService(
+      metro,
+    ).estimate('m2_taksim', 'm2_levent').journey!;
     // Veri dosyasındaki bir kenar süresi düzeltilirse eski meydan
     // okumalar geçersiz olmamalı.
     expect(
@@ -118,7 +120,9 @@ void main() {
   });
 
   test('başkasının karesi kabul ediliyor', () {
-    final real = RouteService(metro).estimate('m2_taksim', 'm2_levent').journey!;
+    final real = RouteService(
+      metro,
+    ).estimate('m2_taksim', 'm2_levent').journey!;
     expect(
       validator
           .resolve(
@@ -131,7 +135,9 @@ void main() {
   });
 
   test('yolculuktan kanonik kimlik okunuyor', () {
-    final real = RouteService(metro).estimate('m2_taksim', 'm2_levent').journey!;
+    final real = RouteService(
+      metro,
+    ).estimate('m2_taksim', 'm2_levent').journey!;
     final pair = ChallengeValidator.canonicalPair(real);
     // Karekoda hat kapsamlı `m2_taksim` değil fiziksel `taksim` giriyor.
     expect(pair.origin, 'taksim');

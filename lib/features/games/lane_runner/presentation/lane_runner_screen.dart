@@ -10,6 +10,7 @@ import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../../core/widgets/metro_train.dart';
 import '../../../journey/models/journey.dart';
+import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_hud.dart';
@@ -17,6 +18,7 @@ import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
 import '../../../session/widgets/overlay_panel.dart';
 import '../../../session/widgets/pause_overlay.dart';
+import '../../../session/widgets/journey_breakdown.dart';
 import '../../../session/widgets/result_overlay.dart';
 import '../application/lane_runner_controller.dart';
 import '../domain/lane_runner_state.dart';
@@ -67,15 +69,22 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
       // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
       // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
       random: scope.challengeRandomFor(widget.journey, LaneRunnerController.id),
-      recordToBeat: scope.store.bestScoreForGameRoute(
-        gameId: LaneRunnerController.id,
-        originId: widget.journey.origin.id,
-        destinationId: widget.journey.destination.id,
+      recordToBeat: scope.store.bestJourneyScore(
+        widget.journey.origin.id,
+        widget.journey.destination.id,
       ),
+      // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
+      // puan, kalan süre ve geçilen duraklar oradan devam eder.
+      session: JourneyScope.sessionOf(context),
     );
     // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
     // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
     controller.reporter = scope.runReporter;
+    // Sayaç tabanları koşudan okunur: yolculuk ekranlardan uzun yaşıyor,
+    // sıfırdan başlanırsa yolculuğun ortasında açılan ekran geçmiş durak
+    // bildirimlerini yeniden oynatır.
+    _seenStationPulse = controller.stationBonusPulse;
+    _seenLineLevel = controller.lineLevel;
     controller.addListener(_onControllerChanged);
     _controller = controller;
     controller.start();
@@ -254,7 +263,7 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
                         _LaneControls(onLeft: _moveLeft, onRight: _moveRight),
                         const SizedBox(height: AppSpacing.md),
                         JourneyStatusBar(
-              gameId: LaneRunnerController.id,
+                          gameId: LaneRunnerController.id,
                           run: controller,
                           lineStations: AppScope.of(
                             context,
@@ -318,6 +327,10 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
       gameId: LaneRunnerController.id,
       isArrival: controller.status == GameStatus.arrived,
       discovery: controller.discovery,
+      // Yolculuk ortaksa oyun bitişi bir ara duraktır, yolculuğun sonu değil.
+      journeyContinues:
+          controller.sharesJourney && controller.status != GameStatus.arrived,
+      remainingSeconds: controller.remainingSeconds,
       destinationName: controller.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -326,6 +339,10 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
       accent: accent,
       isNewBest: controller.isNewBest,
       extraStats: <Widget>[
+        // Varışta yolculuğun dağılımı: hangi oyunda ne kadar süre geçti,
+        // ne kazandırdı. Oyunun kendi sayıları bunun altında.
+        if (controller.status == GameStatus.arrived)
+          ...journeyBreakdownRows(controller.journeySession),
         StatRow(label: 'Geçilen engel', value: '${controller.passes}'),
         StatRow(label: 'Tren hattı', value: controller.lineLabel),
       ],
@@ -355,6 +372,7 @@ class _RunnerHud extends StatelessWidget {
       run: controller,
       accent: accent,
       onPause: onPause,
+      gameScore: controller.scoreThisGame,
       chips: <Widget>[
         _HudChip(
           label: 'Tren',

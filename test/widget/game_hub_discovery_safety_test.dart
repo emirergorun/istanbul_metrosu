@@ -13,6 +13,7 @@ import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/journey_harness.dart';
 import '../helpers/metro_fixture.dart';
 import '../helpers/trivia_fixture.dart';
 
@@ -54,10 +55,14 @@ void main() {
         questions: TriviaFixture.repository(perCategory: 4),
         discovery: discovery,
         routeService: routes,
-        child: MaterialApp(
-          theme: AppTheme.dark(),
-          onGenerateRoute: AppRoutes.onGenerateRoute,
-          home: GameSelectScreen(journey: journey),
+        child: withJourney(
+          store: store,
+          routes: routes,
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            onGenerateRoute: AppRoutes.onGenerateRoute,
+            home: GameSelectScreen(journey: journey),
+          ),
         ),
       ),
     );

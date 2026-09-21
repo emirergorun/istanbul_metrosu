@@ -25,6 +25,8 @@ class JourneyProgressBar extends StatelessWidget {
     this.stopCount,
     this.stationProgress,
     this.arrivalPulse = 0,
+    this.journeyScore,
+    this.recordToBeat = 0,
   });
 
   final String lineId;
@@ -57,6 +59,17 @@ class JourneyProgressBar extends StatelessWidget {
 
   /// Durağa varış kutlaması, 0.0 – 1.0. 0 ise kutlama yok.
   final double arrivalPulse;
+
+  /// Yolculuğun şu anki toplam puanı; verilirse çubuğun altına yazılır.
+  ///
+  /// Yalnızca **oyun seçim ekranında** veriliyor: oyunun içinde skor zaten
+  /// HUD'ın en büyük sayısı, iki yerde göstermek gürültü olurdu. Oyun
+  /// değiştirirken ise skor ekranda hiç görünmüyordu — oyuncu "şu ana
+  /// kadar kaç puanım var" sorusunu soramıyordu.
+  final int? journeyScore;
+
+  /// Rotanın rekoru; 0 ise bu rotada ilk yolculuk.
+  final int recordToBeat;
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +155,40 @@ class JourneyProgressBar extends StatelessWidget {
               ),
             ],
           ),
+          if (journeyScore != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.sm),
+            const Divider(height: 1, color: AppColors.surfaceHigh),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    recordToBeat > 0
+                        ? 'YOLCULUK PUANIN · REKOR '
+                              '${Formatters.score(recordToBeat)}'
+                        : 'YOLCULUK PUANIN · BU ROTADA İLK',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.label.copyWith(
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  Formatters.score(journeyScore!),
+                  style: AppText.stat.copyWith(
+                    fontSize: 22,
+                    height: 1.1,
+                    color: journeyScore! > recordToBeat && recordToBeat > 0
+                        ? AppColors.success
+                        : accent,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

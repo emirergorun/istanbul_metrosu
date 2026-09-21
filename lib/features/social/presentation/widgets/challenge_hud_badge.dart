@@ -43,10 +43,7 @@ class ChallengeHudBadge extends StatelessWidget {
         ? (AppColors.success, 'ÖNDESİN')
         : remaining <= target * 0.1
         ? (AppColors.warning, '${Formatters.score(remaining)} kaldı')
-        : (
-            AppColors.textSecondary,
-            'HEDEF ${Formatters.score(target)}',
-          );
+        : (AppColors.textSecondary, 'HEDEF ${Formatters.score(target)}');
 
     return Semantics(
       liveRegion: true,

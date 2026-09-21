@@ -57,9 +57,10 @@ class DailyMission {
   /// Kısa görev metni. Hedef sayı metne gömülür: "3 yeni istasyon keşfet".
   String get title => switch (type) {
     DailyMissionType.dailyJourney => 'Bugünün yolculuğunu tamamla',
-    DailyMissionType.completeJourney => target == 1
-        ? 'Bir yolculuğu sonuna kadar götür'
-        : '$target yolculuk tamamla',
+    DailyMissionType.completeJourney =>
+      target == 1
+          ? 'Bir yolculuğu sonuna kadar götür'
+          : '$target yolculuk tamamla',
     DailyMissionType.playGames => '$target oyun bitir',
     DailyMissionType.playDistinctGames => '$target farklı oyun oyna',
     DailyMissionType.discoverStations => '$target yeni istasyon keşfet',

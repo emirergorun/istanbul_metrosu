@@ -91,8 +91,7 @@ class DailyController extends ChangeNotifier implements RunReporter {
   bool isMissionComplete(DailyMission mission) =>
       mission.isCompleteFor(_counters);
 
-  int get completedMissionCount =>
-      missions.where(isMissionComplete).length;
+  int get completedMissionCount => missions.where(isMissionComplete).length;
 
   /// Bugünün yolculuğu tamamlandı mı?
   bool get isDailyComplete => _counters.dailyDone;
@@ -209,9 +208,7 @@ class DailyController extends ChangeNotifier implements RunReporter {
     if (count <= 0) return;
     refreshDay();
     final before = _snapshotCompletion();
-    _counters = _counters.copyWith(
-      newStations: _counters.newStations + count,
-    );
+    _counters = _counters.copyWith(newStations: _counters.newStations + count);
     _collectNewlyCompleted(before.missions);
     unawaited(_persistCounters());
     _notifyCoalesced();

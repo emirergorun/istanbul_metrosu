@@ -14,6 +14,7 @@ class MergeDropController extends JourneyGameController {
     super.discovery,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
+    super.session,
   }) : _random = random ?? Random(),
        super(gameId: id) {
     _currentLevel = _randomLevel();

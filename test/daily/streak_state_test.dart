@@ -66,9 +66,7 @@ void main() {
     });
 
     test('affedilen gün seriyi sürdürür', () {
-      final state = StreakState.empty
-          .completeOn(monday)
-          .completeOn(wednesday);
+      final state = StreakState.empty.completeOn(monday).completeOn(wednesday);
       expect(state.currentOn(wednesday), 2);
       expect(state.graceUsed, isTrue);
     });

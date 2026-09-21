@@ -25,11 +25,8 @@ import '../helpers/metro_fixture.dart';
 /// motor **tek** bir rapor gönderiyor, gerisini dinleyenler çözüyor. Burada
 /// o zincirin uçtan uca çalıştığı gösteriliyor.
 class _TestGame extends JourneyGameController {
-  _TestGame({
-    required super.journey,
-    required super.gameId,
-    super.discovery,
-  }) : super(recordToBeat: 0, tick: const Duration(days: 1));
+  _TestGame({required super.journey, required super.gameId, super.discovery})
+    : super(recordToBeat: 0, tick: const Duration(days: 1));
 
   @override
   void onTick(double dt) {}
@@ -136,10 +133,7 @@ void main() {
       );
 
       // V4: ilk yolculuk ve ilk keşif rozetleri açıldı.
-      expect(
-        world.achievements.isUnlocked(Achievements.firstJourney),
-        isTrue,
-      );
+      expect(world.achievements.isUnlocked(Achievements.firstJourney), isTrue);
       expect(
         world.achievements.isUnlocked(Achievements.firstDiscovery),
         isTrue,
@@ -184,10 +178,7 @@ void main() {
       expect(world.daily.isDailyComplete, isFalse);
       expect(world.daily.streak, 0);
       expect(world.daily.counters.arrivals, 1);
-      expect(
-        world.achievements.isUnlocked(Achievements.firstJourney),
-        isTrue,
-      );
+      expect(world.achievements.isUnlocked(Achievements.firstJourney), isTrue);
     });
   });
 

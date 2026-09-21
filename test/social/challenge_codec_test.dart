@@ -192,10 +192,7 @@ void main() {
       final decoded = ChallengeCodec.decode(
         ChallengeCodec.encode(sample(name: long)),
       );
-      expect(
-        decoded.challenge!.creatorName.length,
-        Challenge.maxNameLength,
-      );
+      expect(decoded.challenge!.creatorName.length, Challenge.maxNameLength);
     });
   });
 

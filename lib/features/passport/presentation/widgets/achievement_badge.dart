@@ -83,10 +83,7 @@ class _BadgePainter extends CustomPainter {
     final seal = _octagon(center, radius);
 
     if (unlocked) {
-      canvas.drawPath(
-        seal,
-        Paint()..color = color.withValues(alpha: 0.20),
-      );
+      canvas.drawPath(seal, Paint()..color = color.withValues(alpha: 0.20));
     }
     canvas.drawPath(
       seal,
@@ -124,7 +121,9 @@ class _BadgePainter extends CustomPainter {
         center.dx + radius * math.cos(angle),
         center.dy + radius * math.sin(angle),
       );
-      i == 0 ? path.moveTo(point.dx, point.dy) : path.lineTo(point.dx, point.dy);
+      i == 0
+          ? path.moveTo(point.dx, point.dy)
+          : path.lineTo(point.dx, point.dy);
     }
     return path..close();
   }

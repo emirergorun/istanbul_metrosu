@@ -31,33 +31,33 @@ class RailFlightConfig {
     required this.spawnDistance,
   });
 
-  factory RailFlightConfig.forMinutes(int minutes) {
-    if (minutes <= 5) {
-      return const RailFlightConfig(
-        gravity: 1.35,
-        flapVelocity: -0.46,
-        speed: 0.25,
-        gapHeight: 0.38,
-        spawnDistance: 0.62,
-      );
-    }
-    if (minutes <= 15) {
-      return const RailFlightConfig(
-        gravity: 1.42,
-        flapVelocity: -0.48,
-        speed: 0.29,
-        gapHeight: 0.34,
-        spawnDistance: 0.58,
-      );
-    }
-    return const RailFlightConfig(
-      gravity: 1.48,
-      flapVelocity: -0.50,
-      speed: 0.32,
-      gapHeight: 0.31,
-      spawnDistance: 0.54,
+  /// Zorluk **yolculuğun uzunluğuna değil, geçilen kapı sayısına** bağlı.
+  ///
+  /// Eskiden uzun rotada oyun ilk kapıdan itibaren en zor ayarla
+  /// başlıyordu. Rota rekoru oyunlar arasında ortaklaşınca bu bir
+  /// adaletsizliğe döndü: 52 dakikalık bir yolculukta Ray Uçuşu dakikada
+  /// 43 puan verirken diğer oyunlar 130-150 veriyordu (ölçüldü,
+  /// `test/balance/points_per_minute_test.dart`). Oyuncu uzun rotada bu
+  /// oyunu seçtiği için cezalandırılıyordu.
+  ///
+  /// Artık diğer oyunlarla aynı mantık: herkes kolaydan başlar, oyun
+  /// oyuncu ilerledikçe zorlaşır. [hardenAfterGates] kapıda en zor ayara
+  /// ulaşılır — hat merdiveninin (M1…M11) tepesiyle aynı yer.
+  factory RailFlightConfig.forGates(int gates) {
+    final t = (gates / hardenAfterGates).clamp(0.0, 1.0);
+    double lerp(double easy, double hard) => easy + (hard - easy) * t;
+    return RailFlightConfig(
+      gravity: lerp(1.35, 1.48),
+      flapVelocity: lerp(-0.46, -0.50),
+      speed: lerp(0.25, 0.32),
+      gapHeight: lerp(0.38, 0.31),
+      spawnDistance: lerp(0.62, 0.54),
     );
   }
+
+  /// Kaç kapıdan sonra en zor ayara ulaşılır.
+  static const int hardenAfterGates =
+      railFlightGatesPerLine * railFlightMaxLineLevel;
 
   final double gravity;
   final double flapVelocity;

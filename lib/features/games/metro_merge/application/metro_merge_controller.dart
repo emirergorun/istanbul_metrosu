@@ -33,6 +33,7 @@ class MetroMergeController extends JourneyGameController {
     super.discovery,
     Random? random,
     super.tick = AppConstants.playTick,
+    super.session,
   }) : _random = random ?? Random(),
        super(gameId: id) {
     _resetBoard();

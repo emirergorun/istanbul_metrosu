@@ -66,8 +66,6 @@ class PlayerStats {
           setEquals(other.playedGameIds, playedGameIds));
 
   @override
-  int get hashCode => Object.hash(
-    journeysCompleted,
-    Object.hashAllUnordered(playedGameIds),
-  );
+  int get hashCode =>
+      Object.hash(journeysCompleted, Object.hashAllUnordered(playedGameIds));
 }

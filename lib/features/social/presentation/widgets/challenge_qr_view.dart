@@ -48,10 +48,7 @@ class ChallengeQrView extends StatelessWidget {
       // dayanıklı ama kareyi büyütüyor, yani aynı ekranda modüller
       // küçülüyor — telefondan telefona okumada net kayıp.
       image = QrImage(
-        QrCode.fromData(
-          data: data,
-          errorCorrectLevel: QrErrorCorrectLevel.M,
-        ),
+        QrCode.fromData(data: data, errorCorrectLevel: QrErrorCorrectLevel.M),
       );
     } catch (error) {
       // Yük hiçbir karekod sürümüne sığmıyor. Pratikte olmamalı (yük ~110

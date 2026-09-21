@@ -11,6 +11,7 @@ import '../../../../core/audio/audio_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
+import '../../../session/journey_host.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
@@ -25,6 +26,7 @@ import 'widgets/board_view.dart';
 import '../../../session/widgets/pause_overlay.dart';
 import 'widgets/piece_tray.dart';
 import '../../../session/widgets/overlay_panel.dart';
+import '../../../session/widgets/journey_breakdown.dart';
 import '../../../session/widgets/result_overlay.dart';
 import '../../../player/application/share_service.dart';
 
@@ -46,6 +48,9 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   GameController? _controller;
+
+  /// Tahta kayıttan mı geldi? Geldiyse oyun duraklatılmış açılır.
+  bool _resumed = false;
 
   final GlobalKey _boardKey = GlobalKey();
   final ValueNotifier<BoardPreview?> _preview = ValueNotifier<BoardPreview?>(
@@ -119,6 +124,16 @@ class _GameScreenState extends State<GameScreen>
     final store = scope.store;
     // dispose sırasında AppScope'a erişmek güvenli değil; referansı şimdi al.
     _audio = scope.audio;
+    final journeyController = JourneyScope.maybeOf(context);
+
+    // Yarım kalan tahta yolculuk kaydından gelir: yolculuk ortak, tahta
+    // yalnızca son oynanan oyunun.
+    final resumed =
+        widget.resumeFrom ??
+        (journeyController == null
+            ? null
+            : _payloadSnapshot(journeyController, scope));
+
     final controller = GameController(
       journey: widget.journey,
       store: store,
@@ -126,21 +141,37 @@ class _GameScreenState extends State<GameScreen>
       // Meydan okuma modunda tohumlu rastgelelik; Serbest Oyun'da `null`
       // gelir ve oyun kendi tohumsuz `Random()`'ını kurar.
       random: scope.challengeRandomFor(widget.journey, GameController.id),
-      recordToBeat: store.bestScoreForRoute(
+      recordToBeat: store.bestJourneyScore(
         widget.journey.origin.id,
         widget.journey.destination.id,
       ),
-      resumeFrom: widget.resumeFrom?.session,
-      resumeProgress: widget.resumeFrom?.progress,
+      resumeFrom: resumed?.session,
+      resumeProgress: resumed?.progress,
+      // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
+      // puan, kalan süre ve geçilen duraklar oradan devam eder.
+      session: JourneyScope.sessionOf(context),
+      onGamePayload: journeyController?.setGamePayload,
     );
     // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
     // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
     controller.reporter = scope.runReporter;
+    _resumed = resumed != null;
     controller.addListener(_onControllerChanged);
+    // Sayaç tabanı koşudan okunur: yolculuk ekranlardan uzun yaşıyor,
+    // sıfırdan başlanırsa yolculuğun ortasında açılan ekran geçmiş durak
+    // bildirimlerini yeniden oynatır.
+    _seenStationsPassed = controller.stationsPassed;
     _controller = controller;
 
     // Kayıttan gelen oyun duraklatılmış açılır; kullanıcı "devam et" der.
-    if (widget.resumeFrom == null) controller.start();
+    if (!_resumed) controller.start();
+  }
+
+  /// Yolculuk kaydındaki tahtayı çözer; yoksa ya da bozuksa `null`.
+  SavedGame? _payloadSnapshot(JourneyController journey, AppScope scope) {
+    final payload = journey.payloadFor(GameController.id);
+    if (payload == null || payload.isEmpty) return null;
+    return GameSnapshot.decode(payload, scope.routeService);
   }
 
   void _onControllerChanged() {
@@ -442,6 +473,7 @@ class _GameScreenState extends State<GameScreen>
                       run: controller,
                       accent: accent,
                       onPause: controller.pause,
+                      gameScore: controller.scoreThisGame,
                       // Combo ve seri tek okumada: çarpan hat renginde
                       // büyük, seri altında küçük. İkisi de yokken hiç
                       // çizilmez.
@@ -497,7 +529,7 @@ class _GameScreenState extends State<GameScreen>
                           _StationGoal(controller: controller, accent: accent),
                           const SizedBox(height: AppSpacing.sm),
                           JourneyStatusBar(
-              gameId: GameController.id,
+                            gameId: GameController.id,
                             run: controller,
                             lineStations: AppScope.of(
                               context,
@@ -576,6 +608,10 @@ class _GameScreenState extends State<GameScreen>
       gameId: GameController.id,
       isArrival: controller.status == GameStatus.arrived,
       discovery: controller.discovery,
+      // Yolculuk ortaksa oyun bitişi bir ara duraktır, yolculuğun sonu değil.
+      journeyContinues:
+          controller.sharesJourney && controller.status != GameStatus.arrived,
+      remainingSeconds: controller.remainingSeconds,
       destinationName: session.journey.destination.name,
       score: controller.score,
       recordToBeat: controller.recordToBeat,
@@ -588,6 +624,10 @@ class _GameScreenState extends State<GameScreen>
       // Kırılan rekor satırın yanında işaretlenir: oyuncu düşük skorlu bir
       // koşuda bile en iyi serisini kurmuş olabilir.
       extraStats: <Widget>[
+        // Varışta yolculuğun dağılımı: hangi oyunda ne kadar süre geçti,
+        // ne kazandırdı. Oyunun kendi sayıları bunun altında.
+        if (controller.status == GameStatus.arrived)
+          ...journeyBreakdownRows(controller.journeySession),
         StatRow(
           label: 'Geçilen durak',
           value:

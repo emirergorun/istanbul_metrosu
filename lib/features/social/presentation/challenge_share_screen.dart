@@ -43,7 +43,9 @@ class ChallengeShareScreen extends StatelessWidget {
     // Gizli hiçbir şey taşınmıyor: ne cihaz kimliği, ne platform kimliği,
     // ne konum. Yalnızca oyuncunun görünen adı, rota ve hedef.
     final text = <String>[
-      isRematch ? 'RÖVANŞ · Aynı yolculukta beni geç' : 'Aynı yolculukta beni geç',
+      isRematch
+          ? 'RÖVANŞ · Aynı yolculukta beni geç'
+          : 'Aynı yolculukta beni geç',
       '${challenge.lineId} · $gameName',
       'Hedef: ${Formatters.score(challenge.targetScore)}',
       '',

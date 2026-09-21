@@ -14,8 +14,8 @@ class RailFlightController extends JourneyGameController {
     super.discovery,
     Random? random,
     super.tick = const Duration(milliseconds: 16),
+    super.session,
   }) : _random = random ?? Random(),
-       config = RailFlightConfig.forMinutes(journey.estimatedMinutes),
        super(gameId: id, maxFrameSeconds: _maxFrameSeconds) {
     _resetFlight();
   }
@@ -32,7 +32,9 @@ class RailFlightController extends JourneyGameController {
   static const double _maxFrameSeconds = 0.05;
 
   final Random _random;
-  final RailFlightConfig config;
+
+  /// Şu anki zorluk ayarı — geçilen kapı sayısıyla sertleşir.
+  RailFlightConfig get config => RailFlightConfig.forGates(_gatesPassed);
 
   double _trainY = 0.5;
   double _velocity = 0;
@@ -125,7 +127,12 @@ class RailFlightController extends JourneyGameController {
       if (!obstacle.passed &&
           obstacle.x + railFlightObstacleWidth < railFlightTrainX) {
         _gatesPassed++;
-        addScore(1);
+        // Kapı başına sabit 1 puan beceriyi hiç ölçmüyordu: acemi de usta
+        // da kapı başına aynı puanı alıyordu, fark yalnızca kaç kapı
+        // geçtiğindeydi. Hat seviyesi (beş kapıda bir yükselir, M11'de
+        // durur) uzun uçuşu ödüllendirir — diğer oyunlardaki seviye
+        // çarpanıyla aynı fikir.
+        addScore(lineLevel);
         markStationProgress();
         updated.add(obstacle.copyWith(passed: true));
       } else {
