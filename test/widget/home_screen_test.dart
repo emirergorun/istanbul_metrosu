@@ -90,7 +90,7 @@ void main() {
     expect(find.text('GİDİLECEK YER'), findsOneWidget);
     // "İnternetsiz oynanabilir" satırı kaldırıldı.
     expect(find.text('İnternetsiz oynanabilir.'), findsNothing);
-    expect(find.text('YOLCULUĞU BAŞLAT'), findsOneWidget);
+    expect(find.text('BAŞLA'), findsOneWidget);
     // Sağ üstteki çevrimdışı rozeti kaldırıldı.
     expect(find.text('ÇEVRİMDIŞI'), findsNothing);
   });
@@ -174,19 +174,25 @@ void main() {
     );
 
     // Rota seçildikten sonra önce oyun seçimi gelir.
-    await tester.tap(find.text('YOLCULUĞU BAŞLAT'));
+    await tester.tap(find.text('BAŞLA'));
     await tester.pumpAndSettle();
-    expect(find.text('Oyun seç'), findsOneWidget);
+    expect(find.text('OYUNUNU SEÇ'), findsOneWidget);
 
+    // V2: kapak oyunu başlatmaz, tanıtım ekranını açar. Oyun OYNA ile
+    // başlar.
     await tester.tap(find.text('Blok Metro'));
+    await tester.pumpAndSettle();
+    expect(find.text('OYNA'), findsOneWidget);
+    await tester.tap(find.text('OYNA'));
     await tester.pumpAndSettle();
     expect(find.text('SKOR · İLK YOLCULUK'), findsOneWidget);
 
-    // Oyundan çık; oyun seçimi ve planlayıcıdan da geri dön.
+    // Oyundan çık; "Başka oyun seç" galeriye döner, oradan planlayıcıya.
     await tester.tap(find.byIcon(Icons.pause_rounded));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Başka oyun seç'));
     await tester.pumpAndSettle();
+    expect(find.text('OYUNUNU SEÇ'), findsOneWidget);
     for (var i = 0; i < 2; i++) {
       Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
       await tester.pumpAndSettle();

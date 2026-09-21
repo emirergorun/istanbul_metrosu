@@ -54,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.sectionGap),
           const _SectionTitle('OYUN'),
           _SettingsCard(
             children: <Widget>[
@@ -99,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.sectionGap),
           _SectionTitle('REKORLAR (${_visible(records).length})'),
           if (records.isEmpty)
             _SettingsCard(
@@ -124,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           if (records.isNotEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.stack),
             TextButton.icon(
               onPressed: AppFeedback.onTap(
                 context,
@@ -142,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.sectionGap),
           const _SectionTitle('İSTATİSTİKLERİN'),
           _SettingsCard(
             children: <Widget>[
@@ -180,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
 
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.sectionGap),
           const _SectionTitle('UYGULAMA'),
           _SettingsCard(
             children: <Widget>[

@@ -79,7 +79,9 @@ void main() {
 
     await tester.tap(find.text('Başka oyun seç'));
     await tester.pumpAndSettle();
-    expect(find.text('Oyun seç'), findsOneWidget);
+    // Yığında galeri yok (oyun başlık ekranındaki kayıttan açıldı), o
+    // yüzden ilk rotaya dönülür.
+    expect(find.text('YARIM KALAN OYUN'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
@@ -133,6 +135,6 @@ void main() {
 
     await tester.tap(find.text('Taksim → Levent'));
     await tester.pumpAndSettle();
-    expect(find.text('Oyun seç'), findsOneWidget);
+    expect(find.text('OYUNUNU SEÇ'), findsOneWidget);
   });
 }

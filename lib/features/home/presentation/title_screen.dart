@@ -10,6 +10,8 @@ import '../../../core/widgets/metro_train.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../games/blocks/application/game_snapshot.dart';
 import '../../games/catalog/mini_game.dart';
+import '../../daily/presentation/widgets/daily_entry_strip.dart';
+import '../../discovery/presentation/widgets/discovery_entry_strip.dart';
 import '../../journey/models/journey.dart';
 import '../../journey/models/station.dart';
 import '../../journey/presentation/widgets/onboarding_sheet.dart';
@@ -184,6 +186,11 @@ class _TitleScreenState extends State<TitleScreen>
     if (mounted) setState(() {});
   }
 
+  Future<void> _openFriends() async {
+    await AppRoutes.openFriends(context);
+    if (mounted) setState(() {});
+  }
+
   Future<void> _openSettings() async {
     await AppRoutes.openSettings(context);
     if (mounted) setState(() {});
@@ -230,88 +237,162 @@ class _TitleScreenState extends State<TitleScreen>
             ),
           ),
           SafeArea(
-            child: Column(
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    child: IconButton(
-                      onPressed: AppFeedback.onTap(context, _openSettings),
-                      tooltip: 'Ayarlar',
-                      icon: const Icon(Icons.settings_rounded),
-                      color: AppColors.textSecondary,
+            // Esnek boşluklar önce sıfıra iner, sonra taşar. En dar
+            // telefonda (320×568) uygulamanın izin verdiği en büyük yazı
+            // ölçeğiyle birlikte içerik ekrandan uzun olabiliyor —
+            // keşif şeridi eklendikten sonra sınır aşıldı.
+            //
+            // Kaydırma yalnızca o durumda devreye giriyor: `IntrinsicHeight`
+            // sütuna doğal yüksekliğini verir, `ConstrainedBox` en az ekran
+            // kadar uzun olmasını sağlar. İçerik sığdığında düzen bire bir
+            // aynı kalır, esnek boşluklar payını alır.
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: <Widget>[
+                          // Üst satırdaki iki ikincil giriş.
+                          //
+                          // Arkadaşlar ayarların **içine gömülmedi**:
+                          // sosyal katman bir tercih değil, oynama yolu.
+                          // Alt gezinme çubuğu da eklenmedi — ekranın
+                          // dibi birincil eylemin yeri ve orayı üç sekmeyle
+                          // paylaşmak o eylemi zayıflatırdı.
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.sm),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  IconButton(
+                                    onPressed: AppFeedback.onTap(
+                                      context,
+                                      _openFriends,
+                                    ),
+                                    tooltip: 'Arkadaşlar',
+                                    icon: const Icon(Icons.groups_rounded),
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  IconButton(
+                                    onPressed: AppFeedback.onTap(
+                                      context,
+                                      _openSettings,
+                                    ),
+                                    tooltip: 'Ayarlar',
+                                    icon: const Icon(Icons.settings_rounded),
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Dikey boşluk 3-2-1 bölünüyor: marka biraz aşağıda, kart
+                          // ise ekranın **dibinde değil**, dipten bir tutam yukarıda
+                          // duruyor.
+                          //
+                          // Eşit bölünmüşken marka ile kart arasında ekranın %15'i
+                          // bomboş kalıyor, kart da en alta yapışıyordu; ikisi birden
+                          // kartı ekrana sonradan iliştirilmiş gibi gösteriyordu.
+                          // Alta bırakılan pay hem o boşluğu kapatıyor hem de kartı
+                          // başparmağın rahat eriştiği banda taşıyor: uzun telefonda
+                          // ekranın **en** dibi, ortasından daha zor erişilen yerdir.
+                          const Spacer(flex: 3),
+                          const _Wordmark(),
+                          const Spacer(flex: 2),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.xl,
+                              0,
+                              AppSpacing.xl,
+                              AppSpacing.xl,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                // Alt alta dizilen her blok arasında
+                                // **aynı** boşluk var: keşif şeridi,
+                                // günün yolculuğu, birincil kart ve
+                                // ikincil bağlantı tek bir ritimde
+                                // duruyor. Üçü üç farklı değerdeyken
+                                // (8 / 24 / 12) bloklar aynı aileye ait
+                                // görünmüyordu. Birincil eylem boşlukla
+                                // değil kendi ağırlığıyla öne çıkıyor:
+                                // beyaz zemin, kalın punto.
+                                const DiscoveryEntryStrip(),
+                                const SizedBox(height: AppSpacing.stack),
+                                const DailyEntryStrip(),
+                                const SizedBox(height: AppSpacing.stack),
+                                if (saved != null) ...<Widget>[
+                                  _SavedGameCard(
+                                    saved: saved,
+                                    lineTheme: LineTheme.from(
+                                      scope.metro
+                                              .lineById(
+                                                saved.session.journey.lineId,
+                                              )
+                                              ?.color ??
+                                          AppColors.brandNavy,
+                                    ),
+                                    onResume: () => _resumeSaved(saved),
+                                    onDiscard: _discardSaved,
+                                  ),
+                                  const SizedBox(height: AppSpacing.stack),
+                                  TextButton(
+                                    onPressed: AppFeedback.onTap(
+                                      context,
+                                      _openPlanner,
+                                    ),
+                                    child: const Text(
+                                      'Yeni bir yolculuk başlat',
+                                    ),
+                                  ),
+                                ] else if (last != null) ...<Widget>[
+                                  _ResumeButton(
+                                    journey: last,
+                                    record: scope.store.bestRecordForRoute(
+                                      last.origin.id,
+                                      last.destination.id,
+                                    ),
+                                    lineTheme: LineTheme.from(
+                                      scope.metro
+                                              .lineById(last.lineId)
+                                              ?.color ??
+                                          AppColors.brandNavy,
+                                    ),
+                                    onTap: () => _replay(last),
+                                  ),
+                                  const SizedBox(height: AppSpacing.stack),
+                                  TextButton(
+                                    onPressed: AppFeedback.onTap(
+                                      context,
+                                      _openPlanner,
+                                    ),
+                                    child: const Text('Başka bir rota seç'),
+                                  ),
+                                ] else
+                                  FilledButton(
+                                    onPressed: AppFeedback.onTap(
+                                      context,
+                                      _openPlanner,
+                                    ),
+                                    child: const Text('OYUNA BAŞLA'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(flex: 1),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                // Dikey boşluk 3-2-1 bölünüyor: marka biraz aşağıda, kart
-                // ise ekranın **dibinde değil**, dipten bir tutam yukarıda
-                // duruyor.
-                //
-                // Eşit bölünmüşken marka ile kart arasında ekranın %15'i
-                // bomboş kalıyor, kart da en alta yapışıyordu; ikisi birden
-                // kartı ekrana sonradan iliştirilmiş gibi gösteriyordu.
-                // Alta bırakılan pay hem o boşluğu kapatıyor hem de kartı
-                // başparmağın rahat eriştiği banda taşıyor: uzun telefonda
-                // ekranın **en** dibi, ortasından daha zor erişilen yerdir.
-                const Spacer(flex: 3),
-                const _Wordmark(),
-                const Spacer(flex: 2),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.xl,
-                    0,
-                    AppSpacing.xl,
-                    AppSpacing.xl,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      if (saved != null) ...<Widget>[
-                        _SavedGameCard(
-                          saved: saved,
-                          lineTheme: LineTheme.from(
-                            scope.metro
-                                    .lineById(saved.session.journey.lineId)
-                                    ?.color ??
-                                AppColors.brandNavy,
-                          ),
-                          onResume: () => _resumeSaved(saved),
-                          onDiscard: _discardSaved,
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextButton(
-                          onPressed: AppFeedback.onTap(context, _openPlanner),
-                          child: const Text('Yeni bir yolculuk başlat'),
-                        ),
-                      ] else if (last != null) ...<Widget>[
-                        _ResumeButton(
-                          journey: last,
-                          record: scope.store.bestRecordForRoute(
-                            last.origin.id,
-                            last.destination.id,
-                          ),
-                          lineTheme: LineTheme.from(
-                            scope.metro.lineById(last.lineId)?.color ??
-                                AppColors.brandNavy,
-                          ),
-                          onTap: () => _replay(last),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextButton(
-                          onPressed: AppFeedback.onTap(context, _openPlanner),
-                          child: const Text('Başka bir rota seç'),
-                        ),
-                      ] else
-                        FilledButton(
-                          onPressed: AppFeedback.onTap(context, _openPlanner),
-                          child: const Text('OYUNA BAŞLA'),
-                        ),
-                    ],
-                  ),
-                ),
-                const Spacer(flex: 1),
-              ],
+                );
+              },
             ),
           ),
         ],

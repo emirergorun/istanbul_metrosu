@@ -330,7 +330,7 @@ class _PlannerCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(
                   onPressed: AppFeedback.onTap(context, onStart),
-                  child: const Text('YOLCULUĞU BAŞLAT'),
+                  child: const Text('BAŞLA'),
                 ),
               ],
             ),

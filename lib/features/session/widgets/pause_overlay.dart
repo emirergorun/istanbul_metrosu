@@ -42,7 +42,7 @@ class PauseOverlay extends StatelessWidget {
           label: 'Kalan yolculuk',
           value: Formatters.remaining(remainingSeconds),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.stack),
         // Buton rengi bilinçli olarak hattan bağımsız: `theme.dart`'taki
         // hiyerarşi kuralı gereği birincil eylem her hatta aynı görünür.
         // Hat rengi verilseydi M1A'da (kırmızı) "Devam et" butonu `danger`
@@ -51,7 +51,7 @@ class PauseOverlay extends StatelessWidget {
           onPressed: AppFeedback.onTap(context, onResume),
           child: const Text('DEVAM ET'),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.stack),
         TextButton(
           onPressed: AppFeedback.onTap(context, onRestart),
           child: const Text('Yeniden başlat'),

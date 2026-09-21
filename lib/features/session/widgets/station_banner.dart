@@ -58,6 +58,12 @@ class _StationBannerState extends State<StationBanner>
   String? _stationName;
   int _bonus = 0;
 
+  /// Bu durak **bu koşuda** ilk kez mi keşfedildi?
+  ///
+  /// Kalıcı duruma bakılmaz: üç gün önce keşfedilmiş bir durak "yeni"
+  /// değildir. Şerit yalnız oyuncunun az önce kazandığı durağı işaretler.
+  bool _isNewDiscovery = false;
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +101,8 @@ class _StationBannerState extends State<StationBanner>
       _bonus = widget.run.stationBonusPulse > 0
           ? widget.run.lastStationBonus
           : 0;
+      _isNewDiscovery =
+          widget.run.discovery?.isNewInRun(reached.canonicalId) ?? false;
     });
 
     _hideTimer?.cancel();
@@ -142,7 +150,15 @@ class _StationBannerState extends State<StationBanner>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(Icons.trip_origin_rounded, size: 15, color: widget.accent),
+            // Dolu nokta ilk keşif, boş halka bilinen durak — keşif
+            // ekranındaki dille aynı. Fark renkte değil şekilde.
+            Icon(
+              _isNewDiscovery
+                  ? Icons.circle_rounded
+                  : Icons.trip_origin_rounded,
+              size: _isNewDiscovery ? 11 : 15,
+              color: widget.accent,
+            ),
             const SizedBox(width: AppSpacing.sm),
             Flexible(
               child: Text(
@@ -152,6 +168,20 @@ class _StationBannerState extends State<StationBanner>
                 style: AppText.captionStrong.copyWith(color: widget.accent),
               ),
             ),
+            if (_isNewDiscovery) ...<Widget>[
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: widget.accent),
+                ),
+                child: Text(
+                  'YENİ',
+                  style: AppText.micro.copyWith(color: widget.accent),
+                ),
+              ),
+            ],
           ],
         ),
       ),

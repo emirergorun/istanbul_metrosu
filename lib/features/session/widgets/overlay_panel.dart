@@ -61,7 +61,7 @@ class OverlayPanel extends StatelessWidget {
                         ),
                         child: Icon(icon, size: 28, color: accent),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.stack),
                     ],
                     Text(
                       title,
@@ -74,7 +74,10 @@ class OverlayPanel extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: AppSpacing.xl),
+                    // Başlık grubu bitti, gövde başlıyor: tek bölüm
+                    // boşluğu. Gövdedeki her blok arasında ise
+                    // [AppSpacing.stack] var — bkz. `result_overlay.dart`.
+                    const SizedBox(height: AppSpacing.sectionGap),
                     ...children,
                   ],
                 ),
@@ -105,7 +108,11 @@ class StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
+      // Satır dolgusu yığın boşluğunun yarısı: iki satır arasında tam
+      // [AppSpacing.stack] kalıyor ve istatistik listesi panelin geri
+      // kalanıyla aynı ritimde okunuyor. Önce 7'ydi — ölçekte olmayan,
+      // elle seçilmiş bir sayı.
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.stack / 2),
       child: Row(
         children: <Widget>[
           Expanded(child: Text(label, style: AppText.body)),

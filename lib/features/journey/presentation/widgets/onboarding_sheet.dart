@@ -92,7 +92,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                     _Step(step: OnboardingSheet.steps[index]),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.stack),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -108,7 +108,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                   ),
               ],
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.stack),
             FilledButton(
               onPressed: AppFeedback.onTap(context, _next),
               child: Text(_isLast ? 'BAŞLA' : 'DEVAM'),
@@ -148,7 +148,7 @@ class _Step extends StatelessWidget {
           ),
           child: Icon(step.icon, size: 26, color: AppColors.action),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.stack),
         Text(
           step.title,
           textAlign: TextAlign.center,

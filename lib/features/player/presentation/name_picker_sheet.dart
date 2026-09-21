@@ -85,7 +85,7 @@ class _NamePickerSheetState extends State<NamePickerSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.stack),
             const Text(
               'OYUNCU ADIN',
               textAlign: TextAlign.center,
@@ -98,7 +98,7 @@ class _NamePickerSheetState extends State<NamePickerSheet> {
               textAlign: TextAlign.center,
               style: AppText.caption,
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.sectionGap),
             // Aday ad: ekranın en büyük ögesi, çünkü karar bu.
             Container(
               constraints: const BoxConstraints(minHeight: 84),
@@ -114,7 +114,7 @@ class _NamePickerSheetState extends State<NamePickerSheet> {
                 style: AppText.tileTitle.copyWith(fontSize: 20),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.stack),
             OutlinedButton(onPressed: _roll, child: const Text('BAŞKA BİR AD')),
             const SizedBox(height: AppSpacing.sm),
             FilledButton(
