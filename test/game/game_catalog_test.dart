@@ -82,12 +82,18 @@ void main() {
 
     test('yardım yalnız kontrolü açıklama gerektiren oyunlarda', () {
       // Sürükle-bırak ve şıkka dokunma kendini anlatıyor; dokunarak
-      // yükselen tren, üç ray ve dört yön tuşu anlatmıyor.
+      // yükselen tren, üç ray, yön pedi ve "dokun = bir adım ileri"
+      // anlatmıyor.
       final withHelp = MiniGames.playable
           .where((MiniGame g) => g.hasHowToPlay)
           .map((MiniGame g) => g.id)
           .toSet();
-      expect(withHelp, <String>{'rail_flight', 'lane_runner', 'train_snake'});
+      expect(withHelp, <String>{
+        'rail_flight',
+        'lane_runner',
+        'train_snake',
+        'crossing',
+      });
     });
 
     test('kimlikten oyuna çözüm çalışır', () {

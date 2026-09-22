@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
+import 'package:istanbul_metro_game/features/games/crossing/application/crossing_controller.dart';
+import 'package:istanbul_metro_game/features/games/crossing/domain/crossing_state.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/application/lane_runner_controller.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/domain/lane_runner_state.dart';
 import 'package:istanbul_metro_game/features/games/merge_drop/application/merge_drop_controller.dart';
@@ -19,6 +21,7 @@ import 'package:istanbul_metro_game/features/session/journey_game_controller.dar
 import 'package:istanbul_metro_game/features/session/journey_run.dart';
 import 'package:istanbul_metro_game/features/session/journey_session.dart';
 
+import '../helpers/metro_fixture.dart';
 import '../helpers/trivia_fixture.dart';
 
 /// Bir **yolculuğun** sonucu: bot, süre dolana kadar oynar.
@@ -515,6 +518,155 @@ class MetroQuizBot extends GameBot {
   }
 }
 
+/// Karşıdan Karşıya: boşluğu bekler, güvenliyse ileri adım atar.
+///
+/// Oyunun kendisi zaman baskısı içermiyor (kovalayan yok), yani beceri
+/// tamamen **ne kadar hızlı karar verdiğinde**: acemi geniş bir güvenlik
+/// payı ister ve çok bekler, usta dar boşluklardan geçer.
+class CrossingBot extends GameBot {
+  CrossingBot({required super.journey, required super.seed, super.skill});
+
+  @override
+  CrossingController create(JourneySession session, Random random) =>
+      CrossingController(
+        journey: journey,
+        recordToBeat: 0,
+        lines: MetroFixture.load().lines(),
+        random: Random(seed),
+        session: session,
+      );
+
+  @override
+  void live(CrossingController controller, Random random) {
+    const dt = 1 / 60;
+    var reaction = 0.0;
+    var guard = 0;
+    while (controller.status == GameStatus.playing &&
+        guard++ < 200000 &&
+        !expired(controller)) {
+      reaction -= dt;
+      if (reaction <= 0 && !controller.isHopping) {
+        reaction = _reactionSeconds + random.nextDouble() * 0.05;
+        final move = _decide(controller, random);
+        if (move != null) controller.move(move);
+      }
+      controller.debugAdvance(dt);
+    }
+  }
+
+  /// Kararlar arası süre: oyuncu ekrana bakıp sonra basıyor.
+  ///
+  /// Zıplama 0,14 saniye sürdüğüne göre bu aralık aynı zamanda oyunun
+  /// pratikteki temposu.
+  double get _reactionSeconds => _flaw(0.30, 0.09, skill) + 0.025;
+
+  /// Bir hücrede güvenle durabilmek için gereken boşluk.
+  ///
+  /// Oyuncu hücreye varır (bir zıplama), sıradaki kararını verir (bir
+  /// tepki süresi) ve oradan çıkar (bir zıplama daha). Bu üçü hesaba
+  /// katılmazsa bot her ray satırında "vardım ve kaldım" diye eziliyordu
+  /// (ölçüldü: yolculuk başına 32 can). Üstüne beceriye göre daralan bir
+  /// pay: usta dar boşluklardan geçer, acemi en geniş boşluğu bekler.
+  double get _dwellSeconds =>
+      crossingHopSeconds * 2 + _reactionSeconds + _flaw(0.25, 0.03, skill);
+
+  CrossingDirection? _decide(CrossingController controller, Random random) {
+    // Ara sıra bakmadan atlar. Karar saniyede birkaç kez verildiği için
+    // oran düşük tutuldu.
+    if (random.nextDouble() < _flaw(0.006, 0.0002, skill)) {
+      return CrossingDirection.forward;
+    }
+
+    final column = controller.column;
+    final row = controller.row;
+    final dwell = _dwellSeconds;
+
+    // 1. İleri gidebiliyorsa git: oyunun tamamı bu.
+    if (_clearSeconds(controller, row + 1, column, dwell) >= dwell) {
+      return CrossingDirection.forward;
+    }
+
+    // 2. Boşluk hizada değilse ona doğru kay — ama kaydığı hücre de
+    //    güvenli olmalı, yoksa trenin önüne kaçmış olur.
+    final sideways = _towardsGap(controller, row + 1, column, dwell);
+    if (sideways != null) {
+      final candidate = column + sideways.delta.x;
+      if (_clearSeconds(controller, row, candidate, dwell) >= dwell) {
+        return sideways;
+      }
+    }
+
+    // 3. Durduğu yer bir sonraki kararı verip çıkmaya yetiyorsa bekle.
+    final stay = crossingHopSeconds * 2 + _reactionSeconds;
+    if (_clearSeconds(controller, row, column, stay) >= stay) return null;
+
+    // 4. Tren geliyor ve beklenecek yer yok: en uzun yaşatan yöne kaç.
+    CrossingDirection? best;
+    var bestClear = _clearSeconds(controller, row, column, dwell);
+    for (final direction in CrossingDirection.values) {
+      final delta = direction.delta;
+      final clear = _clearSeconds(
+        controller,
+        row + delta.y,
+        column + delta.x,
+        dwell,
+      );
+      if (clear > bestClear) {
+        bestClear = clear;
+        best = direction;
+      }
+    }
+    return best;
+  }
+
+  /// [row] satırının [column] sütunu kaç saniye boş kalıyor.
+  ///
+  /// [cap] tavanında durur: botun ufku dar, ondan ötesini hesaplamak hem
+  /// gereksiz hem de gerçek oyuncunun yapmadığı bir şey.
+  double _clearSeconds(
+    CrossingController controller,
+    int row,
+    int column,
+    double cap,
+  ) {
+    if (column < 0 || column >= crossingColumns) return -1;
+    if (row < controller.backLimit) return -1;
+    final target = controller.rowAt(row);
+    if (target == null) return -1;
+    if (!target.isTrack) return cap;
+
+    final direction = target.toRight ? 1 : -1;
+    for (var t = 0.0; t <= cap; t += 0.03) {
+      final shift = target.speed * t * direction;
+      for (final train in target.trains) {
+        if (train.copyWith(x: train.x + shift).hits(column)) return t;
+      }
+    }
+    return cap;
+  }
+
+  /// İleride açık bir sütun varsa o yöne bir adım.
+  CrossingDirection? _towardsGap(
+    CrossingController controller,
+    int row,
+    int column,
+    double window,
+  ) {
+    for (var distance = 1; distance <= 3; distance++) {
+      for (final direction in <CrossingDirection>[
+        CrossingDirection.left,
+        CrossingDirection.right,
+      ]) {
+        final candidate = column + direction.delta.x * distance;
+        if (_clearSeconds(controller, row, candidate, window) >= window) {
+          return direction;
+        }
+      }
+    }
+    return null;
+  }
+}
+
 /// Bir oyunun bot fabrikası.
 typedef BotFactory =
     GameBot Function({
@@ -558,6 +710,11 @@ final Map<String, ({String id, BotFactory make})> botFactories =
         id: 'train_snake',
         make: ({required journey, required seed, required skill}) =>
             TrainSnakeBot(journey: journey, seed: seed, skill: skill),
+      ),
+      'Karşıdan Karşıya': (
+        id: 'crossing',
+        make: ({required journey, required seed, required skill}) =>
+            CrossingBot(journey: journey, seed: seed, skill: skill),
       ),
       'Metro Bilgi': (
         id: 'metro_quiz',

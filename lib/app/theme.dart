@@ -151,6 +151,13 @@ class AppColors {
   /// üzerinde ~4.0:1 kontrast — 3.9:1 sınırının üstünde.
   static const Color gameSnake = Color(0xFF8C97FF);
 
+  /// Ton açısı ~122°: gameLanes (85°) ile gameRail (160°) arasındaki tek
+  /// kalan boşluk, ikisine de 37-38° uzak. Sekizinci oyun eklenirken
+  /// çemberde bundan daha geniş bir aralık kalmamıştı; dokuzuncu oyun
+  /// gelirse kuralı 35°'nin altına çekmek yerine renk **tek ayrım
+  /// olmadığı** için gliften ayrışmak daha doğru olur.
+  static const Color gameCrossing = Color(0xFF57DB5B);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

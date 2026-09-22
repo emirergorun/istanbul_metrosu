@@ -126,6 +126,18 @@ class GameScoreProfiles {
           scale: 0.140,
           note: 'Yolcu başına seviye × 10; tempo hızlı.',
         ),
+        'crossing': GameScoreProfile(
+          measuredPerMinute: 100,
+          scale: 0.147,
+          note:
+              'Metro Bilgi gibi **ustaya bakılarak** ayarlandı. Sebebi tür: '
+              'oyuncu istediği kadar bekleyebildiği için beceri doğrudan '
+              '"ne kadar dar boşluktan geçmeyi göze alıyorsun" demek; '
+              'ölçülen usta/orta farkı 1,8 kat (diğer oyunlarda 1,1-1,5). '
+              'Orta seviyeyi 120\'ye çekmek ustayı tavanın üstüne '
+              'çıkarıyordu. Bu ayarla orta 100, usta 179 — usta diğer '
+              'oyunların ustalarıyla aynı bantta.',
+        ),
         'metro_quiz': GameScoreProfile(
           measuredPerMinute: 97,
           scale: 1.38,
