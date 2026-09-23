@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../app/app_scope.dart';
 import '../../../app/theme.dart';
 import '../../daily/domain/day_stamp.dart';
+import '../../discovery/presentation/widgets/discovery_progress_track.dart';
 import '../application/achievement_controller.dart';
 import '../domain/achievement.dart';
 import 'widgets/achievement_badge.dart';
 
-/// Pasaportun başarım sayfası.
+/// Yolculuk Kartı'nın rozet sayfası.
 ///
 /// Kilitli başarımın adı **gizlenmiyor**. "???" merak uyandırmıyor, hedefi
 /// yok ediyor: oyuncu neye çalışacağını bilemiyor. Keşif ekranında
@@ -26,14 +27,14 @@ class AchievementsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text('BAŞARIMLAR', style: AppText.title),
+        title: const Text('ROZETLER', style: AppText.title),
       ),
       body: SafeArea(
         top: false,
         child: AnimatedBuilder(
           animation: achievements,
           builder: (BuildContext context, _) {
-            // Damga rafıyla **aynı** sıralama; bkz. [AchievementController.ordered].
+            // Pin rafıyla **aynı** sıralama; bkz. [AchievementController.ordered].
             final definitions = achievements.ordered;
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(
@@ -79,7 +80,7 @@ class _Summary extends StatelessWidget {
     final total = controller.totalCount;
 
     return Semantics(
-      label: '$total başarımın $unlocked tanesi açıldı',
+      label: '$total rozetin $unlocked tanesi kazanıldı',
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -91,7 +92,7 @@ class _Summary extends StatelessWidget {
             // yiyor, kalan metin sabit genişlikte satırı taşırıyordu.
             Expanded(
               child: Text(
-                '/ $total açıldı',
+                '/ $total rozet kazanıldı',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.bodyStrong.copyWith(color: AppColors.textMuted),
@@ -104,7 +105,7 @@ class _Summary extends StatelessWidget {
   }
 }
 
-/// Tek bir başarımın satırı — pasaportta ve bu ekranda aynı.
+/// Tek bir rozetin satırı — kartta ve bu ekranda aynı.
 class AchievementTile extends StatelessWidget {
   const AchievementTile({
     super.key,
@@ -133,7 +134,7 @@ class AchievementTile extends StatelessWidget {
     return Semantics(
       container: true,
       label: unlocked
-          ? '${definition.title}, açıldı. ${definition.description}'
+          ? '${definition.title}, kazanıldı. ${definition.description}'
           : '${definition.title}, kilitli. ${definition.description} '
                 '$progress bölü ${definition.target}',
       child: ExcludeSemantics(
@@ -151,11 +152,7 @@ class AchievementTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              AchievementBadge(
-                definition: definition,
-                unlocked: unlocked,
-                progress: ratio,
-              ),
+              AchievementBadge(definition: definition, unlocked: unlocked),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
@@ -176,21 +173,48 @@ class AchievementTile extends StatelessWidget {
                       Text(
                         '${unlockedOn!.day.toString().padLeft(2, '0')}.'
                         '${unlockedOn!.month.toString().padLeft(2, '0')}.'
-                        '${unlockedOn!.year} tarihinde açıldı',
+                        '${unlockedOn!.year} tarihinde kazanıldı',
                         style: AppText.micro.copyWith(
                           color: AppColors.textMuted,
                           fontFeatures: kTabularFigures,
                         ),
                       ),
                     ],
+                    // İlerleme rozetin üstünde değil **kartta**: pin
+                    // temiz kalıyor, "ne kadar kaldı" sorusunu satır
+                    // yanıtlıyor.
                     if (!unlocked && definition.target > 1) ...<Widget>[
+                      const SizedBox(height: AppSpacing.sm),
+                      DiscoveryProgressTrack(
+                        value: ratio,
+                        color: color,
+                        // Oluk kartın zemininden **koyu**: kart rengiyle
+                        // aynı verilince çubuk kartın içinde kayboluyordu.
+                        background: AppColors.background,
+                        thickness: 5,
+                      ),
                       const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '$progress / ${definition.target}',
-                        style: AppText.micro.copyWith(
-                          color: color,
-                          fontFeatures: kTabularFigures,
-                        ),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              achievementRemainingText(definition, progress),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.micro.copyWith(
+                                fontFamily: AppFonts.display,
+                                color: color,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '$progress / ${definition.target}',
+                            style: AppText.micro.copyWith(
+                              color: AppColors.textMuted,
+                              fontFeatures: kTabularFigures,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -202,4 +226,27 @@ class AchievementTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "7 DURAK KALDI" — kalanı ölçünün kendi birimiyle söyler.
+///
+/// Sayı tek başına ("18 / 25") ne kadar kaldığını hesaplatıyordu. Birim
+/// ölçüden geliyor: durak sayan bir rozet durak, gün sayan gün der.
+String achievementRemainingText(
+  AchievementDefinition definition,
+  int progress,
+) {
+  final left = (definition.target - progress).clamp(0, definition.target);
+  final unit = switch (definition.metric) {
+    AchievementMetric.stationsDiscovered => 'DURAK',
+    AchievementMetric.interchangesDiscovered => 'AKTARMA',
+    AchievementMetric.linesCompleted => 'HAT',
+    AchievementMetric.journeysCompleted => 'YOLCULUK',
+    AchievementMetric.distinctGamesPlayed => 'OYUN',
+    AchievementMetric.bestStreak ||
+    AchievementMetric.dailyDaysCompleted => 'GÜN',
+    AchievementMetric.bestQuizScore => 'PUAN',
+    AchievementMetric.gameRunsFinished => 'OYUN',
+  };
+  return '$left $unit KALDI';
 }

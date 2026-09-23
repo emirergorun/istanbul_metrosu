@@ -3,7 +3,7 @@ import 'run_report.dart';
 /// Biten koşuyu birden fazla dinleyiciye iletir.
 ///
 /// Oyun controller'ı **tek** bir rapor hedefi tanır; kaç sistemin dinlediği
-/// onu ilgilendirmez. Bugün iki dinleyici var (günlük görevler ve pasaport
+/// onu ilgilendirmez. Bugün iki dinleyici var (günlük görevler ve Yolculuk Kartı
 /// başarımları); üçüncüsü eklendiğinde yedi oyun ekranının hiçbirine
 /// dokunmak gerekmez.
 class CompositeRunReporter implements RunReporter {

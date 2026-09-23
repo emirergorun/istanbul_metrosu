@@ -38,7 +38,7 @@ class StreakState {
 
   /// Ömür boyu tamamlanan gün sayısı. Seri kırılsa da küçülmez.
   ///
-  /// Pasaportta "kaç gün geldin" sorusunun cevabı. Seriden ayrı bir ölçü:
+  /// Yolculuk Kartı'ndaki "kaç gün geldin" sorusunun cevabı. Seriden ayrı:
   /// seri sürekliliği, bu sayı sadakati anlatıyor.
   final int totalDays;
 

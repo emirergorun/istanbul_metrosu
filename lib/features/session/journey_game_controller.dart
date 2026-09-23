@@ -108,7 +108,7 @@ abstract class JourneyGameController extends ChangeNotifier
   @override
   final JourneyDiscovery? discovery;
 
-  /// Biten koşuyu dinleyen taraf — bugün günlük görevler ve pasaport.
+  /// Biten koşuyu dinleyen taraf — bugün günlük görevler ve Yolculuk Kartı.
   ///
   /// Kurucu parametresi değil **atanabilir alan**: yedi oyunun controller'ı
   /// bu sınıftan türüyor ve hiçbirinin kurucusuna dokunmadan bağlanabilmesi

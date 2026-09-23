@@ -4,7 +4,7 @@ import '../../games/catalog/mini_game.dart';
 
 /// Başarımın hangi oyunculuk alanından geldiği.
 ///
-/// Pasaportta gruplamak için: yirmi başarım tek bir listede sıralanırsa
+/// Kartta gruplamak için: yirmi başarım tek bir listede sıralanırsa
 /// oyuncu neye bakacağını bilemez.
 enum AchievementCategory {
   exploration('Keşif'),
@@ -48,6 +48,10 @@ enum AchievementMetric {
   ///
   /// Kayıtlı rota rekorlarından okunuyor; ikinci bir sayaç tutulmuyor.
   bestQuizScore,
+
+  /// Tek bir oyunda bitirilen anlamlı koşu sayısı; oyun
+  /// [AchievementDefinition.gameId] ile seçilir.
+  gameRunsFinished,
 }
 
 /// Bir başarımın tanımı — kalıcı kimlik, metin ve hedef.
@@ -63,6 +67,7 @@ class AchievementDefinition {
     required this.title,
     required this.description,
     required this.target,
+    this.gameId,
   });
 
   /// Kayıtta duran kalıcı kimlik. Değiştirilmemeli.
@@ -80,6 +85,9 @@ class AchievementDefinition {
   /// Açılması için gereken değer.
   final int target;
 
+  /// Oyuna bağlı ölçülerde hangi oyun; diğerlerinde `null`.
+  final String? gameId;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -94,9 +102,9 @@ class AchievementDefinition {
 
 /// Uygulamadaki tüm başarımlar.
 ///
-/// Liste **ürün kararı**: pasaportta bu sırayla çizilir. Kolay olandan zora,
+/// Liste **ürün kararı**: kartta bu sırayla çizilir. Kolay olandan zora,
 /// kategori kategori. Yeni başarım eklemek için buraya bir kayıt eklemek
-/// yeterli; pasaport listeyi olduğu gibi çizer ve ilerlemeyi kendi hesaplar.
+/// yeterli; kart listeyi olduğu gibi çizer ve ilerlemeyi kendi hesaplar.
 class Achievements {
   const Achievements._();
 
@@ -254,9 +262,42 @@ class Achievements {
     id: 'every_game',
     category: AchievementCategory.gameplay,
     metric: AchievementMetric.distinctGamesPlayed,
-    title: 'Bütün Hatlar',
+    title: 'Bütün Oyunlar',
     description: 'Katalogdaki her oyunu bir kez bitir.',
     target: MiniGames.playable.length,
+  );
+
+  static const AchievementDefinition journeyHundred = AchievementDefinition(
+    id: 'journey_100',
+    category: AchievementCategory.journey,
+    metric: AchievementMetric.journeysCompleted,
+    title: 'Yüz Yolculuk',
+    description: '100 yolculuğu sonuna kadar götür.',
+    target: 100,
+  );
+
+  /// Oyun ustalığı: koşu sayısı, skor değil — puan rotanın ortak havuzunda.
+  ///
+  /// Kimlikler oyun controller'larındaki kalıcı kimliklerle aynı; burada
+  /// düz metin, çünkü alan katmanı oyun paketlerini içe aktarmamalı.
+  static const AchievementDefinition blocksMaster = AchievementDefinition(
+    id: 'blocks_runs_10',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameRunsFinished,
+    gameId: 'blocks',
+    title: 'Blok Ustası',
+    description: 'Blok Metro\'da 10 oyun bitir.',
+    target: 10,
+  );
+
+  static const AchievementDefinition crossingMaster = AchievementDefinition(
+    id: 'crossing_runs_10',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameRunsFinished,
+    gameId: 'crossing',
+    title: 'Karşı Peron',
+    description: 'Karşıdan Karşıya\'da 10 oyun bitir.',
+    target: 10,
   );
 
   /// Çizim sırası.
@@ -272,11 +313,14 @@ class Achievements {
     explorerIII,
     interchange,
     quizMilestone,
+    blocksMaster,
+    crossingMaster,
     threeLines,
     journeyTwenty,
     everyGame,
     streakSeven,
     thirtyDays,
+    journeyHundred,
   ];
 
   static AchievementDefinition? byId(String id) {

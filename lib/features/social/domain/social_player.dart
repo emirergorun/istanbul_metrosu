@@ -55,7 +55,7 @@ class SocialPlayer {
   /// Keşfe göre verilen unvan.
   ///
   /// Uydurma bir rütbe sistemi değil: tek girdisi keşfedilen durak sayısı,
-  /// yani oyuncunun gerçekten yaptığı iş. Eşikler pasaporttaki İstanbul
+  /// yani oyuncunun gerçekten yaptığı iş. Eşikler Yolculuk Kartı'ndaki İstanbul
   /// Kâşifi başarımlarıyla aynı basamaklarda.
   String get title => switch (stationsDiscovered) {
     >= 50 => 'İstanbul Kâşifi',

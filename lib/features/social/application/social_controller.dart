@@ -40,7 +40,7 @@ class SocialController extends ChangeNotifier {
 
   /// Kimlik kartındaki keşif sayısı buradan okunur.
   ///
-  /// Kopyalanmaz: pasaportta olduğu gibi tek kaynak keşif kaydı.
+  /// Kopyalanmaz: Yolculuk Kartı'nda olduğu gibi tek kaynak keşif kaydı.
   final DiscoveryController? discovery;
 
   final Analytics analytics;

@@ -86,12 +86,20 @@ class DiscoveryProgressTrack extends StatelessWidget {
               return Stack(
                 children: <Widget>[
                   Positioned.fill(child: ColoredBox(color: background)),
+                  // `heightFactor` **zorunlu**: çocuksuz bir `ColoredBox`
+                  // gevşek kısıtta en küçük boyutu alıyor, yani sıfır
+                  // yükseklik. Yalnız `widthFactor` verilen dilimler
+                  // çiziliyor ama görünmüyordu — çubuk her yerde boş bir
+                  // oluk gibi duruyordu (ana ekran şeridi, Yolculuk Kartım,
+                  // sonuç paneli, günlük görev kartı).
                   FractionallySizedBox(
                     widthFactor: before + earned * t,
+                    heightFactor: 1,
                     child: ColoredBox(color: gainColor),
                   ),
                   FractionallySizedBox(
                     widthFactor: before,
+                    heightFactor: 1,
                     child: ColoredBox(color: color),
                   ),
                 ],

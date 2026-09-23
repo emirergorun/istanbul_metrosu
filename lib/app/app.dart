@@ -106,8 +106,8 @@ class _MetroGameAppState extends State<MetroGameApp>
     platform: const GameCenterService(),
   );
 
-  /// Pasaport başarımları keşfi ve günlüğü **okur**, kopyalamaz.
-  /// Biten koşuyu dinleyenler — günlük görevler ve pasaport.
+  /// Yolculuk Kartı'nın rozetleri keşfi ve günlüğü **okur**, kopyalamaz.
+  /// Biten koşuyu dinleyenler — günlük görevler ve Yolculuk Kartı.
   late final CompositeRunReporter _reporter = CompositeRunReporter(
     <RunReporter>[_daily, _achievements],
   );

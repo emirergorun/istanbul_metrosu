@@ -111,7 +111,7 @@ class _MetroQuizScreenState extends State<MetroQuizScreen>
       // puan, kalan süre ve geçilen duraklar oradan devam eder.
       session: JourneyScope.sessionFor(context, widget.journey),
     );
-    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // Biten koşu günlük görevlere ve Yolculuk Kartı rozetlerine buradan
     // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
     controller.reporter = scope.runReporter;
     controller.addListener(_onControllerChanged);

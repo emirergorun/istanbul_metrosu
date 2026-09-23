@@ -11,7 +11,11 @@ import '../../session/run_report.dart';
 import '../domain/achievement.dart';
 import '../domain/player_stats.dart';
 
-/// İstanbul Pasaportu'nun başarım katmanı.
+/// Yolculuk Kartı'nın rozet katmanı.
+///
+/// Dosya ve sınıf adları (`passport/`, `AchievementController`) kasıtlı
+/// olarak korundu: kayıt anahtarları ve testler bunlara bağlı, oyuncuya
+/// görünen bir yanları da yok. Ürün adı değişti, kod kimliği değil.
 ///
 /// **Paralel bir ilerleme veritabanı değildir.** Keşfedilen durak sayısını
 /// keşif kaydı, seriyi günlük sistem bilir; bu sınıf onları okur ve
@@ -74,15 +78,15 @@ class AchievementController extends ChangeNotifier implements RunReporter {
   /// arasında bir aralık var. Türetilmiş cevap o aralıkta da doğru.
   bool isUnlocked(AchievementDefinition definition) =>
       _unlocked.containsKey(definition.id) ||
-      _metric(definition.metric) >= definition.target;
+      _valueOf(definition) >= definition.target;
 
   /// Başarımın açıldığı gün; bilinmiyorsa `null`.
   DayStamp? unlockedOn(AchievementDefinition definition) =>
       _unlocked[definition.id];
 
-  /// Pasaportun **tek** sıralaması.
+  /// Kartın **tek** sıralaması.
   ///
-  /// Önce açılanlar, sonra en çok ilerlenenler. Damga rafı ve başarım
+  /// Önce açılanlar, sonra en çok ilerlenenler. Rozet rafı ve rozet
   /// sayfası aynı listeyi kullanıyor: iki ekranda iki farklı diziliş, aynı
   /// koleksiyonu iki ayrı şey gibi gösteriyordu.
   List<AchievementDefinition> get ordered {
@@ -105,7 +109,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
 
   /// Başarımın o andaki ilerlemesi; hedefi aşmaz.
   int progressOf(AchievementDefinition definition) {
-    final value = _metric(definition.metric);
+    final value = _valueOf(definition);
     return value > definition.target ? definition.target : value;
   }
 
@@ -122,6 +126,13 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     return taken;
   }
 
+  int _valueOf(AchievementDefinition definition) => switch (definition.metric) {
+    AchievementMetric.gameRunsFinished => _stats.runsOf(
+      definition.gameId ?? '',
+    ),
+    final metric => _metric(metric),
+  };
+
   int _metric(AchievementMetric metric) => switch (metric) {
     AchievementMetric.stationsDiscovered => discovery.discoveredCount,
     AchievementMetric.interchangesDiscovered =>
@@ -133,6 +144,8 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     AchievementMetric.dailyDaysCompleted => daily?.totalDaysCompleted ?? 0,
     AchievementMetric.bestQuizScore =>
       store?.bestScoreForGame(_quizGameId) ?? 0,
+    // Oyuna bağlı; [_valueOf] çözüyor.
+    AchievementMetric.gameRunsFinished => 0,
   };
 
   /// Metro Bilgi'nin kalıcı kimliği.
@@ -155,6 +168,10 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     _stats = _stats.copyWith(
       journeysCompleted: _stats.journeysCompleted + (report.arrived ? 1 : 0),
       playedGameIds: <String>{..._stats.playedGameIds, report.gameId},
+      gameRuns: <String, int>{
+        ..._stats.gameRuns,
+        report.gameId: _stats.runsOf(report.gameId) + 1,
+      },
     );
     unawaited(_persistStats());
     _evaluate();
@@ -175,7 +192,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     final fresh = <AchievementDefinition>[];
     for (final definition in definitions) {
       if (_unlocked.containsKey(definition.id)) continue;
-      if (_metric(definition.metric) < definition.target) continue;
+      if (_valueOf(definition) < definition.target) continue;
       // Geriye dönük göçte tarih yazılmaz: rozet dün mü üç ay önce mi hak
       // edildi bilinmiyor, uydurmak yerine boş bırakılıyor.
       _unlocked[definition.id] = announce ? DayStamp.today() : null;

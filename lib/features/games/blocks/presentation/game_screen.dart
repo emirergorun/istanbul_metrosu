@@ -152,7 +152,7 @@ class _GameScreenState extends State<GameScreen>
       session: JourneyScope.sessionFor(context, widget.journey),
       onGamePayload: journeyController?.setGamePayload,
     );
-    // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
+    // Biten koşu günlük görevlere ve Yolculuk Kartı rozetlerine buradan
     // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
     controller.reporter = scope.runReporter;
     _resumed = resumed != null;

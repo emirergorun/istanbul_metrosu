@@ -75,7 +75,7 @@ class DiscoveryController extends ChangeNotifier {
 
   /// Keşfedilen **aktarma** durağı sayısı.
   ///
-  /// [_lineDiscovered] ile aynı gerekçe: pasaport başarımı bunu okuyor ve
+  /// [_lineDiscovered] ile aynı gerekçe: kartın rozeti bunu okuyor ve
   /// her keşif bildiriminde 143 durağı baştan taramak gereksizdi. Yazma
   /// anında güncelleniyor, okuma O(1). Diske yazılmaz; her açılışta
   /// [_discovered] kümesinden yeniden kurulur.

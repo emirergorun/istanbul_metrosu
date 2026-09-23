@@ -293,4 +293,42 @@ void main() {
     final world = build(store);
     expect(world.achievements.stats.journeysCompleted, 0);
   });
+
+  test('oyun ustalığı rozeti yalnız kendi oyununun koşularını sayar', () async {
+    final world = build(await storeWith());
+
+    for (var i = 0; i < 9; i++) {
+      world.achievements.reportRun(run(gameId: 'crossing'));
+    }
+    world.achievements.reportRun(run(gameId: 'blocks'));
+    expect(world.achievements.progressOf(Achievements.crossingMaster), 9);
+    expect(world.achievements.progressOf(Achievements.blocksMaster), 1);
+    expect(world.achievements.isUnlocked(Achievements.crossingMaster), isFalse);
+
+    // Yarıda bırakılan koşu ustalığa sayılmaz.
+    world.achievements.reportRun(
+      run(gameId: 'crossing', status: GameStatus.gameOver, stationsPassed: 0),
+    );
+    expect(world.achievements.progressOf(Achievements.crossingMaster), 9);
+
+    world.achievements.reportRun(run(gameId: 'crossing'));
+    expect(world.achievements.isUnlocked(Achievements.crossingMaster), isTrue);
+  });
+
+  test('koşu sayıları kayıtta kalır, eski kayıt sorunsuz okunur', () async {
+    // Koşu sayacından önce yazılmış kayıt: `runs` alanı yok.
+    final store = await storeWith(<String, Object>{
+      'player_stats': '{"journeys":3,"games":["blocks"]}',
+    });
+    final first = build(store);
+    expect(first.achievements.stats.journeysCompleted, 3);
+    expect(first.achievements.stats.runsOf('blocks'), 0);
+
+    first.achievements.reportRun(run(gameId: 'blocks'));
+    await Future<void>.delayed(Duration.zero);
+
+    final second = build(store);
+    expect(second.achievements.stats.runsOf('blocks'), 1);
+    expect(second.achievements.stats.journeysCompleted, 4);
+  });
 }

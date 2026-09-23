@@ -249,7 +249,7 @@ class LocalStore extends ChangeNotifier {
   /// Bir oyunda, **herhangi bir rotada** kurulmuş en yüksek skor.
   ///
   /// Rekorlar rota bazında tutuluyor; "bu oyunda ne kadar iyisin" sorusunun
-  /// cevabı ise rotadan bağımsız. Pasaport başarımı bunu okuyor. Ayrı bir
+  /// cevabı ise rotadan bağımsız. Yolculuk Kartı'nın rozeti bunu okuyor. Ayrı bir
   /// sayaç tutulmuyor: kayıtlı rekorlar zaten bu bilginin kaynağı.
   int bestScoreForGame(String gameId) {
     var best = 0;

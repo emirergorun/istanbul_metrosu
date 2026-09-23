@@ -57,7 +57,7 @@ class AppScope extends InheritedWidget {
   /// ana ekranda kart çıkmaz, oyun aynen oynanır.
   final DailyController? daily;
 
-  /// İstanbul Pasaportu'nun başarımları. `null` ise başarım bölümü çizilmez.
+  /// Yolculuk Kartı'nın rozetleri. `null` ise rozet bölümü çizilmez.
   final AchievementController? achievements;
 
   /// Kimlik, arkadaşlar ve meydan okuma geçmişi. `null` ise sosyal katman

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/app_scope.dart';
 import '../../../app/theme.dart';
@@ -187,26 +188,82 @@ class _RewardRow extends StatelessWidget {
   }
 }
 
-class _AchievementRow extends StatelessWidget {
+/// Yeni kazanılmış rozet — karta takılma anı.
+///
+/// Damga basılmıyor: pin yerine **oturuyor**. Küçükten gelip hafifçe
+/// geçerek yerine kilitleniyor, rengi o anda açılıyor. Süre 700 ms: fark
+/// edilecek kadar uzun, sonucu okumayı geciktirmeyecek kadar kısa.
+/// Konfeti, parlama ve kumarhane tonu yok.
+class _AchievementRow extends StatefulWidget {
   const _AchievementRow({required this.definition});
 
   final AchievementDefinition definition;
 
   @override
+  State<_AchievementRow> createState() => _AchievementRowState();
+}
+
+class _AchievementRowState extends State<_AchievementRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  )..forward();
+
+  bool _snapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Titreşim pin yerine **oturduğu** anda: büyüme eğrisinin tepesi
+    // ~%45'te. Zamanlayıcı değil animasyonun kendisi tetikliyor; ekran
+    // kapanırsa titreşim de gelmiyor.
+    _controller.addListener(_snap);
+  }
+
+  void _snap() {
+    if (_snapped || _controller.value < 0.45) return;
+    _snapped = true;
+    final scope = context.getInheritedWidgetOfExactType<AppScope>();
+    if (scope != null && scope.store.hapticsEnabled) {
+      HapticFeedback.lightImpact();
+    }
+  }
+
+  /// Yerine oturma eğrisi: hızlı gelir, hedefi bir tık geçer, yerleşir.
+  late final Animation<double> _scale = Tween<double>(
+    begin: 0.55,
+    end: 1,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final definition = widget.definition;
     final color = AchievementBadge.colorOf(definition.category);
 
     return Semantics(
       container: true,
-      label: 'Başarım açıldı. ${definition.title}',
+      label: 'Yeni rozet kazanıldı. ${definition.title}',
       child: ExcludeSemantics(
         child: Row(
           children: <Widget>[
-            AchievementBadge(
-              definition: definition,
-              unlocked: true,
-              progress: 1,
-              size: 28,
+            // Pin soluk gelir, oturduğu anda rengi açılır.
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (BuildContext context, _) => Transform.scale(
+                scale: _scale.value,
+                child: AchievementBadge(
+                  definition: definition,
+                  unlocked: _controller.value >= 0.45,
+                  size: 28,
+                ),
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
@@ -214,7 +271,7 @@ class _AchievementRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'BAŞARIM AÇILDI',
+                    'YENİ ROZET',
                     style: AppText.micro.copyWith(
                       fontFamily: AppFonts.display,
                       color: color,

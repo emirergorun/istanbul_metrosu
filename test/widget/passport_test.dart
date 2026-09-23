@@ -77,7 +77,7 @@ void main() {
       await openPassport(tester);
 
       expect(find.byType(DiscoveryScreen), findsOneWidget);
-      expect(find.text('PASAPORTUM'), findsOneWidget);
+      expect(find.text('YOLCULUK KARTIM'), findsOneWidget);
     });
 
     testWidgets('keşif bölümü hâlâ ilk sırada', (tester) async {
@@ -85,7 +85,7 @@ void main() {
       await openPassport(tester);
 
       final discovery = tester.getRect(find.text('İSTANBUL KEŞFİ'));
-      final badges = tester.getRect(find.text('BAŞARIMLAR'));
+      final badges = tester.getRect(find.text('ROZETLER'));
       final lines = tester.getRect(find.text('HATLAR'));
 
       // Pasaportun konusu keşif; başarımlar onu taçlandıran katman.

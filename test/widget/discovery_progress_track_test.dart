@@ -62,4 +62,39 @@ void main() {
 
     expect(tester.getSize(find.byType(DiscoveryProgressTrack)).height, 5);
   });
+
+  testWidgets('dolu dilim çubuğun tamamını kaplar', (tester) async {
+    // Dilimlere `heightFactor` verilmediği sürece çocuksuz `ColoredBox`
+    // gevşek kısıtta sıfır yükseklik alıyordu: çubuk çiziliyor ama dolu
+    // kısmı görünmüyordu. Ana ekran şeridinden sonuç paneline kadar her
+    // ilerleme çubuğu boş bir oluk gibi duruyordu.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                DiscoveryProgressTrack(
+                  value: 0.5,
+                  color: AppColors.categoryGeography,
+                  background: AppColors.background,
+                  thickness: 6,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final fills = find.byType(FractionallySizedBox);
+    expect(fills, findsWidgets);
+    for (final element in fills.evaluate()) {
+      final rect = tester.getRect(find.byWidget(element.widget));
+      expect(rect.height, 6, reason: 'dilim çubuk yüksekliğinde olmalı');
+      expect(rect.width, greaterThan(0));
+    }
+  });
 }

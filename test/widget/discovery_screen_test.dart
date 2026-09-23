@@ -119,7 +119,9 @@ void main() {
       await tester.tap(find.byType(DiscoveryEntryStrip));
       await tester.pumpAndSettle();
 
-      // Liste kaydırmalı; ekrana sığan kadarı yeter.
+      // Liste kaydırmalı ve tembel; kart ve koleksiyonlar üstte duruyor,
+      // hat kartları ilk ekranın altından başlıyor.
+      await tester.scrollUntilVisible(find.text('M2'), 200);
       expect(find.byType(StationDotStrip), findsWidgets);
       expect(find.text('M2'), findsOneWidget);
     });
@@ -132,8 +134,9 @@ void main() {
       await tester.tap(find.byType(DiscoveryEntryStrip));
       await tester.pumpAndSettle();
 
-      expect(find.text('3 / 15'), findsOneWidget);
       expect(find.text('%2 tamamlandı'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('3 / 15'), 200);
+      expect(find.text('3 / 15'), findsOneWidget);
     });
 
     testWidgets('tamamlanan hat işaretlenir', (tester) async {
@@ -143,8 +146,11 @@ void main() {
       await tester.tap(find.byType(DiscoveryEntryStrip));
       await tester.pumpAndSettle();
 
-      expect(find.text('4 / 4'), findsOneWidget);
       expect(find.textContaining('1 hat bitti'), findsOneWidget);
+      // Hat kartı listenin içinde ve tembel kuruluyor; koleksiyon
+      // bölümü eklendiğinden beri ilk ekranın altında kalıyor.
+      await scrollToLine(tester, 'Levent – Boğaziçi Ü./Hisarüstü');
+      expect(find.text('4 / 4'), findsOneWidget);
     });
 
     testWidgets('hat kartına dokununca duraklar açılır', (tester) async {
@@ -181,6 +187,7 @@ void main() {
       await pumpApp(tester, await storeWith(<String>['taksim']));
       await tester.tap(find.byType(DiscoveryEntryStrip));
       await tester.pumpAndSettle();
+      await scrollToLine(tester, 'Yenikapı – Hacıosman');
 
       expect(
         find.bySemanticsLabel(
@@ -251,6 +258,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('2'), findsWidgets);
+      // Hat kartları kart ve koleksiyonların altında, tembel kuruluyor.
+      await tester.scrollUntilVisible(find.text('2 / 15'), 200);
       expect(find.text('2 / 15'), findsOneWidget);
     });
   });

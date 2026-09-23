@@ -7,25 +7,29 @@ import '../../../core/telemetry/analytics.dart';
 import '../../../core/widgets/line_badge.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../journey/models/station.dart';
+import '../../passport/presentation/achievements_screen.dart';
 import '../../passport/presentation/widgets/achievement_badge.dart';
+import '../../passport/domain/achievement.dart';
+import '../../passport/presentation/widgets/line_pin.dart';
 import '../application/discovery_controller.dart';
 import '../domain/discovery_catalog.dart';
 import 'widgets/discovery_progress_track.dart';
 import 'widgets/station_dot_strip.dart';
 
-/// İstanbul Pasaportu — oyuncunun kalıcı koleksiyonu.
+/// Yolculuk Kartım — oyuncunun İstanbul'daki kalıcı ilerlemesi.
 ///
-/// Tek soruya cevap verir: **İstanbul'un ne kadarını gezdim?** Üstte o
-/// cevap, ortada başarım damgaları, altında hatlar. Hat kartına dokunulunca
-/// durak adları açılır; keşfedilmemiş adlar gizlenmez — kalan yol
-/// görünmezse hedef de olmaz.
+/// Ürün fikri bir seyahat belgesi değil, oyuncuya ait **oyun kartı**:
+/// oynadıkça dolan, koleksiyon biriktiren kişisel bir kart. Pasaport ve
+/// damga benzetmesi bilinçli olarak bırakıldı; rozetler artık damga değil,
+/// karta takılan pinler.
 ///
-/// Pasaport **kendi ilerleme kaydını tutmaz**. Keşfedilen durakların tek
+/// Dört soruya cevap verir, bu sırayla:
+/// İstanbul'un ne kadarını keşfettim · hangi rozetleri kazandım ·
+/// hangi hatları tamamladım · hangi hattın neresindeyim.
+///
+/// Kart **kendi ilerleme kaydını tutmaz**. Keşfedilen durakların tek
 /// kaynağı kalıcı keşif kaydıdır; bu ekran onu görünür ve ödüllendirici
 /// kılar, kopyalamaz.
-///
-/// Başlık kısa tutuldu: "İSTANBUL PASAPORTU" tabela fontunda, en dar
-/// telefonda ve en büyük yazı ölçeğinde başlık çubuğuna sığmıyor.
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
 
@@ -78,7 +82,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text('PASAPORTUM', style: AppText.title),
+        title: const Text('YOLCULUK KARTIM', style: AppText.title),
       ),
       body: SafeArea(
         top: false,
@@ -101,7 +105,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        _GlobalProgress(discovery: discovery, lines: lines),
+                        _JourneyCard(discovery: discovery, lines: lines),
                         if (addedStations > 0) ...<Widget>[
                           const SizedBox(height: AppSpacing.stack),
                           _NetworkGrewNotice(count: addedStations),
@@ -109,8 +113,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                         // Bölüm başlığıyla başlayan blok; bkz.
                         // [AppSpacing.sectionGap].
                         const SizedBox(height: AppSpacing.sectionGap),
-                        const _DailyRecord(),
+                        // Sıra kartın hikâyesi: keşif → hatlar → rozetler →
+                        // günlük sadakat → hat hat ayrıntı.
+                        _LineCollection(discovery: discovery, lines: lines),
                         const _AchievementStrip(),
+                        const _DailyRecord(),
                         const _SectionLabel('HATLAR'),
                         const SizedBox(height: AppSpacing.stack),
                       ],
@@ -164,9 +171,9 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Text(text, style: AppText.sectionTitle);
 }
 
-/// Pasaportun günlük sayfası: seri ve sadakat.
+/// Kartın günlük bölümü: seri ve sadakat.
 ///
-/// Günlük sistem kendi durumunu **sahiplenmeye devam ediyor**; pasaport
+/// Günlük sistem kendi durumunu **sahiplenmeye devam ediyor**; kart
 /// yalnızca okuyor. İki ölçü yan yana duruyor çünkü farklı şeyler
 /// anlatıyorlar: seri sürekliliği, toplam gün sadakati. Serisi kırılan
 /// oyuncunun da gösterecek bir sayısı olsun.
@@ -205,11 +212,14 @@ class _DailyRecord extends StatelessWidget {
                   ),
                   child: Row(
                     children: <Widget>[
-                      _DailyStat(label: 'SERİ', value: daily.streak),
-                      _DailyStat(label: 'EN UZUN', value: daily.bestStreak),
+                      _DailyStat(label: 'SERİ', value: '${daily.streak}'),
+                      _DailyStat(
+                        label: 'EN UZUN',
+                        value: '${daily.bestStreak}',
+                      ),
                       _DailyStat(
                         label: 'TOPLAM',
-                        value: daily.totalDaysCompleted,
+                        value: '${daily.totalDaysCompleted}',
                       ),
                     ],
                   ),
@@ -228,7 +238,7 @@ class _DailyStat extends StatelessWidget {
   const _DailyStat({required this.label, required this.value});
 
   final String label;
-  final int value;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +247,7 @@ class _DailyStat extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            '$value',
+            value,
             style: AppText.stat.copyWith(fontFeatures: kTabularFigures),
           ),
           Text(
@@ -255,18 +265,18 @@ class _DailyStat extends StatelessWidget {
   }
 }
 
-/// Pasaportun damga rafı.
+/// Kartın rozet rafı.
 ///
-/// Bütün başarımlar burada listelenmiyor: raf bir **vitrin**, liste değil.
-/// Sekiz damga yan yana duruyor, tamamı ayrı bir sayfada. Pasaportun ana
-/// konusu hâlâ keşif; başarımlar onu taçlandıran katman.
+/// Bütün rozetler burada listelenmiyor: raf bir **vitrin**, liste değil.
+/// Altı pin yan yana duruyor, tamamı ayrı bir sayfada. Kartın ana konusu
+/// hâlâ keşif; rozetler onu taçlandıran koleksiyon.
 class _AchievementStrip extends StatelessWidget {
   const _AchievementStrip();
 
-  /// Rafta kaç damga görünür.
+  /// Rafta kaç pin görünür.
   ///
   /// Altı: standart telefonda tek satıra sığan en büyük sayı. Sekizken raf
-  /// ikinci satıra tek bir damga sarkıtıyor ve vitrin dağınık duruyordu.
+  /// ikinci satıra tek bir pin sarkıtıyor ve vitrin dağınık duruyordu.
   static const int _shown = 6;
 
   @override
@@ -277,19 +287,26 @@ class _AchievementStrip extends StatelessWidget {
     return AnimatedBuilder(
       animation: achievements,
       builder: (BuildContext context, _) {
-        // Sıra başarım sayfasıyla **aynı**: önce açılanlar, sonra en çok
+        // Sıra rozet sayfasıyla **aynı**: önce kazanılanlar, sonra en çok
         // ilerlenenler. İki ekranda iki farklı diziliş, aynı koleksiyonu
         // iki ayrı şey gibi gösteriyordu.
         final ordered = achievements.ordered;
         if (ordered.isEmpty) return const SizedBox.shrink();
         final shelf = ordered.take(_shown).toList();
+        AchievementDefinition? next;
+        for (final definition in ordered) {
+          if (!achievements.isUnlocked(definition)) {
+            next = definition;
+            break;
+          }
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Expanded(child: _SectionLabel('BAŞARIMLAR')),
+                const Expanded(child: _SectionLabel('ROZETLER')),
                 Text(
                   '${achievements.unlockedCount} / '
                   '${achievements.totalCount}',
@@ -303,9 +320,9 @@ class _AchievementStrip extends StatelessWidget {
                   Navigator.of(context).pushNamed(AppRoutes.achievements),
               borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
               semanticLabel:
-                  '${achievements.totalCount} başarımın '
-                  '${achievements.unlockedCount} tanesi açıldı. '
-                  'Başarımları gör',
+                  '${achievements.totalCount} rozetin '
+                  '${achievements.unlockedCount} tanesi kazanıldı. '
+                  'Rozetleri gör',
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
@@ -319,8 +336,8 @@ class _AchievementStrip extends StatelessWidget {
                   child: Row(
                     children: <Widget>[
                       Expanded(
-                        // Damgalar sarmalanıyor: büyük yazı ölçeğinde ve dar
-                        // ekranda tek satır sekiz damgayı taşıramıyor.
+                        // Pinler sarmalanıyor: büyük yazı ölçeğinde ve dar
+                        // ekranda tek satır altı pini taşıyamıyor.
                         child: Wrap(
                           spacing: AppSpacing.sm,
                           runSpacing: AppSpacing.sm,
@@ -329,9 +346,6 @@ class _AchievementStrip extends StatelessWidget {
                               AchievementBadge(
                                 definition: definition,
                                 unlocked: achievements.isUnlocked(definition),
-                                progress: achievements.progressRatio(
-                                  definition,
-                                ),
                                 size: 34,
                               ),
                           ],
@@ -348,10 +362,361 @@ class _AchievementStrip extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            if (next != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.sm),
+              _NextBadge(
+                definition: next,
+                remaining: achievementRemainingText(
+                  next,
+                  achievements.progressOf(next),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sectionGap),
           ],
         );
       },
+    );
+  }
+}
+
+/// Rafın altındaki tek satır: sıradaki rozet ve ne kadar kaldığı.
+///
+/// Raf "ne topladım" diyor; bu satır "şimdi neye çalışıyorum". Sıralama
+/// zaten en çok ilerlenen kilitli rozeti öne alıyor, yani hedef rastgele
+/// değil, oyuncunun en yakın olduğu rozet.
+class _NextBadge extends StatelessWidget {
+  const _NextBadge({required this.definition, required this.remaining});
+
+  final AchievementDefinition definition;
+  final String remaining;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AchievementBadge.colorOf(definition.category);
+    return Semantics(
+      label: 'Sıradaki rozet ${definition.title}. $remaining',
+      child: ExcludeSemantics(
+        // Dar ekranda ve büyük yazıda satır taşmasın: ad kısalır, kalan
+        // miktar kendi yerini korur ama o da gerekirse kısalır.
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Flexible(
+              child: Text.rich(
+                TextSpan(
+                  children: <InlineSpan>[
+                    TextSpan(
+                      text: 'SIRADAKİ  ',
+                      style: AppText.micro.copyWith(
+                        fontFamily: AppFonts.display,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    TextSpan(text: definition.title),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.caption.copyWith(color: AppColors.textSecondary),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              child: Text(
+                remaining,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: AppText.micro.copyWith(
+                  fontFamily: AppFonts.display,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hat koleksiyonu — on hattın pin seti.
+///
+/// Kartın en somut koleksiyonu bu: her hat bir pin, tamamlanınca kendi
+/// rengine kavuşuyor. Tamamlanmamış hatlar da duruyor, soluk hâlde —
+/// toplanacak şey görünmezse hedef de olmaz.
+///
+/// Altındaki hat listesi kaldırılmadı: pin seti "ne topladım", liste
+/// "neresindeyim" sorusunu yanıtlıyor. İkisi farklı sorular.
+class _LineCollection extends StatelessWidget {
+  const _LineCollection({required this.discovery, required this.lines});
+
+  final DiscoveryController discovery;
+  final List<MetroLine> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    final completed = discovery.completedLineCount(
+      lines.map((MetroLine l) => l.id),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            const Expanded(child: _SectionLabel('HAT KOLEKSİYONU')),
+            Text('$completed / ${lines.length}', style: AppText.statSmall),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.stack),
+        Semantics(
+          container: true,
+          label:
+              '${lines.length} hattın $completed tanesi tamamlandı. '
+              '${_spokenLines()}',
+          child: ExcludeSemantics(
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              ),
+              width: double.infinity,
+              // Beşli iki sıra: on hat bir set gibi dizilsin, yedi + üç
+              // artık bir satır bırakmasın. Pin boyu genişlikten türüyor.
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  const perRow = 5;
+                  const gap = AppSpacing.md;
+                  final size =
+                      ((constraints.maxWidth - gap * (perRow - 1)) / perRow)
+                          .clamp(32.0, 60.0);
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    alignment: WrapAlignment.spaceBetween,
+                    children: <Widget>[
+                      for (final line in lines)
+                        LinePin(
+                          lineId: line.id.toUpperCase(),
+                          color: LineTheme.from(line.color).color,
+                          completed: discovery.isLineComplete(line.id),
+                          size: size,
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sectionGap),
+      ],
+    );
+  }
+
+  /// Ekran okuyucuya hangi hatların tamamlandığını söyler.
+  String _spokenLines() {
+    final done = lines
+        .where((MetroLine line) => discovery.isLineComplete(line.id))
+        .map((MetroLine line) => line.id.toUpperCase())
+        .toList();
+    if (done.isEmpty) return 'Henüz tamamlanan hat yok.';
+    return 'Tamamlananlar: ${done.join(', ')}.';
+  }
+}
+
+/// Kartın kendisi — ekranın üst yarısı.
+///
+/// Banka kartı ya da bilet değil: oyuncuya ait bir **oyun kartı**. Üst
+/// kenarda on hattın renk şeridi duruyor; tamamlanan hat kendi rengiyle,
+/// kalanlar soluk. Kart oynadıkça renkleniyor — "YOLCULUĞUN KADAR OYNA"
+/// sözünün ilerleme tarafı.
+///
+/// Kimlik yalnızca cihazda zaten olan addan geliyor (sözlükten üretilmiş ya
+/// da bağlanmış Game Center takma adı). Ağ beklenmiyor, sahte hesap bilgisi
+/// uydurulmuyor; sosyal katman yoksa kimlik satırı hiç çizilmiyor.
+class _JourneyCard extends StatelessWidget {
+  const _JourneyCard({required this.discovery, required this.lines});
+
+  final DiscoveryController discovery;
+  final List<MetroLine> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = AppScope.of(context);
+    final social = scope.social;
+    final achievements = scope.achievements;
+    final completedLines = discovery.completedLineCount(
+      lines.map((MetroLine l) => l.id),
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: AppColors.surface),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _LineBand(discovery: discovery, lines: lines),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (social != null) ...<Widget>[
+                    AnimatedBuilder(
+                      animation: social,
+                      builder: (BuildContext context, _) {
+                        final me = social.me;
+                        return _CardOwner(name: me.displayName, rank: me.title);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  _GlobalProgress(discovery: discovery, lines: lines),
+                  if (achievements != null) ...<Widget>[
+                    const SizedBox(height: AppSpacing.lg),
+                    AnimatedBuilder(
+                      animation: achievements,
+                      builder: (BuildContext context, _) => _CareerRow(
+                        journeys: achievements.stats.journeysCompleted,
+                        lines: completedLines,
+                        lineTotal: lines.length,
+                        badges: achievements.unlockedCount,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kartın üst kenarı: her hat bir dilim, sırası veri dosyasındaki sıra.
+class _LineBand extends StatelessWidget {
+  const _LineBand({required this.discovery, required this.lines});
+
+  final DiscoveryController discovery;
+  final List<MetroLine> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 6,
+      // `stretch` zorunlu: çocuksuz `ColoredBox` gevşek kısıtta sıfır
+      // yükseklik alıyor ve şerit hiç görünmüyordu.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          for (final line in lines)
+            Expanded(
+              child: ColoredBox(
+                color: discovery.isLineComplete(line.id)
+                    ? LineTheme.from(line.color).color
+                    // Pin setiyle aynı soluk ton: tamamlanmamış hat da
+                    // rengini belli ediyor, ama sönük.
+                    : Color.lerp(
+                        LineTheme.from(line.color).color,
+                        AppColors.blocker,
+                        0.55,
+                      )!,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kartın sahibi: ad ve keşiften türeyen unvan.
+class _CardOwner extends StatelessWidget {
+  const _CardOwner({required this.name, required this.rank});
+
+  final String name;
+  final String rank;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Kart sahibi $name, $rank',
+      child: ExcludeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: <Widget>[
+            Flexible(
+              flex: 3,
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.tileTitle,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Flexible(
+              flex: 2,
+              child: Text(
+                rank.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.micro.copyWith(
+                  fontFamily: AppFonts.display,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Yolculuk kariyeri: üç sayı, üç ayrı koleksiyon.
+class _CareerRow extends StatelessWidget {
+  const _CareerRow({
+    required this.journeys,
+    required this.lines,
+    required this.lineTotal,
+    required this.badges,
+  });
+
+  final int journeys;
+  final int lines;
+  final int lineTotal;
+  final int badges;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label:
+          '$journeys yolculuk tamamlandı, $lineTotal hattın $lines tanesi '
+          'bitti, $badges rozet kazanıldı.',
+      child: ExcludeSemantics(
+        child: Row(
+          children: <Widget>[
+            _DailyStat(label: 'YOLCULUK', value: '$journeys'),
+            _DailyStat(label: 'HAT', value: '$lines/$lineTotal'),
+            _DailyStat(label: 'ROZET', value: '$badges'),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -399,7 +764,12 @@ class _GlobalProgress extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            DiscoveryProgressTrack(value: discovery.progress),
+            // Oluk kartın zemininden koyu: kart rengiyle aynı kalınca
+            // çubuğun boş kısmı kartın içinde kayboluyordu.
+            DiscoveryProgressTrack(
+              value: discovery.progress,
+              background: AppColors.background,
+            ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               _caption(discovered, completedLines),
