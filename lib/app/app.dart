@@ -12,10 +12,14 @@ import '../data/questions/question_repository.dart';
 import '../features/daily/application/daily_controller.dart';
 import '../features/daily/domain/daily_generator.dart';
 import '../features/discovery/application/discovery_controller.dart';
+import '../features/discovery/application/journey_discovery.dart';
 import '../features/discovery/domain/discovery_catalog.dart';
 import '../features/journey/services/route_service.dart';
 import '../features/passport/application/achievement_controller.dart';
+import '../features/session/composite_run_reporter.dart';
 import '../features/session/journey_host.dart';
+import '../features/session/journey_session.dart';
+import '../features/session/run_report.dart';
 import '../features/social/application/challenge_session.dart';
 import '../features/social/application/game_center_service.dart';
 import '../features/social/application/social_controller.dart';
@@ -103,6 +107,11 @@ class _MetroGameAppState extends State<MetroGameApp>
   );
 
   /// Pasaport başarımları keşfi ve günlüğü **okur**, kopyalamaz.
+  /// Biten koşuyu dinleyenler — günlük görevler ve pasaport.
+  late final CompositeRunReporter _reporter = CompositeRunReporter(
+    <RunReporter>[_daily, _achievements],
+  );
+
   late final AchievementController _achievements = AchievementController(
     discovery: _discovery,
     daily: _daily,
@@ -173,6 +182,15 @@ class _MetroGameAppState extends State<MetroGameApp>
       child: JourneyHost(
         store: widget.store,
         routes: _routes,
+        // Tren oyun ekranı kapalıyken de yol alıyor: oyun seçiminde,
+        // başlık ekranında, arka plandan dönüşte. Keşif ve biten yolculuk
+        // bildirimi bu yüzden yolculuğun kendisine de bağlı.
+        discoveryFactory: (journey) => JourneyDiscovery(
+          journey: journey,
+          discovery: _discovery,
+          gameId: JourneySession.journeyBucket,
+        ),
+        reporter: _reporter,
         child: MaterialApp(
           title: AppConstants.appTitle,
           debugShowCheckedModeBanner: false,

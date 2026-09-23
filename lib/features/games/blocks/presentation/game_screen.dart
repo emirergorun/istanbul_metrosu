@@ -149,7 +149,7 @@ class _GameScreenState extends State<GameScreen>
       resumeProgress: resumed?.progress,
       // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
       // puan, kalan süre ve geçilen duraklar oradan devam eder.
-      session: JourneyScope.sessionOf(context),
+      session: JourneyScope.sessionFor(context, widget.journey),
       onGamePayload: journeyController?.setGamePayload,
     );
     // Biten koşu günlük görevlere ve pasaport başarımlarına buradan

@@ -184,6 +184,17 @@ class JourneySession extends ChangeNotifier implements JourneyView {
   /// Oyun oynanırken saati oyunun kare döngüsü sürer; oyun yokken
   /// [JourneyHost] kalp atışı devralır. İkisi aynı anda ilerletirse süre iki
   /// kat hızlı akar, bu yüzden sürücü tek olmalı.
+  /// Bu yolculuğun biten koşusu oyun tarafından bildirildi mi?
+  ///
+  /// Varış oyun oynanırken gelirse raporu oyun controller'ı gönderiyor;
+  /// yolculuk tutamağı aynı varış için ikinci bir rapor göndermesin diye
+  /// buraya bakıyor.
+  bool get runReportedByGame => _runReportedByGame;
+  bool _runReportedByGame = false;
+
+  /// Oyun bu koşuyu bildirdi.
+  void markRunReported() => _runReportedByGame = true;
+
   bool get isDriven => _driver != null;
   Object? _driver;
 

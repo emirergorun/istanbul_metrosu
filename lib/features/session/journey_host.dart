@@ -5,9 +5,11 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/storage/local_store.dart';
+import '../discovery/application/journey_discovery.dart';
 import '../journey/models/journey.dart';
 import '../journey/services/route_service.dart';
 import 'journey_run.dart';
+import 'run_report.dart';
 import 'journey_save.dart';
 import 'journey_session.dart';
 
@@ -28,10 +30,35 @@ import 'journey_session.dart';
 /// 3. **Yolculuğu diske yazmak.** Uygulama öldürülse bile puan, kalan süre
 ///    ve oynanan oyunun durumu kaybolmaz ([JourneySave]).
 class JourneyController extends ChangeNotifier {
-  JourneyController({required this.store, required this.routes});
+  JourneyController({
+    required this.store,
+    required this.routes,
+    this.discoveryFactory,
+    this.reporter,
+  });
 
   final LocalStore store;
   final RouteService routes;
+
+  /// Yolculuk başlayınca açılan keşif defteri.
+  ///
+  /// Yolculuk oyun ekranından uzun yaşıyor: tren oyun seçim ekranında,
+  /// başlık ekranında ve uygulama arka plandayken de yol alıyor. Oyun
+  /// controller'ının kendi defteri yalnız oyun açıkken yazıyordu, bu yüzden
+  /// o duraklar keşfedilmeden geçiliyordu. `null` ise keşif kapalıdır.
+  final JourneyDiscovery Function(Journey journey)? discoveryFactory;
+
+  /// Oyun açık değilken biten yolculuğu dinleyen taraf.
+  ///
+  /// Oyun açıkken raporu oyun controller'ı gönderiyor; ikisi birden
+  /// göndermesin diye buradaki rapor yalnız yolculuğu bir oyun
+  /// sürmüyorken varış olursa çıkar.
+  final RunReporter? reporter;
+
+  JourneyDiscovery? _discovery;
+
+  /// Varış bir kez kapatıldı mı? Rekor iki kez yazılmamalı.
+  bool _finalized = false;
 
   JourneySession? _session;
   Timer? _heartbeat;
@@ -101,6 +128,10 @@ class JourneyController extends ChangeNotifier {
     _activeGameId = save.activeGameId;
     _gamePayload = save.gamePayload;
     _session = session;
+    _finalized = false;
+    session.addListener(_onSessionChanged);
+    _discovery = discoveryFactory?.call(journey);
+    _syncDiscovery(session);
 
     if (session.remainingSeconds <= 0) {
       // Kayıt varış anında yazılmış olabilir; tören açılan ilk ekranda
@@ -178,6 +209,9 @@ class JourneyController extends ChangeNotifier {
     );
     session.setStatus(GameStatus.playing);
     _session = session;
+    _finalized = false;
+    session.addListener(_onSessionChanged);
+    _discovery = discoveryFactory?.call(journey);
     _activeGameId = null;
     _gamePayload = null;
     _startHeartbeat();
@@ -192,7 +226,10 @@ class JourneyController extends ChangeNotifier {
     if (session == null) return;
     _heartbeat?.cancel();
     _heartbeat = null;
+    session.removeListener(_onSessionChanged);
+    _finalized = false;
     _session = null;
+    _discovery = null;
     _activeGameId = null;
     _gamePayload = null;
     unawaited(store.clearSavedJourney());
@@ -209,6 +246,18 @@ class JourneyController extends ChangeNotifier {
       score: session.score,
     );
     session.markNewBest(isNewBest);
+  }
+
+  /// Oturumun durumu değişti.
+  ///
+  /// Varış oyun oynanırken gelirse yolculuğu bitiren taraf oyun oluyor;
+  /// tutamak bunu yalnız buradan duyar. Rekorun yazılması, kaydın düşmesi
+  /// ve keşfin kapanması her iki yoldan da aynı yerde olsun diye.
+  void _onSessionChanged() {
+    final session = _session;
+    if (session == null) return;
+    if (session.status != GameStatus.arrived) return;
+    _arrive(session);
   }
 
   void _startHeartbeat() {
@@ -228,7 +277,9 @@ class JourneyController extends ChangeNotifier {
     if (session.isDriven) return;
 
     session.addElapsed(1);
-    if (session.settle()) {
+    final arrived = session.settle();
+    _syncDiscovery(session);
+    if (arrived) {
       _arrive(session);
       return;
     }
@@ -238,10 +289,40 @@ class JourneyController extends ChangeNotifier {
   }
 
   void _arrive(JourneySession session) {
+    if (_finalized) return;
+    _finalized = true;
     session.setStatus(GameStatus.arrived);
     // Varan yolculuk yarım kalmış sayılmaz: kayıt düşer, puan rekora gider.
     unawaited(store.clearSavedJourney());
     unawaited(_persist(session));
+    // Oyun açıkken varışı oyun controller'ı bildiriyor (keşif, günlük görev,
+    // başarım). Oyun yokken — oyun seçiminde, başlık ekranında ya da arka
+    // plandan dönüşte — o zincir hiç çalışmıyordu.
+    _discovery?.reportArrival();
+    if (session.runReportedByGame) return;
+    final gameId = _activeGameId;
+    // Hiç oyun oynanmadıysa bildirilecek koşu da yok: yolculuk tek başına
+    // "oyun bitirdim" saymaz.
+    if (gameId == null) return;
+    reporter?.reportRun(
+      RunReport(
+        gameId: gameId,
+        journey: session.journey,
+        status: GameStatus.arrived,
+        score: session.score,
+        stationsPassed: session.stationsPassed,
+      ),
+    );
+  }
+
+  /// Oturumun durak sayacını keşif defterine aktarır.
+  ///
+  /// Yalnız **geçilmiş** durak bildirilir: rota seçmek ya da oyun seçim
+  /// ekranını açmak keşif üretmez, bu kural
+  /// `game_hub_discovery_safety_test` ile kilitli.
+  void _syncDiscovery(JourneySession session) {
+    if (session.stationsPassed < 1) return;
+    _discovery?.reportReached(session.stationsPassed);
   }
 
   /// Uygulama arka plandan döndü: aradaki gerçek süre yolculuğa yazılır.
@@ -255,7 +336,9 @@ class JourneyController extends ChangeNotifier {
     // Metroda telefon cebe girince tren durmaz.
     final away = clock.now().difference(left).inMilliseconds / 1000;
     session.creditElapsed(away);
-    if (session.settle()) {
+    final arrived = session.settle();
+    _syncDiscovery(session);
+    if (arrived) {
       _arrive(session);
     } else {
       session.publish();
@@ -288,10 +371,18 @@ class JourneyHost extends StatefulWidget {
     required this.store,
     required this.routes,
     required this.child,
+    this.discoveryFactory,
+    this.reporter,
   });
 
   final LocalStore store;
   final RouteService routes;
+
+  /// Yolculuk için keşif defteri açan işlev; `null` ise keşif kapalı.
+  final JourneyDiscovery Function(Journey journey)? discoveryFactory;
+
+  /// Oyun açık değilken biten yolculuğu dinleyen taraf.
+  final RunReporter? reporter;
   final Widget child;
 
   @override
@@ -302,6 +393,8 @@ class _JourneyHostState extends State<JourneyHost> with WidgetsBindingObserver {
   late final JourneyController _controller = JourneyController(
     store: widget.store,
     routes: widget.routes,
+    discoveryFactory: widget.discoveryFactory,
+    reporter: widget.reporter,
   )..addListener(_onChanged);
 
   void _onChanged() {
@@ -390,6 +483,22 @@ class JourneyScope extends InheritedWidget {
   /// Süren yolculuk; yoksa `null`.
   static JourneySession? sessionOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<JourneyScope>()?.session;
+
+  /// Süren yolculuk — **yalnız aynı rotaysa**.
+  ///
+  /// Oyun ekranları açıldıkları rotayı biliyor; süren yolculuk başka bir
+  /// rotaya aitse ona bağlanmak yanlış olur (puan ve kalan süre başka bir
+  /// yolculuğun). Uygulamada oyun seçim ekranı rotayı zaten eşitliyor, bu
+  /// yüzden burası bir emniyet kemeri: eşleşmezse oyun kendi tek oyunluk
+  /// yolculuğunu kurar.
+  static JourneySession? sessionFor(BuildContext context, Journey journey) {
+    final session = sessionOf(context);
+    if (session == null) return null;
+    final same =
+        session.journey.origin.id == journey.origin.id &&
+        session.journey.destination.id == journey.destination.id;
+    return same ? session : null;
+  }
 
   @override
   bool updateShouldNotify(JourneyScope oldWidget) =>

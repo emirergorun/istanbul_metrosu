@@ -536,6 +536,8 @@ abstract class JourneyGameController extends ChangeNotifier
     // çağırsa bile günlük sayaçlar iki kez büyümemeli.
     if (!_runReported) {
       _runReported = true;
+      // Yolculuk tutamağı aynı varış için ikinci bir rapor göndermesin.
+      _session.markRunReported();
       reporter?.reportRun(
         RunReport(
           gameId: gameId,

@@ -1,5 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/game_cover_art.dart';
+import 'package:istanbul_metro_game/features/games/lane_runner/application/lane_runner_controller.dart';
+import 'package:istanbul_metro_game/features/games/merge_drop/application/merge_drop_controller.dart';
+import 'package:istanbul_metro_game/features/games/metro_merge/application/metro_merge_controller.dart';
+import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_quiz_controller.dart';
+import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_flight_controller.dart';
+import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 
 /// Katalog **tek kaynak**: galeri kartı da, tanıtım ekranı da metnini ve
@@ -10,6 +17,24 @@ void main() {
     test('kimlikler benzersiz', () {
       final ids = MiniGames.all.map((MiniGame g) => g.id).toList();
       expect(ids.toSet().length, ids.length);
+    });
+
+    test('katalog kimlikleri controller kimlikleriyle birebir', () {
+      // Katalog kimliği puanın hangi oyunun hanesine yazıldığını, günlük
+      // görevin hangi oyunu istediğini ve kaydın hangi oyuna ait olduğunu
+      // belirliyor. Controller'daki kimlikten sapsaydı oyun oynanır,
+      // puan başka bir haneye yazılır ve kimse fark etmezdi.
+      final controllerIds = <String>{
+        GameController.id,
+        MetroMergeController.id,
+        RailFlightController.id,
+        MergeDropController.id,
+        MetroQuizController.id,
+        LaneRunnerController.id,
+        TrainSnakeController.id,
+      };
+      final playableIds = MiniGames.playable.map((MiniGame g) => g.id).toSet();
+      expect(playableIds, controllerIds);
     });
 
     test('adlar benzersiz', () {

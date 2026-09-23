@@ -74,7 +74,7 @@ class _RailFlightScreenState extends State<RailFlightScreen>
       ),
       // Yolculuk ortak: süren bir yolculuk varsa oyun onun içine girer —
       // puan, kalan süre ve geçilen duraklar oradan devam eder.
-      session: JourneyScope.sessionOf(context),
+      session: JourneyScope.sessionFor(context, widget.journey),
     );
     // Biten koşu günlük görevlere ve pasaport başarımlarına buradan
     // ulaşıyor. Oyun hiçbirini tanımaz; tek bildiği bir rapor hedefi.
