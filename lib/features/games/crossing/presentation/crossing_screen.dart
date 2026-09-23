@@ -78,7 +78,7 @@ class _CrossingScreenState extends State<CrossingScreen>
         widget.journey.origin.id,
         widget.journey.destination.id,
       ),
-      session: JourneyScope.sessionOf(context),
+      session: JourneyScope.sessionFor(context, widget.journey),
     );
     controller.reporter = scope.runReporter;
     _seenStationPulse = controller.stationBonusPulse;

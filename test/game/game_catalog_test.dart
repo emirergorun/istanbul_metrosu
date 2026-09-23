@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/game_cover_art.dart';
+import 'package:istanbul_metro_game/features/games/crossing/application/crossing_controller.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/application/lane_runner_controller.dart';
 import 'package:istanbul_metro_game/features/games/merge_drop/application/merge_drop_controller.dart';
 import 'package:istanbul_metro_game/features/games/metro_merge/application/metro_merge_controller.dart';
@@ -32,6 +33,7 @@ void main() {
         MetroQuizController.id,
         LaneRunnerController.id,
         TrainSnakeController.id,
+        CrossingController.id,
       };
       final playableIds = MiniGames.playable.map((MiniGame g) => g.id).toSet();
       expect(playableIds, controllerIds);
