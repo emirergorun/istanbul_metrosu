@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../features/games/blocks/application/game_snapshot.dart';
 import '../features/games/blocks/presentation/game_screen.dart';
+import '../features/games/crossing/application/crossing_controller.dart';
+import '../features/games/crossing/presentation/crossing_screen.dart';
 import '../features/games/lane_runner/application/lane_runner_controller.dart';
 import '../features/games/lane_runner/presentation/lane_runner_screen.dart';
 import '../features/games/merge_drop/application/merge_drop_controller.dart';
@@ -186,6 +188,9 @@ class AppRoutes {
               }
               if (args.gameId == TrainSnakeController.id) {
                 return TrainSnakeScreen(journey: args.journey);
+              }
+              if (args.gameId == CrossingController.id) {
+                return CrossingScreen(journey: args.journey);
               }
               return GameScreen(
                 journey: args.journey,

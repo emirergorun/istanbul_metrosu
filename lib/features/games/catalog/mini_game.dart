@@ -248,6 +248,31 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Karşıdan Karşıya — Crossy Road mantığı, metro temasıyla.
+  ///
+  /// Kapağı bilerek boş: görsel ayrıca hazırlanacak, o güne kadar kartta
+  /// yalnız oyunun adı duruyor. Bkz. [GameCoverScene.crossing].
+  static const MiniGame crossing = MiniGame(
+    id: 'crossing',
+    name: 'Karşıdan Karşıya',
+    tagline: 'Geçen metroların arasından sıyrıl, sıra sıra ilerle.',
+    glyph: GameGlyph.crossing,
+    color: AppColors.gameCrossing,
+    coverScene: GameCoverScene.crossing,
+    description:
+        'Peronlar ve raylar arasında yukarı doğru ilerle; geçen metroların '
+        'arasından sıyrılıp elinden geldiğince uzağa git.',
+    objective:
+        'Vardığın her yeni sıra puan yazar, ray geçmek daha çoğunu. '
+        'Beklemek serbest — oyunu yalnızca bir trene çarpmak bitirir.',
+    howToPlay: <String>[
+      'Oyun alanına dokun: bir sıra ileri gidersin.',
+      'Parmağını kaydır: sağa, sola ya da geri adım atarsın.',
+      'Sarı şerit peronun sınırı; trenin geçmesini orada bekle.',
+    ],
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -306,6 +331,7 @@ class MiniGames {
     mergeDrop,
     laneRunner,
     trainSnake,
+    crossing,
     transfer,
     signal,
     wagon,

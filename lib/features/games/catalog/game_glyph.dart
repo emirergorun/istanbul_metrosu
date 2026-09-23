@@ -47,6 +47,9 @@ enum GameGlyph {
   /// Art arda eklenen vagonlar ve önlerindeki yolcu noktası — Yolcu Topla.
   snake,
 
+  /// İki rayın arasından geçen yolcu — Karşıdan Karşıya.
+  crossing,
+
   /// Kilitli kart.
   locked,
 }
@@ -111,6 +114,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintLanes(canvas, s, fill, stroke);
       case GameGlyph.snake:
         _paintSnake(canvas, s, fill);
+      case GameGlyph.crossing:
+        _paintCrossing(canvas, s, fill, stroke);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -372,6 +377,30 @@ class GameGlyphPainter extends CustomPainter {
         Radius.circular(s * 0.06),
       ),
       passenger,
+    );
+  }
+
+  /// İki ray ve aralarından yukarı geçen yolcu — Karşıdan Karşıya.
+  ///
+  /// Raylar yatay, yolcu dikey: oyunun tek cümlesi bu: karşıya geçmek.
+  void _paintCrossing(Canvas canvas, double s, Paint fill, Paint stroke) {
+    final rail = Paint()
+      ..color = color.withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = s * 0.07
+      ..strokeCap = StrokeCap.round;
+    for (final y in <double>[s * 0.28, s * 0.74]) {
+      canvas.drawLine(Offset(s * 0.08, y), Offset(s * 0.92, y), rail);
+    }
+
+    // Yolcu: baş + gövde, iki rayın tam ortasında.
+    canvas.drawCircle(Offset(s * 0.5, s * 0.42), s * 0.11, fill);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.39, s * 0.54, s * 0.22, s * 0.18),
+        Radius.circular(s * 0.07),
+      ),
+      fill,
     );
   }
 

@@ -104,7 +104,9 @@ void main() {
     expect(store.discoveredStationIds, isEmpty);
   });
 
-  testWidgets('yedi oyunun tanıtımını gezmek keşif üretmez', (tester) async {
+  testWidgets('bütün oyunların tanıtımını gezmek keşif üretmez', (
+    tester,
+  ) async {
     for (final game in MiniGames.playable) {
       await pumpGallery(tester);
       final finder = find.text(game.name);

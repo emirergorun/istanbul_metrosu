@@ -47,6 +47,15 @@ enum GameCoverScene {
   /// Izgarada kıvrılan tren ve önündeki yolcu — Yolcu Topla.
   snake,
 
+  /// **Boş kapak** — Karşıdan Karşıya.
+  ///
+  /// Bilerek çizimsiz: oyunun kapağı ayrıca tasarlanacak, o güne kadar
+  /// kartta yalnız oyunun adı duruyor. Boş bırakmak, yedi kapağın
+  /// diline uymayan aceleyle çizilmiş sekizinci bir sahneden iyi.
+  ///
+  /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
+  crossing,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -285,6 +294,9 @@ class _ScenePainter extends CustomPainter {
         _lanes(canvas, size);
       case GameCoverScene.snake:
         _snake(canvas, size);
+      case GameCoverScene.crossing:
+        // Sahne yok: zemin gradyanı ve başlık yeterli.
+        break;
       case GameCoverScene.locked:
         _locked(canvas, size);
     }
