@@ -92,7 +92,8 @@ class _MetroLineScreenState extends State<MetroLineScreen>
         widget.journey.origin.id,
         widget.journey.destination.id,
       ),
-      session: JourneyScope.sessionOf(context),
+      // Ortak oturum yalnız aynı rotadaysa; bkz. [JourneyScope.sessionFor].
+      session: JourneyScope.sessionFor(context, widget.journey),
     );
     controller.reporter = scope.runReporter;
     _seenStationPulse = controller.stationBonusPulse;
