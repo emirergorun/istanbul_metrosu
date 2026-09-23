@@ -249,9 +249,6 @@ class MiniGames {
   );
 
   /// Karşıdan Karşıya — Crossy Road mantığı, metro temasıyla.
-  ///
-  /// Kapağı bilerek boş: görsel ayrıca hazırlanacak, o güne kadar kartta
-  /// yalnız oyunun adı duruyor. Bkz. [GameCoverScene.crossing].
   static const MiniGame crossing = MiniGame(
     id: 'crossing',
     name: 'Karşıdan Karşıya',
@@ -259,6 +256,9 @@ class MiniGames {
     glyph: GameGlyph.crossing,
     color: AppColors.gameCrossing,
     coverScene: GameCoverScene.crossing,
+    coverAsset: 'assets/images/games/karsidan_karsiya_cover.png',
+    // Kapağın üst bandı açık mavi gökyüzü: beyaz başlık okunmuyor.
+    coverIsLight: true,
     description:
         'Peronlar ve raylar arasında yukarı doğru ilerle; geçen metroların '
         'arasından sıyrılıp elinden geldiğince uzağa git.',
