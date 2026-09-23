@@ -297,6 +297,31 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Tünele Kaç — kaydırmalı metro bulmacası, 60 bölüm.
+  ///
+  /// Diğer oyunlardan farklı olarak **bölümlü**: ilerleme (bitirilen bölüm,
+  /// en iyi hamle, yıldız) yolculuktan bağımsız kalıcı bir kayıtta tutulur,
+  /// yolculuk puanı ise bitirilen bölümlerden gelir. Kontrol kendini
+  /// anlatıyor (metroyu kendi ekseninde sürükle) ve ilk bölümler öğretici;
+  /// bu yüzden "Nasıl oynanır?" adımları yok.
+  static const MiniGame tunnelEscape = MiniGame(
+    id: 'tunnel_escape',
+    name: 'Tünele Kaç',
+    tagline: 'Metroları kaydır, kırmızı metroyu tünele ulaştır.',
+    glyph: GameGlyph.escape,
+    color: AppColors.gameTunnelEscape,
+    coverScene: GameCoverScene.tunnelEscape,
+    coverAsset: 'assets/images/games/tunele_kac_cover.png',
+    description:
+        'Beyaz metroları kaydırıp kırmızı metronun önünü aç, onu sağdaki '
+        'tünele ulaştır.',
+    objective:
+        'Kırmızı metro tünele girince bölüm biter ve sıradaki durak açılır. '
+        'Ne kadar az hamle, o kadar çok yıldız; hattın sonunda 60. bölüm '
+        'bekliyor.',
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -357,6 +382,7 @@ class MiniGames {
     trainSnake,
     crossing,
     metroLine,
+    tunnelEscape,
     transfer,
     signal,
     wagon,

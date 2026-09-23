@@ -64,6 +64,10 @@ enum GameCoverScene {
   /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
   metroLine,
 
+  /// Tünele Kaç — raster kapağı var (`tunele_kac_cover.png`); çizim yalnız
+  /// görsel yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
+  tunnelEscape,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -304,6 +308,7 @@ class _ScenePainter extends CustomPainter {
         _snake(canvas, size);
       case GameCoverScene.crossing:
       case GameCoverScene.metroLine:
+      case GameCoverScene.tunnelEscape:
         // Sahne yok: zemin gradyanı ve başlık yeterli.
         break;
       case GameCoverScene.locked:

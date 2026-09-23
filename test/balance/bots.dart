@@ -17,6 +17,11 @@ import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_
 import 'package:istanbul_metro_game/features/games/rail_flight/domain/rail_flight_state.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/domain/train_snake_state.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_hint_service.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_progress_controller.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/data/escape_levels.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_solver.dart';
 import 'package:istanbul_metro_game/features/journey/models/journey.dart';
 import 'package:istanbul_metro_game/features/session/journey_game_controller.dart';
 import 'package:istanbul_metro_game/features/session/journey_run.dart';
@@ -722,6 +727,11 @@ final Map<String, ({String id, BotFactory make})> botFactories =
         make: ({required journey, required seed, required skill}) =>
             MetroLineBot(journey: journey, seed: seed, skill: skill),
       ),
+      'Tünele Kaç': (
+        id: 'tunnel_escape',
+        make: ({required journey, required seed, required skill}) =>
+            TunnelEscapeBot(journey: journey, seed: seed, skill: skill),
+      ),
       'Metro Bilgi': (
         id: 'metro_quiz',
         make: ({required journey, required seed, required skill}) =>
@@ -772,6 +782,104 @@ class MetroLineBot extends GameBot {
       final think = _flaw(2.2, 1.1, skill) + controller.size * 0.06;
       if (controller.status == GameStatus.playing) {
         controller.debugAdvance(think);
+      }
+    }
+  }
+}
+
+/// Tünele Kaç: bölümleri sırayla çözer, ara ara yanlış metroyu kaydırır.
+///
+/// **Oyuncu nereden başlıyor?** Bölümler sonlu; ilk yolculukta oyuncu
+/// bölüm 1'den, otuzuncu yolculukta belki bölüm 30'dan başlıyor. Tohum
+/// başlangıç bölümünü seçiyor (1-40): ölçüm, ilerlemenin farklı
+/// noktalarındaki oyuncuların ortalaması.
+///
+/// Kusur modeli: her adımda [_flaw] olasılıkla en kısa çözüme götürmeyen
+/// yasal bir hamle (yanlış metro, yanlış yön). Düşünme süresi bölüm başına
+/// bir okuma payı ve hamle başına bir karar süresi; zor bölümde karar
+/// süresi uzar.
+class TunnelEscapeBot extends GameBot {
+  TunnelEscapeBot({required super.journey, required super.seed, super.skill});
+
+  /// Bölüm başına durum uzayı — bütün bot koşuları paylaşır.
+  static final Map<int, EscapeComponent> _components = <int, EscapeComponent>{};
+
+  static EscapeComponent _componentOf(int number) =>
+      _components.putIfAbsent(number, () {
+        final level = EscapeLevels.byNumber(number)!;
+        return EscapeSolver(level.layout).explore(level.start);
+      });
+
+  late final int _startLevel = 1 + (seed * 7) % 40;
+
+  @override
+  TunnelEscapeController create(JourneySession session, Random random) {
+    final progress = EscapeProgressController();
+    for (var level = 1; level < _startLevel; level++) {
+      progress.record(level: level, moves: 99, stars: 2, perfect: false);
+    }
+    return TunnelEscapeController(
+      journey: journey,
+      recordToBeat: 0,
+      levelProgress: progress,
+      hintSolver: solveHintImmediately,
+      session: session,
+    );
+  }
+
+  @override
+  void live(TunnelEscapeController controller, Random random) {
+    var guard = 0;
+    while (controller.status == GameStatus.playing &&
+        guard++ < 400 &&
+        !expired(controller)) {
+      final number = controller.nextLevelNumber;
+      if (!controller.openLevel(number)) break;
+      final level = controller.level!;
+      final component = _componentOf(number);
+      final solver = EscapeSolver(level.layout);
+
+      // Tahtayı okuma: engel sayısıyla uzar.
+      controller.debugAdvance(
+        _flaw(6, 3, skill) + level.pieces.length * _flaw(0.5, 0.25, skill),
+      );
+
+      var steps = 0;
+      while (controller.status == GameStatus.playing &&
+          controller.phase == EscapePhase.playing &&
+          steps++ < 400) {
+        final board = controller.board!;
+        final key = board.key;
+        final distance = component.distance[key]!;
+        final options = <(int, int, int)>[];
+        solver.expand(key, (int child) {
+          for (var i = 0; i < board.positions.length; i++) {
+            final to = level.layout.positionIn(child, i);
+            if (to != board.positions[i]) {
+              options.add((i, to, component.distance[child]!));
+              break;
+            }
+          }
+        });
+        final good = options.where((o) => o.$3 < distance).toList();
+        // Kusur zor bölümde artar: seçenek çok, bağımlılık uzun.
+        final hardness = (level.optimalMoves / 25).clamp(0.2, 1.4);
+        final mistake =
+            random.nextDouble() < _flaw(0.32, 0.05, skill) * hardness;
+        final pick = mistake || good.isEmpty
+            ? options[random.nextInt(options.length)]
+            : good[random.nextInt(good.length)];
+        controller.commitMove(pick.$1, pick.$2);
+        if (controller.status != GameStatus.playing) break;
+        // Karar süresi: hamle başına, zorlukla uzar.
+        controller.debugAdvance(
+          _flaw(4.2, 2.2, skill) * (0.7 + hardness * 0.6),
+        );
+      }
+      if (controller.phase == EscapePhase.exiting) {
+        controller.finishExit();
+        // Tünel animasyonu ve panel: "sonraki durak"a basana kadar.
+        controller.debugAdvance(2.5);
       }
     }
   }

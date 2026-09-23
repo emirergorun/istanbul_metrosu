@@ -151,6 +151,17 @@ class GameScoreProfiles {
               '4 e inince aynı sürede daha az tren çıkıyor ve ham tempo '
               '118 den 76 puan/dk ya düşmüştü.',
         ),
+        'tunnel_escape': GameScoreProfile(
+          measuredPerMinute: 120,
+          scale: 0.68,
+          note:
+              'Bölümlü bulmaca: puan bitirilen bölümden gelir, en kısa '
+              'çözüm uzunluğuyla orantılı (emek ölçüsü) ve yıldızla çarpılır. '
+              'Ölçek 1,0 iken orta seviye dakikada 177, usta 264 puan '
+              'veriyordu; 0,68 ile orta ~120, usta ~180. Tekrar oynayarak '
+              'kasılamaz: aynı bölüm bir yolculukta en fazla bir kez küçük '
+              'bir tekrar payı verir (EscapeRules.journeyPoints).',
+        ),
         'metro_quiz': GameScoreProfile(
           measuredPerMinute: 97,
           scale: 1.38,

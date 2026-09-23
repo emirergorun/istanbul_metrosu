@@ -10,6 +10,7 @@ import '../data/questions/question_repository.dart';
 import '../features/daily/application/daily_controller.dart';
 import '../features/discovery/application/discovery_controller.dart';
 import '../features/discovery/application/journey_discovery.dart';
+import '../features/games/tunnel_escape/application/escape_progress_controller.dart';
 import '../features/passport/application/achievement_controller.dart';
 import '../features/session/composite_run_reporter.dart';
 import '../features/social/application/challenge_session.dart';
@@ -33,6 +34,7 @@ class AppScope extends InheritedWidget {
     this.discovery,
     this.daily,
     this.achievements,
+    this.escapeProgress,
     this.social,
     this.challengeSession,
     this.analytics = const NoopAnalytics(),
@@ -59,6 +61,10 @@ class AppScope extends InheritedWidget {
 
   /// Yolculuk Kartı'nın rozetleri. `null` ise rozet bölümü çizilmez.
   final AchievementController? achievements;
+
+  /// Tünele Kaç'ın bölüm ilerlemesi — rozetlerle paylaşılan tek kaynak.
+  /// `null` ise oyun ekranı kendi yerel kopyasını kurar (tek ekran testleri).
+  final EscapeProgressController? escapeProgress;
 
   /// Kimlik, arkadaşlar ve meydan okuma geçmişi. `null` ise sosyal katman
   /// kapalıdır; oyunun kendisi aynen çalışır.
@@ -122,6 +128,7 @@ class AppScope extends InheritedWidget {
       challengeSession != oldWidget.challengeSession ||
       daily != oldWidget.daily ||
       achievements != oldWidget.achievements ||
+      escapeProgress != oldWidget.escapeProgress ||
       analytics != oldWidget.analytics ||
       routeService != oldWidget.routeService;
 }

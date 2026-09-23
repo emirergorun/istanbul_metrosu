@@ -165,6 +165,12 @@ class AppColors {
   /// kontrast 3,96:1 — 3:1 sınırının üstünde.
   static const Color gameMetroLine = Color(0xFFEB70DA);
 
+  /// Ton açısı ~11°: çemberde kalan en geniş boşluk gameDrop (340°) ile
+  /// gameBlocks (40°) arasıydı; ikisine de ~29° uzak. Tünele Kaç'ın
+  /// kırmızı metrosunun açılmış tonu — oyunun kimliği o metro. Glif
+  /// kutusunda kontrast ~4,1:1.
+  static const Color gameTunnelEscape = Color(0xFFFF7A5C);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

@@ -14,6 +14,7 @@ import '../features/daily/domain/daily_generator.dart';
 import '../features/discovery/application/discovery_controller.dart';
 import '../features/discovery/application/journey_discovery.dart';
 import '../features/discovery/domain/discovery_catalog.dart';
+import '../features/games/tunnel_escape/application/escape_progress_controller.dart';
 import '../features/journey/services/route_service.dart';
 import '../features/passport/application/achievement_controller.dart';
 import '../features/session/composite_run_reporter.dart';
@@ -112,9 +113,15 @@ class _MetroGameAppState extends State<MetroGameApp>
     <RunReporter>[_daily, _achievements],
   );
 
+  /// Tünele Kaç'ın bölüm kaydı. Rozetlerden **önce** kurulur: rozetler
+  /// bitirilen bölümü ve yıldızı buradan okuyor.
+  late final EscapeProgressController _escapeProgress =
+      EscapeProgressController(store: widget.store);
+
   late final AchievementController _achievements = AchievementController(
     discovery: _discovery,
     daily: _daily,
+    escape: _escapeProgress,
     store: widget.store,
     analytics: widget.analytics,
   );
@@ -144,6 +151,7 @@ class _MetroGameAppState extends State<MetroGameApp>
       unawaited(_discovery.flush());
       unawaited(_daily.flush());
       unawaited(_achievements.flush());
+      unawaited(_escapeProgress.flush());
       unawaited(_social.flush());
     }
     // Ekrana dönen oyuncu dünün yolculuğunu görmemeli: uygulama gece
@@ -155,6 +163,7 @@ class _MetroGameAppState extends State<MetroGameApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _achievements.dispose();
+    _escapeProgress.dispose();
     _social.dispose();
     _challengeSession.dispose();
     _discovery.dispose();
@@ -173,6 +182,7 @@ class _MetroGameAppState extends State<MetroGameApp>
       discovery: _discovery,
       daily: _daily,
       achievements: _achievements,
+      escapeProgress: _escapeProgress,
       social: _social,
       challengeSession: _challengeSession,
       routeService: _routes,

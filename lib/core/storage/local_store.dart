@@ -71,6 +71,7 @@ class LocalStore extends ChangeNotifier {
   static const String _friendsKey = 'friends_v1';
   static const String _challengeHistoryKey = 'challenge_history_v1';
   static const String _platformNameKey = 'platform_display_name';
+  static const String _escapeProgressKey = 'tunnel_escape_progress_v1';
 
   SharedPreferences? _prefs;
   bool _ready = false;
@@ -486,6 +487,15 @@ class LocalStore extends ChangeNotifier {
 
   Future<void> savePlayerStats(String raw) async {
     await _prefs?.setString(_playerStatsKey, raw);
+    notifyListeners();
+  }
+
+  /// Tünele Kaç'ın bölüm kaydı (JSON): bitirilen bölümler, en iyi hamle ve
+  /// yıldız. Açık bölümler buradan **türetilir**, ayrıca saklanmaz.
+  String? get escapeProgressRaw => _prefs?.getString(_escapeProgressKey);
+
+  Future<void> saveEscapeProgress(String raw) async {
+    await _prefs?.setString(_escapeProgressKey, raw);
     notifyListeners();
   }
 

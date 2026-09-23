@@ -53,6 +53,9 @@ enum GameGlyph {
   /// Kıvrılan bir hat ve ucundaki çıkış oku — Metro Hattı.
   metroLine,
 
+  /// Kaydırılan bir metro ve önündeki tünel kemeri — Tünele Kaç.
+  escape,
+
   /// Kilitli kart.
   locked,
 }
@@ -121,8 +124,49 @@ class GameGlyphPainter extends CustomPainter {
         _paintCrossing(canvas, s, fill, stroke);
       case GameGlyph.metroLine:
         _paintMetroLine(canvas, s, fill);
+      case GameGlyph.escape:
+        _paintEscape(canvas, s, fill, stroke);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
+    }
+  }
+
+  /// Yatay metro, yolunu kesen dikey metro ve sağda tünel kemeri: oyunun
+  /// bütün fikri — önünü aç, tünele gir.
+  void _paintEscape(Canvas canvas, double s, Paint fill, Paint stroke) {
+    // Hedef metro: iki hücre boyunda, ortada.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.06, s * 0.40, s * 0.44, s * 0.22),
+        Radius.circular(s * 0.08),
+      ),
+      fill,
+    );
+    // Kenara kaydırılmış dikey engel: yol açık.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.56, s * 0.06, s * 0.14, s * 0.28),
+        Radius.circular(s * 0.06),
+      ),
+      fill,
+    );
+    // Tünel kemeri: sağda, metronun hizasında.
+    final arch = Path()
+      ..moveTo(s * 0.74, s * 0.34)
+      ..lineTo(s * 0.80, s * 0.34)
+      ..arcToPoint(
+        Offset(s * 0.80, s * 0.68),
+        radius: Radius.circular(s * 0.17),
+      )
+      ..lineTo(s * 0.74, s * 0.68);
+    canvas.drawPath(arch, stroke);
+    // Yön: metrodan tünele üç nokta.
+    for (var i = 0; i < 2; i++) {
+      canvas.drawCircle(
+        Offset(s * (0.58 + i * 0.08), s * 0.51),
+        s * 0.025,
+        fill,
+      );
     }
   }
 

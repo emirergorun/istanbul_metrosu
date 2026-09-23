@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/features/games/metro_line/application/metro_line_controller.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
@@ -9,6 +11,7 @@ import 'package:istanbul_metro_game/features/games/metro_merge/application/metro
 import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_quiz_controller.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_flight_controller.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 
 /// Katalog **tek kaynak**: galeri kartı da, tanıtım ekranı da metnini ve
@@ -36,6 +39,7 @@ void main() {
         TrainSnakeController.id,
         CrossingController.id,
         MetroLineController.id,
+        TunnelEscapeController.id,
       };
       final playableIds = MiniGames.playable.map((MiniGame g) => g.id).toSet();
       expect(playableIds, controllerIds);
@@ -59,6 +63,15 @@ void main() {
         // Raster kapak henüz üretilmedi; sahne çizimi her oyunda tanımlı
         // olmak zorunda, yoksa galeri boş kart çizerdi.
         expect(game.coverScene, isNotNull, reason: game.id);
+      }
+    });
+
+    test('kapak görselleri depoda var', () {
+      // Yol yanlışsa Image.asset galeride sessizce boş kart çizer.
+      for (final game in MiniGames.all) {
+        final asset = game.coverAsset;
+        if (asset == null) continue;
+        expect(File(asset).existsSync(), isTrue, reason: '${game.id}: $asset');
       }
     });
 

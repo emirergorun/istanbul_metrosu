@@ -247,6 +247,9 @@ String achievementRemainingText(
     AchievementMetric.dailyDaysCompleted => 'GÜN',
     AchievementMetric.bestQuizScore => 'PUAN',
     AchievementMetric.gameRunsFinished => 'OYUN',
+    AchievementMetric.escapeLevelsCompleted ||
+    AchievementMetric.escapePerfectLevels => 'BÖLÜM',
+    AchievementMetric.escapeStars => 'YILDIZ',
   };
   return '$left $unit KALDI';
 }

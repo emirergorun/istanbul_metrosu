@@ -72,6 +72,8 @@ const Set<String> kMasterAchievementIds = <String>{
   'journey_100',
   'daily_30',
   'streak_7',
+  'escape_levels_all',
+  'escape_stars_all',
 };
 
 /// Rozetin ortasındaki işaret.
@@ -131,7 +133,22 @@ enum BadgeGlyph {
   streakSeven,
 
   /// Takvim — toplam gün.
-  calendar;
+  calendar,
+
+  /// Tünel kemeri ve içine giren metro — Tünele Kaç'ın ilk kaçışı.
+  tunnel,
+
+  /// Ayrılan iki ray — makas.
+  railSwitch,
+
+  /// Hattın sonundaki tampon — son sefer.
+  terminus,
+
+  /// Halka içinde onay — kusursuz sefer, tek fazla hamle yok.
+  flawless,
+
+  /// Yıldız — bütün yıldızlar.
+  star;
 
   /// Başarımın işaretini kimliğinden seçer.
   ///
@@ -158,6 +175,11 @@ enum BadgeGlyph {
         'streak_3' => streakThree,
         'streak_7' => streakSeven,
         'daily_30' => calendar,
+        'escape_first' => tunnel,
+        'escape_levels_15' => railSwitch,
+        'escape_levels_all' => terminus,
+        'escape_perfect' => flawless,
+        'escape_stars_all' => star,
         _ => switch (definition.category) {
           AchievementCategory.exploration => station,
           AchievementCategory.journey => train,
@@ -467,6 +489,95 @@ class BadgePinPainter extends CustomPainter {
           r * 0.22,
           fill,
         );
+
+      case BadgeGlyph.tunnel:
+        // Kemer: yarım daire ve iki ayak; içinde kısa bir metro.
+        final arch = Path()
+          ..moveTo(center.dx - r * 0.8, center.dy + r * 0.75)
+          ..lineTo(center.dx - r * 0.8, center.dy)
+          ..arcToPoint(
+            Offset(center.dx + r * 0.8, center.dy),
+            radius: Radius.circular(r * 0.8),
+          )
+          ..lineTo(center.dx + r * 0.8, center.dy + r * 0.75);
+        canvas.drawPath(arch, stroke);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset(center.dx, center.dy + r * 0.3),
+              width: r * 0.62,
+              height: r * 0.6,
+            ),
+            Radius.circular(r * 0.18),
+          ),
+          fill,
+        );
+
+      case BadgeGlyph.railSwitch:
+        // Düz ray ve ondan ayrılan kol: makas.
+        canvas.drawLine(
+          Offset(center.dx - r * 0.9, center.dy + r * 0.45),
+          Offset(center.dx + r * 0.9, center.dy + r * 0.45),
+          stroke,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(center.dx - r * 0.5, center.dy + r * 0.45)
+            ..quadraticBezierTo(
+              center.dx + r * 0.1,
+              center.dy + r * 0.45,
+              center.dx + r * 0.9,
+              center.dy - r * 0.55,
+            ),
+          stroke,
+        );
+        canvas.drawCircle(
+          Offset(center.dx - r * 0.5, center.dy + r * 0.45),
+          r * 0.2,
+          fill,
+        );
+
+      case BadgeGlyph.terminus:
+        // Hat biter, tampon durur.
+        canvas.drawLine(
+          Offset(center.dx - r * 0.9, center.dy),
+          Offset(center.dx + r * 0.55, center.dy),
+          stroke,
+        );
+        canvas.drawLine(
+          Offset(center.dx + r * 0.75, center.dy - r * 0.62),
+          Offset(center.dx + r * 0.75, center.dy + r * 0.62),
+          stroke,
+        );
+        for (final x in <double>[-0.9, -0.2]) {
+          canvas.drawCircle(
+            Offset(center.dx + r * x, center.dy),
+            r * 0.24,
+            fill,
+          );
+        }
+
+      case BadgeGlyph.flawless:
+        canvas.drawCircle(center, r * 0.82, stroke);
+        canvas.drawPath(
+          Path()
+            ..moveTo(center.dx - r * 0.4, center.dy + r * 0.02)
+            ..lineTo(center.dx - r * 0.08, center.dy + r * 0.34)
+            ..lineTo(center.dx + r * 0.44, center.dy - r * 0.3),
+          stroke,
+        );
+
+      case BadgeGlyph.star:
+        final points = <Offset>[
+          for (var i = 0; i < 10; i++)
+            center +
+                Offset(
+                      math.cos(-math.pi / 2 + i * math.pi / 5),
+                      math.sin(-math.pi / 2 + i * math.pi / 5),
+                    ) *
+                    (r * (i.isEven ? 0.95 : 0.42)),
+        ];
+        canvas.drawPath(Path()..addPolygon(points, true), fill);
     }
   }
 

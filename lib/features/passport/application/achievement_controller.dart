@@ -7,6 +7,7 @@ import '../../../core/telemetry/analytics.dart';
 import '../../daily/application/daily_controller.dart';
 import '../../daily/domain/day_stamp.dart';
 import '../../discovery/application/discovery_controller.dart';
+import '../../games/tunnel_escape/application/escape_progress_controller.dart';
 import '../../session/run_report.dart';
 import '../domain/achievement.dart';
 import '../domain/player_stats.dart';
@@ -29,6 +30,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
   AchievementController({
     required this.discovery,
     this.daily,
+    this.escape,
     this.store,
     this.analytics = const NoopAnalytics(),
   }) {
@@ -42,10 +44,14 @@ class AchievementController extends ChangeNotifier implements RunReporter {
 
     discovery.addListener(_onSourceChanged);
     daily?.addListener(_onSourceChanged);
+    escape?.addListener(_onSourceChanged);
   }
 
   final DiscoveryController discovery;
   final DailyController? daily;
+
+  /// Tünele Kaç'ın bölüm kaydı. `null` ise o rozetler ilerlemez.
+  final EscapeProgressController? escape;
   final LocalStore? store;
   final Analytics analytics;
 
@@ -146,6 +152,9 @@ class AchievementController extends ChangeNotifier implements RunReporter {
       store?.bestScoreForGame(_quizGameId) ?? 0,
     // Oyuna bağlı; [_valueOf] çözüyor.
     AchievementMetric.gameRunsFinished => 0,
+    AchievementMetric.escapeLevelsCompleted => escape?.completedCount ?? 0,
+    AchievementMetric.escapeStars => escape?.totalStars ?? 0,
+    AchievementMetric.escapePerfectLevels => escape?.perfectCount ?? 0,
   };
 
   /// Metro Bilgi'nin kalıcı kimliği.
@@ -262,6 +271,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     _disposed = true;
     discovery.removeListener(_onSourceChanged);
     daily?.removeListener(_onSourceChanged);
+    escape?.removeListener(_onSourceChanged);
     super.dispose();
   }
 }

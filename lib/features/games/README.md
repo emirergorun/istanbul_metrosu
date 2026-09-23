@@ -19,6 +19,7 @@ features/
     merge_drop/     Hat Düşür
     metro_quiz/     Metro Bilgi
     lane_runner/    Ray Değiştir
+    tunnel_escape/  Tünele Kaç (bölümlü bulmaca, aşağıda)
     game2/          yeni oyun buraya
 ```
 
@@ -97,3 +98,25 @@ demek; ayrı bir iş olarak ele alınmalı.
 
 Pratik sonucu: Blok Metro rekorunu eski (oyundan bağımsız) anahtarla yazıyor,
 diğerleri oyun bazlı anahtarla. Ayarlar ekranı ikisini de doğru gösterir.
+
+## Bölümlü oyun: Tünele Kaç
+
+Diğer oyunlar sonsuz; Tünele Kaç **60 sabit bölümlü** bir kaydırmalı
+bulmaca. Yolculuk motorunu aynen kullanıyor, üstüne üç şey ekliyor:
+
+- **Saf Dart alan katmanı** (`tunnel_escape/domain/`): hareket, çarpışma,
+  BFS çözücü. Flutter içe aktarmıyor; bölüm üretim aracı
+  (`tool/tunnel_escape/generate_levels.dart`) aynı kodu `dart run` ile
+  kullanıyor.
+- **Veri olarak bölümler** (`tunnel_escape/data/escape_level_grids.dart`):
+  ızgara metni + çözücünün en kısa çözümü + yıldız sınırları.
+  `test/tunnel_escape/escape_levels_test.dart` her bölümü çözücüyle yeniden
+  doğruluyor; veri elle düzenlenirse test yakalar.
+- **Kalıcı bölüm kaydı** (`EscapeProgressController`, `LocalStore`
+  `tunnel_escape_progress_v1`): bitirilen bölüm, en iyi hamle, yıldız.
+  Yolculuktan bağımsız; açık bölümler bu kayıttan **türetiliyor**.
+
+Yolculuk puanı bitirilen bölümden gelir ve tekrar oynayarak kasılamaz
+(`EscapeRules.journeyPoints`). Bölüm bitirmeden çıkılan koşu diğer
+oyunlardaki gibi sayılmaz; en az bir bölüm bitmişse çıkış koşuyu bitirir.
+

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../../games/catalog/mini_game.dart';
+import '../../games/tunnel_escape/data/escape_levels.dart';
+import '../../games/tunnel_escape/domain/escape_rules.dart';
 
 /// Başarımın hangi oyunculuk alanından geldiği.
 ///
@@ -52,6 +54,15 @@ enum AchievementMetric {
   /// Tek bir oyunda bitirilen anlamlı koşu sayısı; oyun
   /// [AchievementDefinition.gameId] ile seçilir.
   gameRunsFinished,
+
+  /// Tünele Kaç'ta bitirilen bölüm sayısı — bölüm kaydından.
+  escapeLevelsCompleted,
+
+  /// Tünele Kaç'ta toplanan yıldız — bölüm kaydından.
+  escapeStars,
+
+  /// Tünele Kaç'ta en kısa çözümle, ipucusuz bitirilen uzun bölüm sayısı.
+  escapePerfectLevels,
 }
 
 /// Bir başarımın tanımı — kalıcı kimlik, metin ve hedef.
@@ -300,6 +311,63 @@ class Achievements {
     target: 10,
   );
 
+  // --- Tünele Kaç ---
+  //
+  // Bölümlü tek oyun; ilerlemesi uzun olduğu için birden çok kilometre taşı
+  // var. Hepsi bölüm kaydından okunuyor, ayrı sayaç yok. Eşikler haritanın
+  // yapısını izliyor: ilk bölüm, ilk hat (15 bölüm), son durak.
+
+  static const AchievementDefinition escapeFirst = AchievementDefinition(
+    id: 'escape_first',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.escapeLevelsCompleted,
+    title: 'İlk Kaçış',
+    description: 'Tünele Kaç\'ta kırmızı metroyu ilk kez tünele götür.',
+    target: 1,
+  );
+
+  /// Haritanın ilk hattı (M2) on beş bölüm.
+  static const AchievementDefinition escapeSwitchman = AchievementDefinition(
+    id: 'escape_levels_15',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.escapeLevelsCompleted,
+    title: 'Makasçı',
+    description: 'Tünele Kaç\'ın ilk hattını bitir: 15 bölüm.',
+    target: 15,
+  );
+
+  /// Anlamlı bir bölüm olmalı: öğretici bölümleri en kısa çözümle bitirmek
+  /// sayılmıyor, bkz. [EscapeRules.perfectMinimumMoves].
+  static const AchievementDefinition escapePerfect = AchievementDefinition(
+    id: 'escape_perfect',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.escapePerfectLevels,
+    title: 'Kusursuz Sefer',
+    description:
+        'Tünele Kaç\'ta en az ${EscapeRules.perfectMinimumMoves} hamlelik bir '
+        'bölümü en kısa çözümle, ipucusuz bitir.',
+    target: 1,
+  );
+
+  /// Hedef bölüm sayısından **türer**: bölüm eklenirse rozet yalan söylemez.
+  static AchievementDefinition get escapeFinale => AchievementDefinition(
+    id: 'escape_levels_all',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.escapeLevelsCompleted,
+    title: 'Son Sefer',
+    description: 'Tünele Kaç\'ın ${EscapeLevels.count} bölümünü de bitir.',
+    target: EscapeLevels.count,
+  );
+
+  static AchievementDefinition get escapeMaster => AchievementDefinition(
+    id: 'escape_stars_all',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.escapeStars,
+    title: 'Hat Hâkimi',
+    description: 'Tünele Kaç\'ın bütün bölümlerinde üç yıldız topla.',
+    target: EscapeLevels.count * EscapeRules.maxStars,
+  );
+
   /// Çizim sırası.
   static List<AchievementDefinition> get all => <AchievementDefinition>[
     firstDiscovery,
@@ -313,14 +381,19 @@ class Achievements {
     explorerIII,
     interchange,
     quizMilestone,
+    escapeFirst,
     blocksMaster,
     crossingMaster,
+    escapeSwitchman,
+    escapePerfect,
     threeLines,
     journeyTwenty,
     everyGame,
     streakSeven,
     thirtyDays,
+    escapeFinale,
     journeyHundred,
+    escapeMaster,
   ];
 
   static AchievementDefinition? byId(String id) {
