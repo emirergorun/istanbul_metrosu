@@ -6,6 +6,8 @@ import '../features/games/crossing/application/crossing_controller.dart';
 import '../features/games/crossing/presentation/crossing_screen.dart';
 import '../features/games/lane_runner/application/lane_runner_controller.dart';
 import '../features/games/lane_runner/presentation/lane_runner_screen.dart';
+import '../features/games/metro_line/application/metro_line_controller.dart';
+import '../features/games/metro_line/presentation/metro_line_screen.dart';
 import '../features/games/merge_drop/application/merge_drop_controller.dart';
 import '../features/games/merge_drop/presentation/merge_drop_screen.dart';
 import '../features/games/metro_merge/application/metro_merge_controller.dart';
@@ -191,6 +193,9 @@ class AppRoutes {
               }
               if (args.gameId == CrossingController.id) {
                 return CrossingScreen(journey: args.journey);
+              }
+              if (args.gameId == MetroLineController.id) {
+                return MetroLineScreen(journey: args.journey);
               }
               return GameScreen(
                 journey: args.journey,

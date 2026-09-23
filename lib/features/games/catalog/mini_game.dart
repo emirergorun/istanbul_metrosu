@@ -273,6 +273,30 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Metro Hattı — Amaze GO! mantığı, metro deposu temasıyla.
+  ///
+  /// Kapağı bilerek boş, bkz. [GameCoverScene.metroLine].
+  static const MiniGame metroLine = MiniGame(
+    id: 'metro_line',
+    name: 'Metro Hattı',
+    tagline: 'Tıkanmış depoyu doğru sırayla boşalt.',
+    glyph: GameGlyph.metroLine,
+    color: AppColors.gameMetroLine,
+    coverScene: GameCoverScene.metroLine,
+    description:
+        'Birbirine dolanmış hatları, önü açık olanı bularak teker teker '
+        'depodan çıkar.',
+    objective:
+        'Çıkardığın her tren vagonu başına puan yazar, depoyu tamamen '
+        'boşaltmak prim. Üç kez kapalı raya tren sokarsan hat tıkanır.',
+    howToPlay: <String>[
+      'Bir trene dokun: önü kenara kadar boşsa raydan çıkar.',
+      'Önü kapalıysa bir jeton gider; önce önünü açman gerekir.',
+      'Tahtayı basılı tut: çıkabilecek bir treni gösterir.',
+    ],
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -332,6 +356,7 @@ class MiniGames {
     laneRunner,
     trainSnake,
     crossing,
+    metroLine,
     transfer,
     signal,
     wagon,

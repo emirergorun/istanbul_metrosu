@@ -109,8 +109,8 @@ void main() {
 
     test('yardım yalnız kontrolü açıklama gerektiren oyunlarda', () {
       // Sürükle-bırak ve şıkka dokunma kendini anlatıyor; dokunarak
-      // yükselen tren, üç ray, yön pedi ve "dokun = bir adım ileri"
-      // anlatmıyor.
+      // yükselen tren, üç ray, yön pedi, "dokun = bir adım ileri" ve
+      // "önü açık treni bul" anlatmıyor.
       final withHelp = MiniGames.playable
           .where((MiniGame g) => g.hasHowToPlay)
           .map((MiniGame g) => g.id)
@@ -120,6 +120,7 @@ void main() {
         'lane_runner',
         'train_snake',
         'crossing',
+        'metro_line',
       });
     });
 

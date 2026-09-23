@@ -56,6 +56,14 @@ enum GameCoverScene {
   /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
   crossing,
 
+  /// **Boş kapak** — Metro Hattı.
+  ///
+  /// Karşıdan Karşıya ile aynı gerekçe: kapak ayrıca tasarlanacak, o güne
+  /// kadar kartta yalnız oyunun adı duruyor.
+  ///
+  /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
+  metroLine,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -295,6 +303,7 @@ class _ScenePainter extends CustomPainter {
       case GameCoverScene.snake:
         _snake(canvas, size);
       case GameCoverScene.crossing:
+      case GameCoverScene.metroLine:
         // Sahne yok: zemin gradyanı ve başlık yeterli.
         break;
       case GameCoverScene.locked:
