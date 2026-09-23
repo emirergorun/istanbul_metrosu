@@ -50,6 +50,9 @@ enum GameGlyph {
   /// İki rayın arasından geçen yolcu — Karşıdan Karşıya.
   crossing,
 
+  /// Kıvrılan bir hat ve ucundaki çıkış oku — Metro Hattı.
+  metroLine,
+
   /// Kilitli kart.
   locked,
 }
@@ -116,6 +119,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintSnake(canvas, s, fill);
       case GameGlyph.crossing:
         _paintCrossing(canvas, s, fill, stroke);
+      case GameGlyph.metroLine:
+        _paintMetroLine(canvas, s, fill);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -400,6 +405,37 @@ class GameGlyphPainter extends CustomPainter {
         Rect.fromLTWH(s * 0.39, s * 0.54, s * 0.22, s * 0.18),
         Radius.circular(s * 0.07),
       ),
+      fill,
+    );
+  }
+
+  /// Kıvrılan hat ve ucundaki ok — Metro Hattı.
+  ///
+  /// Oyunun tek cümlesi: karışık bir hattı doğru yönden dışarı çıkarmak.
+  /// Bu yüzden glif bir köşe dönen kalın çizgi ve başındaki ok.
+  void _paintMetroLine(Canvas canvas, double s, Paint fill) {
+    final body = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = s * 0.15
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(s * 0.18, s * 0.80)
+        ..lineTo(s * 0.18, s * 0.42)
+        ..lineTo(s * 0.58, s * 0.42),
+      body,
+    );
+
+    // Ok: hattın ucunda, sağa doğru.
+    canvas.drawPath(
+      Path()
+        ..moveTo(s * 0.88, s * 0.42)
+        ..lineTo(s * 0.64, s * 0.28)
+        ..lineTo(s * 0.64, s * 0.56)
+        ..close(),
       fill,
     );
   }

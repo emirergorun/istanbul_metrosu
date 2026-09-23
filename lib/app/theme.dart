@@ -158,6 +158,13 @@ class AppColors {
   /// olmadığı** için gliften ayrışmak daha doğru olur.
   static const Color gameCrossing = Color(0xFF57DB5B);
 
+  /// Ton açısı ~308°: çemberde kalan en geniş boşluk olan gameQuiz (276°)
+  /// ile gameDrop (340°) arasının tam ortası — ikisine de ~32° uzak.
+  /// Dokuzuncu oyunda 35° kuralı artık tutmuyor (bkz. [gameCrossing]);
+  /// ayrımın yükünü glif taşıyor, renk destekliyor. Glif kutusunda
+  /// kontrast 3,96:1 — 3:1 sınırının üstünde.
+  static const Color gameMetroLine = Color(0xFFEB70DA);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

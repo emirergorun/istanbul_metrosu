@@ -138,6 +138,19 @@ class GameScoreProfiles {
               'çıkarıyordu. Bu ayarla orta 100, usta 179 — usta diğer '
               'oyunların ustalarıyla aynı bantta.',
         ),
+        'metro_line': GameScoreProfile(
+          measuredPerMinute: 120,
+          scale: 0.167,
+          note:
+              'Beceri burada "karışık tahtada önü açık olanı ayırt etmek": '
+              'acemi daha sık kapalı raya dokunup can harcıyor (medyan 4 '
+              'can, usta 1). 25 tohumla ölçülen medyan: acemi 100, orta '
+              '120, usta 155 — usta/orta farkı 1,3 kat, diğer oyunların '
+              'bandında. Ölçek zorluk artışından sonra 0,100 iken buraya '
+              'çekildi: tahta 5x5 ten 6x6 ya, tren üst sınırı 5 vagondan '
+              '4 e inince aynı sürede daha az tren çıkıyor ve ham tempo '
+              '118 den 76 puan/dk ya düşmüştü.',
+        ),
         'metro_quiz': GameScoreProfile(
           measuredPerMinute: 97,
           scale: 1.38,

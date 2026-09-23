@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:istanbul_metro_game/features/games/blocks/application/game_controller.dart';
 import 'package:istanbul_metro_game/features/games/blocks/domain/board.dart';
 import 'package:istanbul_metro_game/features/games/crossing/application/crossing_controller.dart';
+import 'package:istanbul_metro_game/features/games/metro_line/application/metro_line_controller.dart';
 import 'package:istanbul_metro_game/features/games/crossing/domain/crossing_state.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/application/lane_runner_controller.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/domain/lane_runner_state.dart';
@@ -716,12 +717,65 @@ final Map<String, ({String id, BotFactory make})> botFactories =
         make: ({required journey, required seed, required skill}) =>
             CrossingBot(journey: journey, seed: seed, skill: skill),
       ),
+      'Metro Hattı': (
+        id: 'metro_line',
+        make: ({required journey, required seed, required skill}) =>
+            MetroLineBot(journey: journey, seed: seed, skill: skill),
+      ),
       'Metro Bilgi': (
         id: 'metro_quiz',
         make: ({required journey, required seed, required skill}) =>
             MetroQuizBot(journey: journey, seed: seed, skill: skill),
       ),
     };
+
+/// Metro Hattı: önü açık bir tren arar, ara sıra yanlış trene dokunur.
+///
+/// Oyunun zorluğu tıkanmak değil (tahta kilitlenemez, bkz.
+/// `metro_line_controller_test`), **görsel arama**: karışık tahtada önü
+/// gerçekten açık olanı ayırt etmek. Bot bunu iki sayıyla modelliyor:
+/// dokunuş başına düşünme süresi ve yanlış dokunma olasılığı.
+class MetroLineBot extends GameBot {
+  MetroLineBot({required super.journey, required super.seed, super.skill});
+
+  @override
+  MetroLineController create(JourneySession session, Random random) =>
+      MetroLineController(
+        journey: journey,
+        recordToBeat: 0,
+        random: Random(seed),
+        session: session,
+      );
+
+  @override
+  void live(MetroLineController controller, Random random) {
+    var guard = 0;
+    while (controller.status == GameStatus.playing &&
+        guard++ < 20000 &&
+        !expired(controller)) {
+      final trains = controller.trains;
+      if (trains.isEmpty) break;
+
+      // Yanlış dokunuş: acemi daha sık kapalı raya tren sokar.
+      final mistake = random.nextDouble() < _flaw(0.16, 0.03, skill);
+      final open = trains.where(controller.canExit).toList();
+      final shut = trains.where((t) => !controller.canExit(t)).toList();
+
+      final target = mistake && shut.isNotEmpty
+          ? shut[random.nextInt(shut.length)]
+          : (open.isNotEmpty
+                ? open[random.nextInt(open.length)]
+                : trains[random.nextInt(trains.length)]);
+      controller.tap(target.id);
+
+      // Arama süresi: tahta büyüdükçe uzuyor, usta daha çabuk buluyor.
+      final think = _flaw(2.2, 1.1, skill) + controller.size * 0.06;
+      if (controller.status == GameStatus.playing) {
+        controller.debugAdvance(think);
+      }
+    }
+  }
+}
 
 /// Bir seviyedeki koşuların özeti.
 @immutable
