@@ -130,12 +130,16 @@ Path starPath(Offset center, double radius) {
 }
 
 /// Oyun denetimlerinin işaretleri — çizilmiş, stok simge değil.
-enum EscapeControlGlyph { undo, hint, restart, map }
+enum EscapeControlGlyph { undo, hint, restart }
 
-/// Tahtanın altındaki denetim düğmesi: işaret ve kısa etiket.
+/// Tahtanın altındaki denetim: işaret ve kısa etiket, kutusuz.
 ///
-/// Parmak alanı en az 52 piksel yüksek; üç düğme eşit genişlikte yan yana,
-/// başparmağın eriştiği bantta.
+/// Üç denetim tek aile: aynı çizgi kalınlığı, aynı boy, aynı etiket dili.
+/// Kutu, çerçeve ya da gölge yok — tahtayla yarışmasınlar. Önem sırası
+/// renkle veriliyor: sık kullanılan geri al tam beyaz ([emphasis]), ipucu ve
+/// baştan iki ton geride. Böylece bölüm başında tek açık denetim ipucu
+/// olsa bile ekranın en parlak ögesi o olmuyor. Parmak alanı 56 piksel yüksek, düğme genişliği
+/// kadar geniş.
 class EscapeControlButton extends StatelessWidget {
   const EscapeControlButton({
     super.key,
@@ -144,6 +148,7 @@ class EscapeControlButton extends StatelessWidget {
     required this.onTap,
     this.semanticLabel,
     this.busy = false,
+    this.emphasis = false,
   });
 
   final EscapeControlGlyph glyph;
@@ -154,28 +159,26 @@ class EscapeControlButton extends StatelessWidget {
   /// İpucu aranırken: işaret soluklaşır.
   final bool busy;
 
+  /// Ailenin öndeki denetimi.
+  final bool emphasis;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final tone = enabled
-        ? AppColors.textPrimary
-        : AppColors.textMuted.withValues(alpha: 0.5);
+    final base = emphasis ? AppColors.textPrimary : AppColors.textMuted;
+    final tone = enabled ? base : AppColors.textMuted.withValues(alpha: 0.38);
     return Pressable(
       onTap: onTap,
       semanticLabel: semanticLabel ?? label,
-      borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 2),
-      child: Container(
+      scale: 0.92,
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 4),
+      child: SizedBox(
         height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 2),
-          border: Border.all(color: AppColors.outline.withValues(alpha: 0.7)),
-        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             SizedBox.square(
-              dimension: 20,
+              dimension: 24,
               child: CustomPaint(
                 painter: _GlyphPainter(
                   glyph: glyph,
@@ -183,11 +186,15 @@ class EscapeControlButton extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               label,
               maxLines: 1,
-              style: AppText.micro.copyWith(color: tone, letterSpacing: 0.9),
+              style: AppText.caption.copyWith(
+                color: tone,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              ),
             ),
           ],
         ),
@@ -250,26 +257,25 @@ class _GlyphPainter extends CustomPainter {
           paint,
         );
       case EscapeControlGlyph.hint:
-        // İşaret feneri: tek ışık ve iki kısa ışın — "sıradaki adımı göster".
-        canvas.drawCircle(c + Offset(0, s * 0.06), s * 0.2, paint);
+        // Ampul: yuvarlak cam, daralan boyun ve iki çizgilik duy.
+        final bulb = Path()
+          ..moveTo(s * 0.38, s * 0.66)
+          ..cubicTo(s * 0.38, s * 0.56, s * 0.24, s * 0.5, s * 0.24, s * 0.36)
+          ..arcToPoint(
+            Offset(s * 0.76, s * 0.36),
+            radius: Radius.circular(s * 0.26),
+          )
+          ..cubicTo(s * 0.76, s * 0.5, s * 0.62, s * 0.56, s * 0.62, s * 0.66)
+          ..close();
+        canvas.drawPath(bulb, paint);
         canvas.drawLine(
-          Offset(s * 0.5, s * 0.08),
-          Offset(s * 0.5, s * 0.2),
+          Offset(s * 0.4, s * 0.8),
+          Offset(s * 0.6, s * 0.8),
           paint,
         );
         canvas.drawLine(
-          Offset(s * 0.16, s * 0.24),
-          Offset(s * 0.24, s * 0.32),
-          paint,
-        );
-        canvas.drawLine(
-          Offset(s * 0.84, s * 0.24),
-          Offset(s * 0.76, s * 0.32),
-          paint,
-        );
-        canvas.drawLine(
-          Offset(s * 0.4, s * 0.9),
-          Offset(s * 0.6, s * 0.9),
+          Offset(s * 0.44, s * 0.92),
+          Offset(s * 0.56, s * 0.92),
           paint,
         );
       case EscapeControlGlyph.restart:
@@ -287,20 +293,6 @@ class _GlyphPainter extends CustomPainter {
             ..lineTo(end.dx - s * 0.02, end.dy + s * 0.2),
           paint,
         );
-      case EscapeControlGlyph.map:
-        // Hat: üç durak ve onları bağlayan çizgi.
-        canvas.drawLine(
-          Offset(s * 0.14, s * 0.5),
-          Offset(s * 0.86, s * 0.5),
-          paint,
-        );
-        for (final x in <double>[0.2, 0.5, 0.8]) {
-          canvas.drawCircle(
-            Offset(s * x, s * 0.5),
-            s * 0.1,
-            Paint()..color = color,
-          );
-        }
     }
   }
 

@@ -5,6 +5,10 @@ import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_progress_controller.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/data/escape_levels.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_progress.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/presentation/escape_complete_panel.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/presentation/escape_board_view.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/presentation/escape_painter.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/presentation/tunnel_escape_screen.dart';
@@ -114,6 +118,15 @@ void main() {
     semantics.dispose();
   });
 
+  /// Bölüm 1'i en kısa çözümle bitirir ve paneli bekler.
+  Future<void> solveFirstLevel(WidgetTester tester) async {
+    final cell = cellSize(tester);
+    await drag(tester, cellCenter(tester, 2, 4), Offset(0, cell));
+    await drag(tester, cellCenter(tester, 2, 0), Offset(cell * 4.2, 0));
+    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pump(const Duration(milliseconds: 900));
+  }
+
   testWidgets('bölüm sürükleyerek çözülür, panel çıkar, sonraki durak açılır', (
     tester,
   ) async {
@@ -145,6 +158,113 @@ void main() {
     expect(find.text('HAT AÇILDI'), findsNothing);
   });
 
+  testWidgets('panelde tek baskın eylem: ortalı SONRAKİ DURAK', (tester) async {
+    await pumpScreen(tester);
+    await openFirstLevel(tester);
+    await solveFirstLevel(tester);
+
+    // Birincil eylem tek dolu düğme; tekrar oynamak düz metin düğme.
+    expect(find.byType(FilledButton), findsOneWidget);
+    final next = tester.getRect(
+      find.ancestor(
+        of: find.text('SONRAKİ DURAK'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    final title = tester.getRect(find.text('HAT AÇILDI'));
+    final replay = tester.getRect(
+      find.ancestor(
+        of: find.text('Tekrar oyna'),
+        matching: find.byType(TextButton),
+      ),
+    );
+
+    // Başlık, düğme ve tekrar aynı eksende; sıra yukarıdan aşağı.
+    expect(next.center.dx, moreOrLessEquals(title.center.dx, epsilon: 1));
+    expect(replay.center.dx, moreOrLessEquals(next.center.dx, epsilon: 1));
+    expect(title.bottom, lessThan(next.top));
+    expect(next.bottom, lessThanOrEqualTo(replay.top));
+    expect(next.height, greaterThanOrEqualTo(48));
+    // Düğme ekranın alt kenarına yapışmıyor.
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(screen.height - next.bottom, greaterThan(80));
+  });
+
+  // Panelin en zor halleri: tek yıldız, iki satırlık not, üç haneli hamle
+  // ve yeni en iyi satırı birlikte — en dar ekranda da taşmamalı.
+  for (final (label, stars, usedHint, moves) in <(String, int, bool, int)>[
+    ('bir yıldız', 1, false, 118),
+    ('ipucuyla iki yıldız', 2, true, 44),
+    ('üç yıldız', 3, false, 42),
+  ]) {
+    testWidgets('iPhone SE: panel $label ile taşmıyor', (tester) async {
+      tester.view.physicalSize = const Size(750, 1334);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      final level = EscapeLevels.last;
+      final completion = EscapeCompletion(
+        level: level,
+        moves: moves,
+        stars: stars,
+        usedHint: usedHint,
+        record: EscapeRecordResult(
+          previous: const EscapeLevelRecord(bestMoves: 120, bestStars: 1),
+          current: EscapeLevelRecord(bestMoves: moves, bestStars: stars),
+          unlockedNext: false,
+        ),
+        pointsAwarded: 1234,
+        hasNext: false,
+      );
+      await tester.pumpWidget(
+        AppScope(
+          store: store,
+          audio: AudioService(),
+          metro: metro,
+          routeService: RouteService(metro),
+          escapeProgress: progress,
+          child: MaterialApp(
+            theme: AppTheme.dark(),
+            home: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: EscapeCompletePanel(
+                    completion: completion,
+                    accent: AppColors.success,
+                    onNext: () {},
+                    onReplay: () {},
+                    onMap: () {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      expect(find.text('HAT TAMAMLANDI'), findsOneWidget);
+      expect(find.text('$moves HAMLE'), findsOneWidget);
+      expect(find.text('HAT HARİTASI'), findsOneWidget);
+    });
+  }
+
+  testWidgets('Tekrar oyna aynı bölümü baştan açar', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpScreen(tester);
+    await openFirstLevel(tester);
+    await solveFirstLevel(tester);
+
+    await tester.tap(find.text('Tekrar oyna'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('HAT AÇILDI'), findsNothing);
+    expect(find.text('BÖLÜM 1'), findsOneWidget);
+    expect(find.bySemanticsLabel('0 hamle'), findsOneWidget);
+    semantics.dispose();
+  });
+
   testWidgets('dik yöndeki sürükleme metroyu oynatmaz', (tester) async {
     final semantics = tester.ensureSemantics();
     await pumpScreen(tester);
@@ -166,7 +286,7 @@ void main() {
     await drag(tester, cellCenter(tester, 2, 0), Offset(cell * 2, 0));
     expect(find.bySemanticsLabel('1 hamle'), findsOneWidget);
 
-    await tester.tap(find.text('GERİ AL'));
+    await tester.tap(find.text('Geri al'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.bySemanticsLabel('0 hamle'), findsOneWidget);
@@ -175,7 +295,7 @@ void main() {
     await drag(tester, cellCenter(tester, 2, 0), Offset(cell, 0));
     expect(find.bySemanticsLabel('2 hamle'), findsOneWidget);
 
-    await tester.tap(find.text('BAŞTAN'));
+    await tester.tap(find.text('Baştan'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.bySemanticsLabel('0 hamle'), findsOneWidget);
@@ -209,6 +329,14 @@ void main() {
       // Tahta kare ve yeterince büyük: parmak için hücre en az 44 pt.
       final cell = cellSize(tester);
       expect(cell, greaterThanOrEqualTo(44), reason: device.$1);
+
+      // Bölüm sonu paneli de sığıyor: taşma yok, düğme ekranda.
+      await solveFirstLevel(tester);
+      expect(tester.takeException(), isNull);
+      final next = tester.getRect(find.text('SONRAKİ DURAK'));
+      final screen = device.$2 / device.$3;
+      expect(next.bottom, lessThan(screen.height), reason: device.$1);
+      expect(next.top, greaterThan(0), reason: device.$1);
     });
   }
 }

@@ -2,9 +2,10 @@
 //
 // Kullanım (proje kökünden):
 //
-//   dart run tool/tunnel_escape/generate_levels.dart pool <çıktı.json> [tohum]
+//   dart run tool/tunnel_escape/generate_levels.dart pool <çıktı.json> [tohum] [tırmanış]
 //   dart run tool/tunnel_escape/generate_levels.dart curate <havuz.json>...
 //   dart run tool/tunnel_escape/generate_levels.dart report
+//   dart run tool/tunnel_escape/generate_levels.dart solve <bölüm>
 //
 // Yöntem: **rastgele üret → çöz → ölç → seç → gönder.** Hiçbir bölüm
 // "çözülebilir görünüyor" diye gönderilmez.
@@ -18,6 +19,7 @@
 //    yazar. İlk iki bölüm elle tasarlandı (öğretici), araç onları da çözücüyle
 //    doğrular.
 // 3. `report`: gönderilen bölümlerin zorluk tablosunu basar.
+// 4. `solve`: bir bölümün tahtasını ve en kısa çözümünü adım adım basar.
 //
 // Alan katmanı saf Dart olduğu için araç oyunun kendi çözücüsünü kullanıyor;
 // oyundaki kural ile bölümü doğrulayan kural ayrı düşemez.
@@ -29,6 +31,7 @@ import 'dart:math';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/data/escape_levels.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_analysis.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_board.dart';
+import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_heuristics.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_level.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_piece.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_rules.dart';
@@ -45,11 +48,14 @@ void main(List<String> args) {
     case 'pool':
       final out = args.length > 1 ? args[1] : 'pool.json';
       final seed = args.length > 2 ? int.parse(args[2]) : 1;
-      _pool(out, seed);
+      final climbs = args.length > 3 ? int.parse(args[3]) : 30;
+      _pool(out, seed, climbs);
     case 'curate':
       _curate(args.skip(1).toList());
     case 'report':
       _report();
+    case 'solve':
+      _solve(int.parse(args[1]));
     default:
       stderr.writeln('Bilinmeyen komut: ${args.first}');
       exit(64);
@@ -69,6 +75,8 @@ class Candidate {
     required this.states,
     required this.moved,
     required this.branching,
+    required this.detours,
+    required this.depth,
   });
 
   factory Candidate.fromJson(Map<String, dynamic> json) => Candidate(
@@ -78,6 +86,8 @@ class Candidate {
     states: json['states'] as int,
     moved: json['moved'] as int,
     branching: (json['branching'] as num).toDouble(),
+    detours: json['detours'] as int,
+    depth: json['depth'] as int,
   );
 
   final List<String> grid;
@@ -94,6 +104,27 @@ class Candidate {
 
   /// En kısa çözüm boyunca ortalama yasal hamle sayısı.
   final double branching;
+
+  /// Bütün en kısa çözümlerde kaçınılmaz "geri" hamle sayısı
+  /// ([EscapeLevelStats.minimumDetours]).
+  final int detours;
+
+  /// Başlangıçtaki bağımlılık zinciri ([EscapeHeuristics.dependencyDepth]).
+  final int depth;
+
+  /// Açgözlü oyuncunun bitirme oranı — pahalı, yalnız seçimde hesaplanır.
+  double get greedy => _greedy ??= _measureGreedy();
+  double? _greedy;
+
+  double _measureGreedy() {
+    final (layout, start) = EscapeLevel.parseGrid(grid);
+    final runs = EscapeHeuristics(layout).greedyRuns(start);
+    final limit = max(12, optimal * 3);
+    return runs.where((int? r) => r != null && r <= limit).length / runs.length;
+  }
+
+  /// Hamle başına düşünme yükü: zorunlu geri hamlenin çözüme oranı.
+  double get detourDensity => optimal == 0 ? 0 : detours / optimal;
 
   /// Tahtadaki metroların (hedef dahil) çözüme katılan payı.
   double get involvement => moved / (blockers + 1);
@@ -184,6 +215,8 @@ class Candidate {
     'states': states,
     'moved': moved,
     'branching': double.parse(branching.toStringAsFixed(2)),
+    'detours': detours,
+    'depth': depth,
   };
 }
 
@@ -221,6 +254,17 @@ Candidate? evaluate(
     }
   }
   final start = layout.positionsOf(pick!);
+  return _measure(layout, start, solver, component);
+}
+
+/// Başlangıcı belli bir tahtanın ölçüleri. [component] aynı bileşenin
+/// haritası: en zor başlangıç da elle yazılmış başlangıç da oradadır.
+Candidate _measure(
+  EscapeLayout layout,
+  List<int> start,
+  EscapeSolver solver,
+  EscapeComponent component,
+) {
   final solution = solver.solve(start)!;
   final movedPieces = <int>{for (final m in solution.path) m.piece};
 
@@ -231,6 +275,7 @@ Candidate? evaluate(
     key = layout.keyWith(key, move.piece, move.to);
   }
 
+  final heuristics = EscapeHeuristics(layout);
   return Candidate(
     grid: EscapeLevel.render(layout, start),
     optimal: solution.moves,
@@ -238,6 +283,14 @@ Candidate? evaluate(
     states: component.size,
     moved: movedPieces.length,
     branching: branchingSum / solution.moves,
+    detours: EscapeLevelStats.minimumDetours(
+      layout,
+      start,
+      solver,
+      component,
+      heuristics,
+    ),
+    depth: heuristics.dependencyDepth(start),
   );
 }
 
@@ -395,7 +448,7 @@ Arrangement _relabel(Arrangement arrangement) {
 // pool
 // ---------------------------------------------------------------------------
 
-void _pool(String out, int seed) {
+void _pool(String out, int seed, int climbs) {
   final random = Random(seed);
   final byGrid = <String, Candidate>{};
 
@@ -406,7 +459,7 @@ void _pool(String out, int seed) {
   // 1. Rastgele örnekler: her yoğunluktan.
   for (var blockers = 2; blockers <= 13; blockers++) {
     var found = 0;
-    for (var sample = 0; sample < 900; sample++) {
+    for (var sample = 0; sample < 500; sample++) {
       final exitRow = random.nextInt(10) < 7 ? 2 : 1 + random.nextInt(4);
       final arrangement = randomArrangement(random, blockers, exitRow: exitRow);
       if (arrangement == null) continue;
@@ -423,15 +476,25 @@ void _pool(String out, int seed) {
     );
   }
 
-  // 2. Tepe tırmanma: zor bölümler.
-  for (var climb = 0; climb < 70; climb++) {
+  // 2. Tepe tırmanma, iki amaçla sırayla:
+  //
+  // * uzun: en kısa çözüm ve zorunlu geri hamle birlikte uzasın (geç
+  //   bölümler);
+  // * sıkı: az metroyla çok geri hamle — zorluğu kalabalıktan değil akıl
+  //   yürütmeden alan orta bölümler. Metro sayısı [_compactMax]'ı geçemez.
+  for (var climb = 0; climb < climbs; climb++) {
+    final compact = climb.isOdd;
     final exitRow = climb % 3 == 0 ? 1 + random.nextInt(4) : 2;
+    double scoreOf(Candidate c) => compact
+        ? c.detours * 3.0 + c.optimal - c.blockers * 0.8
+        : c.optimal + c.detours * 2.0;
+
     Arrangement? current;
     Candidate? currentScore;
     for (var attempt = 0; attempt < 50 && currentScore == null; attempt++) {
       current = randomArrangement(
         random,
-        9 + random.nextInt(4),
+        compact ? 5 + random.nextInt(3) : 9 + random.nextInt(4),
         exitRow: exitRow,
       );
       final layout = current?.toLayout();
@@ -440,21 +503,23 @@ void _pool(String out, int seed) {
     }
     if (current == null || currentScore == null) continue;
 
-    for (var step = 0; step < 1400; step++) {
+    for (var step = 0; step < 1000; step++) {
       final next = mutate(current!, random, exitRow: exitRow);
       final layout = next?.toLayout();
       if (next == null || layout == null) continue;
+      if (compact && next.pieces.length - 1 > _compactMax) continue;
       final score = evaluate(layout, next.positions, minOptimal: 2);
       if (score == null) continue;
       // Eşit zorluğu da kabul et: platoda yürümek yerel tepeden çıkarır.
-      if (score.optimal >= currentScore!.optimal) {
+      if (scoreOf(score) >= scoreOf(currentScore!)) {
         current = next;
         currentScore = score;
-        if (score.optimal >= 10) keep(score);
+        if (score.optimal >= 5) keep(score);
       }
     }
     stderr.writeln(
-      'tırmanış $climb: en zor ${currentScore!.optimal} hamle, '
+      'tırmanış $climb (${compact ? 'sıkı' : 'uzun'}): '
+      '${currentScore!.optimal} hamle, ${currentScore.detours} geri, '
       '${currentScore.blockers} engel (${watch.elapsed.inSeconds} sn)',
     );
   }
@@ -480,6 +545,9 @@ void _pool(String out, int seed) {
 // curate
 // ---------------------------------------------------------------------------
 
+/// Sıkı tırmanışta en fazla beyaz metro.
+const int _compactMax = 9;
+
 /// İlk iki bölüm elle: mekaniği metinsiz öğretmeleri gerekiyor.
 ///
 /// 1. Tek beyaz metro kırmızının önünde; aşağı ya da yukarı kaydırmak
@@ -493,163 +561,227 @@ const List<List<String>> _handmade = <List<String>>[
 
 /// Zorluk eğrisi: bölüm başına hedeflenen en kısa çözüm uzunluğu.
 ///
-/// Kuşak içinde düz artmıyor; birkaç bölümde bir **nefes** bölümü var
-/// (bir önceki kuşağın üst ucuna dönen daha kısa bir bulmaca). Oyuncu iki
+/// Kuşaklar: 1-5 öğret, 6-15 düşün, 16-30 planla, 31-45 çöz, 46-59
+/// ustalaş, 60 son durak. Kuşak içinde düz artmıyor: iki zor bölümden sonra
+/// bir **nefes** bölümü geliyor (zor → zor → orta → daha zor). Oyuncu iki
 /// zor bölüm arasında kendini akıllı hissetmeli.
+///
+/// Hamle sayısı zorluğun yalnız bir yüzü. Asıl ayar [_detourBand] ve
+/// [_maxGreedy]: kuşak ilerledikçe çözüm daha çok "önce uzaklaş" anı
+/// istiyor ve göze iyi gelen hamleyle bitirilemiyor.
 const List<int> _curve = <int>[
-  // 1-5 öğretici
-  2, 3, 3, 4, 5,
-  // 6-15 kavrayış
-  4, 5, 5, 6, 6, 7, 5, 7, 8, 8,
-  // 16-30 planlama
-  7, 8, 9, 9, 10, 8, 10, 11, 11, 12, 10, 12, 13, 13, 14,
-  // 31-45 ustalık
-  12, 13, 14, 14, 15, 15, 13, 16, 16, 17, 17, 15, 18, 19, 20,
-  // 46-59 uzman
-  18, 20, 21, 21, 22, 19, 23, 23, 24, 25, 22, 26, 27, 28,
+  // 1-5 öğret
+  2, 3, 4, 5, 6,
+  // 6-15 düşün
+  6, 7, 8, 7, 9, 10, 8, 10, 11, 12,
+  // 16-30 planla
+  11, 12, 13, 12, 14, 15, 13, 15, 16, 17, 15, 17, 18, 19, 19,
+  // 31-45 çöz
+  17, 19, 20, 18, 21, 22, 20, 23, 24, 22, 25, 25, 23, 26, 27,
+  // 46-59 ustalaş
+  24, 26, 28, 25, 29, 30, 27, 31, 32, 29, 33, 34, 35, 36,
   // 60 son durak — [_finaleRange] içindeki en iyi aday
   99,
 ];
 
 /// Son durağın hamle aralığı.
 ///
-/// Havuzda 50-60 hamlelik bulmacalar da var, ama onlar "adil" değil: iyi
+/// Havuzda 50 hamleyi aşan bulmacalar da var, ama onlar "adil" değil: iyi
 /// oyuncu bile ipucusuz bitiremez. Son durak öncekilerden **belirgin
-/// biçimde** zor (uzman kuşağı 28'de bitiyor) ama çözülebilir kalmalı.
-const (int, int) _finaleRange = (35, 42);
+/// biçimde** zor (ustalık kuşağı 36'da bitiyor) ama çözülebilir kalmalı.
+const (int, int) _finaleRange = (40, 46);
+
+/// Bölümün zorunlu geri hamle bandı (bütün en kısa çözümlerde).
+///
+/// Alt sınır bölümün "gözle çözülmemesini", üst sınır adil kalmasını
+/// sağlıyor: 11 hamlelik bir bölümde beş "önce uzaklaş" anı, düşün
+/// kuşağında zorluk değil yorgunluktur. Band kuşak içinde de ilerliyor.
+(int, int) _detourBand(int number) {
+  if (number <= 5) return (0, 1);
+  if (number <= 9) return (1, 2);
+  if (number <= 15) return (2, 3);
+  if (number <= 22) return (3, 4);
+  if (number <= 30) return (4, 5);
+  if (number <= 37) return (4, 6);
+  if (number <= 45) return (5, 7);
+  if (number <= 59) return (6, 9);
+  return (7, 12);
+}
+
+/// Açgözlü oyuncunun en fazla bitirme oranı: bu oranın üstündeki bölüm
+/// "gözle çözülüyor" sayılır. Öğreticide sınır yok — orası gözle çözülsün.
+double _maxGreedy(int number) => switch (EscapeTier.of(number)) {
+  EscapeTier.onboarding => 1,
+  EscapeTier.understanding => number < 10 ? 0.8 : 0.5,
+  EscapeTier.planning => 0.25,
+  EscapeTier.mastery => 0.1,
+  EscapeTier.expert => 0.05,
+  EscapeTier.finale => 0.05,
+};
 
 /// Seçilmiş bir bölüme bundan fazla benzeyen aday elenir.
 const double _maxSimilarity = 0.6;
 
 void _curate(List<String> pools) {
-  final candidates = <Candidate>[];
+  final byGrid = <String, Candidate>{};
   for (final path in pools) {
     final raw = jsonDecode(File(path).readAsStringSync()) as List<dynamic>;
-    candidates.addAll(
-      raw.map((dynamic e) => Candidate.fromJson(e as Map<String, dynamic>)),
-    );
+    for (final e in raw) {
+      final c = Candidate.fromJson(e as Map<String, dynamic>);
+      byGrid.putIfAbsent(c.grid.join('/'), () => c);
+    }
   }
+  final candidates = byGrid.values.toList();
   stderr.writeln('${candidates.length} aday okundu');
 
   final usedFamilies = <String>{};
   final usedGrids = <String>{};
   final usedPrints = <String>{};
-  final chosen = <Candidate>[];
+  final picked = <int, Candidate>{};
 
-  for (var i = 0; i < _curve.length; i++) {
+  void take(int number, Candidate c) {
+    picked[number] = c;
+    usedFamilies.add(c.family);
+    usedGrids.add(c.grid.join('/'));
+    usedPrints.add(c.fingerprint);
+  }
+
+  bool fresh(Candidate c) {
+    if (usedGrids.contains(c.grid.join('/'))) return false;
+    if (usedPrints.contains(c.fingerprint)) return false;
+    if (usedFamilies.contains(c.family)) return false;
+    // Küçük tahtada (öğretici bölümler) tek ortak metro bile oranı
+    // yükseltir; benzerlik yalnız kalabalık tahtalarda anlamlı.
+    return c.blockers < 5 ||
+        !picked.values.any(
+          (Candidate o) =>
+              o.blockers >= 5 && o.similarityTo(c) > _maxSimilarity,
+        );
+  }
+
+  // Son durak önce seçilir: en iyi finali geç bölümlerin benzerlik ve aile
+  // kuralları elemeden alsın.
+  final order = <int>[
+    _curve.length - 1,
+    for (var i = 0; i < _curve.length - 1; i++) i,
+  ];
+  for (final i in order) {
     final number = i + 1;
     if (number <= _handmade.length) {
       final (layout, start) = EscapeLevel.parseGrid(_handmade[i]);
-      final candidate = evaluateExact(layout, start);
-      chosen.add(candidate);
-      usedFamilies.add(candidate.family);
-      usedGrids.add(candidate.grid.join('/'));
-      usedPrints.add(candidate.fingerprint);
+      take(number, evaluateExact(layout, start));
       continue;
     }
 
     final tier = EscapeTier.of(number);
     final want = _curve[i];
+    bool inRange(Candidate c, int slack) => want == 99
+        ? c.optimal >= _finaleRange.$1 && c.optimal <= _finaleRange.$2
+        : (c.optimal - want).abs() <= slack;
+
+    // Önce tam kurallarla; bulunamazsa önce geri hamle şartı bir gevşer,
+    // sonra hamle sayısı bir oynar. Her gevşeme raporlanır.
     Candidate? best;
-    var bestScore = double.negativeInfinity;
-    for (final c in candidates) {
-      if (usedGrids.contains(c.grid.join('/'))) continue;
-      if (want != 99 && c.optimal != want) continue;
-      if (want == 99 &&
-          (c.optimal < _finaleRange.$1 || c.optimal > _finaleRange.$2)) {
-        continue;
-      }
-      if (usedPrints.contains(c.fingerprint)) continue;
-      final family = c.family;
-      if (usedFamilies.contains(family)) continue;
-      if (!_fits(tier, c)) continue;
-      // Küçük tahtada (öğretici bölümler) tek ortak metro bile oranı
-      // yükseltir; benzerlik yalnız kalabalık tahtalarda anlamlı.
-      if (c.blockers >= 5 &&
-          chosen.any(
-            (Candidate o) =>
-                o.blockers >= 5 && o.similarityTo(c) > _maxSimilarity,
-          )) {
-        continue;
-      }
-      final score = _quality(tier, c);
-      if (score > bestScore) {
-        bestScore = score;
+    for (final (slack, detourRelief) in const <(int, int)>[
+      (0, 0),
+      (0, 1),
+      (1, 0),
+      (1, 1),
+    ]) {
+      final (fewest, most) = _detourBand(number);
+      final matches =
+          candidates
+              .where(
+                (Candidate c) =>
+                    inRange(c, slack) &&
+                    c.detours >= fewest - detourRelief &&
+                    c.detours <= most + detourRelief &&
+                    _fits(tier, number, c),
+              )
+              .toList()
+            ..sort(
+              (Candidate a, Candidate b) =>
+                  _quality(tier, b).compareTo(_quality(tier, a)),
+            );
+      var checked = 0;
+      for (final c in matches) {
+        if (!fresh(c)) continue;
+        if (c.greedy > _maxGreedy(number)) continue;
         best = c;
+        break;
+      }
+      checked = matches.length;
+      if (best != null) {
+        if (slack > 0 || detourRelief > 0) {
+          stderr.writeln(
+            'Bölüm $number: gevşetildi (hamle ±$slack, geri -$detourRelief), '
+            '$checked aday',
+          );
+        }
+        break;
       }
     }
     if (best == null) {
       stderr.writeln('Bölüm $number için $want hamlelik aday yok!');
       exit(1);
     }
-    chosen.add(best);
-    usedFamilies.add(best.family);
-    usedGrids.add(best.grid.join('/'));
-    usedPrints.add(best.fingerprint);
+    take(number, best);
   }
 
-  _write(chosen);
+  _write(<Candidate>[for (var n = 1; n <= _curve.length; n++) picked[n]!]);
 }
 
-/// Kuşağın kaba sınırları: öğretici bölümde kalabalık, uzman bölümde boş
-/// tahta istemiyoruz.
-bool _fits(EscapeTier tier, Candidate c) {
+/// Kuşağın kaba sınırları: öğretici bölümde kalabalık, ileri bölümlerde boş
+/// tahta istemiyoruz. Zorluk metro sayısından gelmesin diye üst sınır
+/// ustalık kuşağında bile tahtayı doldurmuyor.
+bool _fits(EscapeTier tier, int number, Candidate c) {
   final (minBlockers, maxBlockers) = switch (tier) {
     EscapeTier.onboarding => (1, 4),
-    EscapeTier.understanding => (3, 7),
-    EscapeTier.planning => (5, 10),
-    EscapeTier.mastery => (7, 12),
-    EscapeTier.expert => (8, 14),
-    EscapeTier.finale => (8, 14),
+    EscapeTier.understanding => (3, 8),
+    EscapeTier.planning => (4, 10),
+    EscapeTier.mastery => (5, 12),
+    EscapeTier.expert => (6, 13),
+    EscapeTier.finale => (6, 14),
   };
   if (c.blockers < minBlockers || c.blockers > maxBlockers) return false;
-  // Öğreticide her metro çözüme katılmalı: süs metro yeni oyuncuyu
-  // yanıltır.
-  if (tier == EscapeTier.onboarding && c.moved != c.blockers + 1) return false;
-  return c.involvement >= 0.45;
+  if (tier == EscapeTier.onboarding) {
+    // Öğreticide her metro çözüme katılmalı: süs metro yeni oyuncuyu
+    // yanıltır. En çok bir geri hamle; beşinci bölüm ilk küçük zinciri
+    // (C → B → A) tanıtır.
+    if (c.moved != c.blockers + 1) return false;
+    if (number == 5 && c.depth < 3) return false;
+  }
+  return c.involvement >= 0.5;
 }
 
-/// Aynı hamle sayısındaki adaylardan hangisi daha iyi bir bölüm?
+/// Aynı hamle sayısındaki uygun adaylardan hangisi daha iyi bir bölüm?
 ///
-/// Çözüme katılan metro payı yüksek olsun (süs metro az), dallanma kuşağa
-/// göre makul olsun, erken kuşakta tahta sade kalsın.
+/// Düşünme yükü (zorunlu geri hamle, zincir) yüksek olsun; çözüme katılan
+/// metro payı yüksek olsun (süs metro az); kuşağın rahat yoğunluğunu aşan
+/// her metro cezalı — zorluk kalabalıktan gelmesin.
 double _quality(EscapeTier tier, Candidate c) {
-  var score = c.involvement * 10;
-  switch (tier) {
-    case EscapeTier.onboarding:
-    case EscapeTier.understanding:
-      score -= c.blockers * 0.6; // sade tahta
-    case EscapeTier.planning:
-      score -= (c.blockers - 7).abs() * 0.4;
-    case EscapeTier.mastery:
-      score += log(c.states) * 0.3;
-    case EscapeTier.expert:
-    case EscapeTier.finale:
-      score += log(c.states) * 0.4 + c.blockers * 0.2;
-  }
+  final comfortable = switch (tier) {
+    EscapeTier.onboarding => 3,
+    EscapeTier.understanding => 6,
+    EscapeTier.planning => 8,
+    EscapeTier.mastery => 9,
+    EscapeTier.expert => 10,
+    EscapeTier.finale => 11,
+  };
+  var score = c.detours * 2.0 + c.involvement * 4 + min(c.depth, 7) * 0.4;
+  score -= max(0, c.blockers - comfortable) * 0.8;
+  if (tier == EscapeTier.onboarding) score -= c.blockers * 0.5;
+  if (tier.index >= EscapeTier.mastery.index) score += log(c.states) * 0.2;
   return score;
 }
 
 /// Elle yazılmış bölüm: en zor başlangıç değil, **olduğu gibi** çözülür.
 Candidate evaluateExact(EscapeLayout layout, List<int> start) {
   final solver = EscapeSolver(layout);
-  final solution = solver.solve(start);
-  if (solution == null) throw StateError('Elle yazılmış bölüm çözülemiyor');
-  final component = solver.explore(start);
-  var branchingSum = 0;
-  var key = layout.keyOf(start);
-  for (final move in solution.path) {
-    branchingSum += solver.branching(key);
-    key = layout.keyWith(key, move.piece, move.to);
+  if (solver.solve(start) == null) {
+    throw StateError('Elle yazılmış bölüm çözülemiyor');
   }
-  return Candidate(
-    grid: EscapeLevel.render(layout, start),
-    optimal: solution.moves,
-    blockers: layout.pieceCount - 1,
-    states: component.size,
-    moved: <int>{for (final m in solution.path) m.piece}.length,
-    branching: branchingSum / solution.moves,
-  );
+  return _measure(layout, start, solver, solver.explore(start));
 }
 
 void _write(List<Candidate> chosen) {
@@ -715,7 +847,7 @@ void _write(List<Candidate> chosen) {
 
 void _report() {
   stdout.writeln(
-    'BÖLÜM | EN İYİ | ENGEL | ÇÖZÜME KATILAN | DURUM | DALLANMA | ZORLUK',
+    'BÖLÜM | EN İYİ | ENGEL | ZİNCİR | GERİ | AÇGÖZLÜ | DURUM | DALLANMA | ZORLUK',
   );
   for (final level in EscapeLevels.all) {
     final stats = EscapeLevelStats.of(level);
@@ -723,10 +855,37 @@ void _report() {
       '${level.number.toString().padLeft(5)} | '
       '${stats.optimal.toString().padLeft(6)} | '
       '${stats.blockers.toString().padLeft(5)} | '
-      '${stats.movedPieces.toString().padLeft(14)} | '
-      '${stats.states.toString().padLeft(5)} | '
+      '${stats.dependencyDepth.toString().padLeft(6)} | '
+      '${stats.detours.toString().padLeft(4)} | '
+      '${'${(stats.greedySolveRate * 100).round()}%'.padLeft(7)} | '
+      '${stats.states.toString().padLeft(6)} | '
       '${stats.branching.toStringAsFixed(1).padLeft(8)} | '
       '${stats.difficulty.toStringAsFixed(1).padLeft(6)}',
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// solve
+// ---------------------------------------------------------------------------
+
+void _solve(int number) {
+  final level = EscapeLevels.byNumber(number);
+  if (level == null) {
+    stderr.writeln('Bölüm $number yok');
+    exit(64);
+  }
+  final solution = EscapeSolver(level.layout).solve(level.start)!;
+  stdout.writeln('Bölüm $number — ${solution.moves} hamle');
+  EscapeLevel.render(level.layout, level.start).forEach(stdout.writeln);
+  for (final move in solution.path) {
+    final piece = level.pieces[move.piece];
+    final direction = piece.isHorizontal
+        ? (move.to > move.from ? 'sağa' : 'sola')
+        : (move.to > move.from ? 'aşağı' : 'yukarı');
+    stdout.writeln(
+      '${piece.id} ${(move.to - move.from).abs()} $direction '
+      '(${move.from} → ${move.to})',
     );
   }
 }

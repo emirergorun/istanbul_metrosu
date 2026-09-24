@@ -114,11 +114,13 @@ void main() {
     }
 
     test('öğretici bölümler kısa ve her metro çözüme katılıyor', () {
+      expect(stats[1]!.optimal, lessThanOrEqualTo(2), reason: 'ilk bölüm');
       for (final level in levels.where(
         (l) => l.tier == EscapeTier.onboarding,
       )) {
         final s = stats[level.number]!;
-        expect(s.optimal, lessThanOrEqualTo(5), reason: '${level.number}');
+        expect(s.optimal, lessThanOrEqualTo(6), reason: '${level.number}');
+        expect(s.detours, lessThanOrEqualTo(1), reason: '${level.number}');
         expect(
           s.movedPieces,
           level.pieces.length,
@@ -164,8 +166,96 @@ void main() {
       for (final level in levels.where((l) => l.number > 30)) {
         expect(
           stats[level.number]!.optimal,
-          greaterThanOrEqualTo(10),
+          greaterThanOrEqualTo(15),
           reason: 'bölüm ${level.number} fazla kolay',
+        );
+      }
+    });
+
+    // "Bu çok kolay" şikâyetinin ölçüsü: hamle sayısı değil, çözümün
+    // gözle bulunup bulunmadığı. Eşikler dengeleme aracındaki kuşak
+    // kurallarıyla aynı (tool/tunnel_escape/generate_levels.dart).
+
+    test('öğreticiden sonra her bölüm en az bir "önce uzaklaş" istiyor', () {
+      for (final level in levels.where((l) => l.number > 5)) {
+        final s = stats[level.number]!;
+        final least = level.number > 30
+            ? 4
+            : level.number > 15
+            ? 3
+            : 1;
+        expect(
+          s.detours,
+          greaterThanOrEqualTo(least),
+          reason: 'bölüm ${level.number}: çözüm hep ileri gidiyor',
+        );
+      }
+    });
+
+    test('zorunlu geri hamle kuşaktan kuşağa artıyor', () {
+      final tiers = EscapeTier.values;
+      for (var i = 1; i < tiers.length; i++) {
+        expect(
+          average(tiers[i], (s) => s.detours.toDouble()),
+          greaterThan(average(tiers[i - 1], (s) => s.detours.toDouble())),
+          reason: '${tiers[i]}',
+        );
+      }
+    });
+
+    test('planlama kuşağından sonra bölümler gözle çözülmüyor', () {
+      for (final level in levels.where((l) => l.number > 15)) {
+        final rate = stats[level.number]!.greedySolveRate;
+        expect(
+          rate,
+          lessThanOrEqualTo(level.number > 30 ? 0.1 : 0.25),
+          reason:
+              'bölüm ${level.number}: göze iyi gelen hamleyle '
+              '%${(rate * 100).round()} bitiyor',
+        );
+      }
+    });
+
+    test('zorluk kalabalıktan gelmiyor: tahtalar dolu değil', () {
+      for (final level in levels) {
+        expect(
+          stats[level.number]!.blockers,
+          lessThanOrEqualTo(13),
+          reason: 'bölüm ${level.number}',
+        );
+      }
+      final roomy = levels
+          .where((l) => l.number > 30 && stats[l.number]!.blockers <= 9)
+          .length;
+      expect(roomy, greaterThanOrEqualTo(15), reason: 'geç bölümler hep sık');
+    });
+
+    test('her kuşakta bir nefes bölümü var', () {
+      for (final tier in EscapeTier.values.where(
+        (t) => t != EscapeTier.onboarding && t != EscapeTier.finale,
+      )) {
+        final numbers = <int>[
+          for (final l in levels)
+            if (l.tier == tier) l.number,
+        ];
+        final breather = numbers
+            .skip(1)
+            .any((int n) => stats[n]!.optimal < stats[n - 1]!.optimal);
+        expect(breather, isTrue, reason: '$tier hep tırmanıyor');
+      }
+    });
+
+    test('üç yıldız en iyi çözüme yakın, iki yıldız belirgin pay', () {
+      for (final level in levels) {
+        expect(
+          level.threeStarMoves - level.optimalMoves,
+          lessThanOrEqualTo(3),
+          reason: 'bölüm ${level.number}',
+        );
+        expect(
+          level.twoStarMoves - level.threeStarMoves,
+          greaterThanOrEqualTo(2),
+          reason: 'bölüm ${level.number}',
         );
       }
     });
@@ -179,6 +269,31 @@ void main() {
         );
       }
     });
+  });
+
+  test('her bölümün parmak izi benzersiz ve ızgaradan türüyor', () {
+    final prints = <String>{};
+    for (final level in levels) {
+      expect(
+        level.fingerprint,
+        EscapeLevel.fingerprintOf(escapeLevelData[level.number - 1].grid),
+      );
+      expect(prints.add(level.fingerprint), isTrue, reason: '${level.number}');
+    }
+    expect(EscapeLevels.fingerprints, hasLength(levels.length));
+  });
+
+  test('ipucu her bölümde en kısa çözümün ilk adımı', () {
+    for (final level in levels) {
+      final solver = EscapeSolver(level.layout);
+      final hint = solver.nextMove(level.start)!;
+      final after = List<int>.of(level.start)..[hint.piece] = hint.to;
+      expect(
+        solver.solve(after)!.moves,
+        level.optimalMoves - 1,
+        reason: 'bölüm ${level.number}: ipucu çözümden uzaklaştırıyor',
+      );
+    }
   });
 
   test('ızgara verisi metro dilinde: yalnız R hedef', () {

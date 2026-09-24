@@ -67,7 +67,7 @@ class _EscapeBoardViewState extends State<EscapeBoardView>
 
   late final AnimationController _exit = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 820),
+    duration: const Duration(milliseconds: 640),
   );
 
   late final AnimationController _pulse = AnimationController(

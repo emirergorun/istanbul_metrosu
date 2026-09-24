@@ -304,6 +304,7 @@ class _StationRow extends StatelessWidget {
     if (!unlocked) return '$base, kilitli';
     final r = record;
     if (r == null) return '$base, sıradaki bölüm';
+    if (!r.hasResult) return '$base, bulmacası yenilendi, tekrar oyna';
     return '$base, ${r.bestStars} yıldız, en iyi ${r.bestMoves} hamle';
   }
 
@@ -366,6 +367,8 @@ class _StationRow extends StatelessWidget {
                 Text(
                   !unlocked
                       ? 'BÖLÜM ${station.level}'
+                      : completed && !record!.hasResult
+                      ? 'BÖLÜM ${station.level} · YENİ BULMACA'
                       : completed
                       ? 'BÖLÜM ${station.level} · EN İYİ ${record!.bestMoves} HAMLE'
                       : 'BÖLÜM ${station.level} · SIRADAKİ DURAK',

@@ -75,7 +75,7 @@ class EscapeCompletion {
   /// Sonraki bölüm var mı? Son bölümde "sonraki durak" yok.
   final bool hasNext;
 
-  int get bestMoves => record.current.bestMoves;
+  int get bestMoves => record.current.bestMoves ?? moves;
 
   bool get isNewBest => record.isNewBestFor(moves);
 

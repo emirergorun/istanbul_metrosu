@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/storage/local_store.dart';
+import '../data/escape_level_history.dart';
+import '../data/escape_levels.dart';
 import '../domain/escape_progress.dart';
 
 /// Bir bitirişin kayda etkisi — tamamlanma paneli bunu anlatır.
@@ -24,9 +26,15 @@ class EscapeRecordResult {
 
   bool get isFirstCompletion => previous == null;
 
-  /// En iyi hamle bu bitirişte mi kırıldı? İlk bitiriş de rekordur.
-  bool isNewBestFor(int moves) =>
-      previous == null || moves < previous!.bestMoves;
+  /// Bu bulmacadaki ilk sonuç mu? Bulmacası yenilenmiş (taşınmış) bölümün
+  /// ilk bitirişi de sayılır.
+  bool get isFirstResult => !(previous?.hasResult ?? false);
+
+  /// En iyi hamle bu bitirişte mi kırıldı? İlk sonuç da rekordur.
+  bool isNewBestFor(int moves) {
+    final best = previous?.bestMoves;
+    return best == null || moves < best;
+  }
 
   int get previousBestStars => previous?.bestStars ?? 0;
 }
@@ -39,13 +47,30 @@ class EscapeRecordResult {
 ///
 /// Kayıt bitirişte hemen yazılır ve beklenmez: diske yazmak bir kareyi
 /// bekletmemeli. Arka plana düşerken [flush] beklenerek çağrılır.
+///
+/// Açılışta kayıt bugünkü bulmacalarla eşleştirilir
+/// ([EscapeProgress.reconcile]): bölümleri yenilenmiş bir sürüme geçen
+/// oyuncunun bitirdiği bölümler açık kalır, eski bulmacanın hamle ve
+/// yıldızları yeni bulmacaya taşınmaz.
 class EscapeProgressController extends ChangeNotifier {
-  EscapeProgressController({this.store})
-    : _progress = EscapeProgress.decode(store?.escapeProgressRaw);
+  EscapeProgressController({
+    this.store,
+    Map<int, String>? fingerprints,
+    List<String> legacyFingerprints = escapeLegacyFingerprints,
+  }) : _fingerprints = fingerprints ?? EscapeLevels.fingerprints {
+    final (progress, changed) = EscapeProgress.decode(
+      store?.escapeProgressRaw,
+    ).reconcile(current: _fingerprints, legacy: legacyFingerprints);
+    _progress = progress;
+    if (changed) unawaited(_persist());
+  }
 
   final LocalStore? store;
 
-  EscapeProgress _progress;
+  /// Bölüm numarasından bugünkü bulmacanın parmak izine.
+  final Map<int, String> _fingerprints;
+
+  late EscapeProgress _progress;
 
   EscapeProgress get progress => _progress;
 
@@ -83,6 +108,7 @@ class EscapeProgressController extends ChangeNotifier {
       moves: moves,
       stars: stars,
       perfect: perfect,
+      fingerprint: _fingerprints[level],
     );
     unawaited(_persist());
     notifyListeners();

@@ -13,6 +13,11 @@ abstract final class EscapeLevels {
 
   static int get count => all.length;
 
+  /// Bölüm numarasından bulmacanın parmak izine — kayıt eşleştirmesi için.
+  static final Map<int, String> fingerprints = Map<int, String>.unmodifiable(
+    <int, String>{for (final level in all) level.number: level.fingerprint},
+  );
+
   /// Numarası verilen bölüm; yoksa `null`.
   static EscapeLevel? byNumber(int number) {
     if (number < 1 || number > all.length) return null;

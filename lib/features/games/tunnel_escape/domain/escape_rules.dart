@@ -16,7 +16,9 @@ abstract final class EscapeRules {
     required int optimal,
     required double branching,
   }) {
-    final threeSlack = optimal >= 20
+    final threeSlack = optimal >= 30
+        ? 3
+        : optimal >= 20
         ? 2
         : optimal >= 12
         ? 1

@@ -114,7 +114,14 @@ bulmaca. Yolculuk motorunu aynen kullanıyor, üstüne üç şey ekliyor:
   doğruluyor; veri elle düzenlenirse test yakalar.
 - **Kalıcı bölüm kaydı** (`EscapeProgressController`, `LocalStore`
   `tunnel_escape_progress_v1`): bitirilen bölüm, en iyi hamle, yıldız.
-  Yolculuktan bağımsız; açık bölümler bu kayıttan **türetiliyor**.
+  Yolculuktan bağımsız; açık bölümler bu kayıttan **türetiliyor**. Her
+  sonuç kazanıldığı bulmacanın parmak iziyle yazılıyor: bölümler yeniden
+  tasarlanırsa bitirme korunur, eski hamle ve yıldız yeni bulmacaya
+  taşınmaz (`EscapeProgress.reconcile`).
+- **Zorluk yalnız hamle sayısı değil** (`domain/escape_heuristics.dart`):
+  bölüm seçimi zorunlu "önce uzaklaş" hamlelerine ve göze iyi gelen hamleyi
+  yapan bir oyuncunun bölümü bitirip bitiremediğine de bakıyor. Eğri ve
+  kuşak kuralları üretim aracında, `report` hepsini tablo olarak basar.
 
 Yolculuk puanı bitirilen bölümden gelir ve tekrar oynayarak kasılamaz
 (`EscapeRules.journeyPoints`). Bölüm bitirmeden çıkılan koşu diğer

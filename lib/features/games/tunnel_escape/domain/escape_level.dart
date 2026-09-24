@@ -100,6 +100,13 @@ final class EscapeLevel {
   /// bir sonraki bölümü açar.
   final int twoStarMoves;
 
+  /// Bulmacanın kalıcı parmak izi: tahta değişirse değişir.
+  ///
+  /// Kayıtlar bununla bulmacaya bağlanır ([EscapeLevelRecord.fingerprint]):
+  /// bölüm numarası aynı kalıp tahtası yenilenirse eski en iyi hamle yeni
+  /// bulmacayla karşılaştırılmaz.
+  late final String fingerprint = fingerprintOf(render(layout, start));
+
   int get width => layout.width;
   int get height => layout.height;
   List<EscapePiece> get pieces => layout.pieces;
@@ -211,6 +218,17 @@ final class EscapeLevel {
     }
 
     return (EscapeLayout(width: width, height: height, pieces: pieces), start);
+  }
+
+  /// Izgara metninin parmak izi: satırlar `/` ile birleşir, FNV-1a (32 bit),
+  /// sekiz haneli onaltılık. Platformdan ve oturumdan bağımsız, kararlı.
+  static String fingerprintOf(List<String> grid) {
+    var hash = 0x811c9dc5;
+    for (final unit in grid.join('/').codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 
   /// Tahtayı ızgara metnine geri yazar — araçlar ve hata iletileri için.

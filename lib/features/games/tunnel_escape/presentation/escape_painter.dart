@@ -16,13 +16,11 @@ abstract final class EscapePalette {
   static const Color boardFill = Color(0xFF181B20);
   static const Color boardEdge = Color(0xFF3A3F48);
   static const Color cell = Color(0xFF1F2329);
-  static const Color exitLane = Color(0xFF232026);
 
   static const Color body = Color(0xFFECE7DE);
   static const Color roof = Color(0xFFF8F5EF);
   static const Color bodyEdge = Color(0xFFC4BCAF);
   static const Color window = Color(0xFF2A2E36);
-  static const Color light = Color(0xFFFFF1C2);
 
   static const Color target = Color(0xFFE5392F);
   static const Color targetRoof = Color(0xFFF1564B);
@@ -31,7 +29,6 @@ abstract final class EscapePalette {
   static const Color targetStripe = Color(0xFFFFE9E3);
 
   static const Color tunnelRing = Color(0xFF4B515C);
-  static const Color tunnelRingLight = Color(0xFF626976);
   static const Color tunnelMouth = Color(0xFF050607);
   static const Color signal = Color(0xFFF5C518);
 }
@@ -51,8 +48,9 @@ class EscapeGeometry {
 
   /// Verilen alana sığan en büyük tahta.
   ///
-  /// Sağda tünel için yarım hücrelik pay bırakılıyor: tünel tahtanın
-  /// dışına taşan tek öge ve kırpılmamalı.
+  /// Sağda tünel için küçük bir pay bırakılıyor: tünel tahtanın dışına
+  /// taşan tek öge ve kırpılmamalı. Pay bilerek dar — tahta ekranın
+  /// kahramanı, genişlik ona gitsin.
   factory EscapeGeometry.fit(Size size, int columns, int rows) {
     final pad = frameFactor * 2;
     final cellByWidth = size.width / (columns + pad + tunnelFactor);
@@ -72,10 +70,13 @@ class EscapeGeometry {
   }
 
   /// Çerçeve kalınlığı, hücre cinsinden.
-  static const double frameFactor = 0.22;
+  static const double frameFactor = 0.16;
 
-  /// Tünelin tahtadan dışarı taşan kısmı, hücre cinsinden.
-  static const double tunnelFactor = 0.62;
+  /// Tünelin çerçeveden dışarı taşan kısmı, hücre cinsinden.
+  static const double tunnelFactor = 0.3;
+
+  /// Tünel kemerinin kalınlığı, hücre cinsinden.
+  static const double archFactor = 0.09;
 
   final Offset origin;
   final double cell;
@@ -108,14 +109,16 @@ class EscapeGeometry {
     ((point.dx - origin.dx) / cell).floor(),
   );
 
-  /// Tünel ağzının dikdörtgeni: hedef satırında, tahtanın sağ kenarında.
+  /// Tünel ağzının karanlık içi: hedef satırında, ızgaranın sağ kenarından
+  /// kemerin iç yüzüne kadar. Metro buraya girer.
   Rect tunnelMouth(int exitRow) {
     final top = origin.dy + exitRow * cell;
-    return Rect.fromLTWH(
+    final arch = archFactor * cell;
+    return Rect.fromLTRB(
       grid.right,
-      top + cell * 0.08,
-      frameFactor * cell + tunnelFactor * cell * 0.72,
-      cell * 0.84,
+      top + cell * 0.1,
+      frame.right + tunnelFactor * cell - arch,
+      top + cell * 0.9,
     );
   }
 }
@@ -200,13 +203,7 @@ class EscapeBoardPainter extends CustomPainter {
   void _paintFrame(Canvas canvas, EscapeGeometry g) {
     final frame = RRect.fromRectAndRadius(
       g.frame,
-      Radius.circular(g.cell * 0.34),
-    );
-    canvas.drawRRect(
-      frame.shift(Offset(0, g.cell * 0.06)),
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.35)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, g.cell * 0.12),
+      Radius.circular(g.cell * 0.3),
     );
     canvas.drawRRect(frame, Paint()..color = EscapePalette.boardFill);
     canvas.drawRRect(
@@ -218,43 +215,34 @@ class EscapeBoardPainter extends CustomPainter {
     );
   }
 
+  /// Izgara: tek parça zemin ve ince derzler — depo zeminindeki karolar.
+  ///
+  /// Otuz altı ayrı yuvarlak kutu yerine tek yüzey: hücreler yine sayılır
+  /// ama tahta metroların önüne geçmez.
   void _paintCells(Canvas canvas, EscapeGeometry g) {
-    final paint = Paint()..color = EscapePalette.cell;
-    final inset = g.cell * 0.05;
-    final radius = Radius.circular(g.cell * 0.16);
-    for (var row = 0; row < g.rows; row++) {
-      for (var col = 0; col < g.columns; col++) {
-        final rect = Rect.fromLTWH(
-          g.origin.dx + col * g.cell + inset,
-          g.origin.dy + row * g.cell + inset,
-          g.cell - inset * 2,
-          g.cell - inset * 2,
-        );
-        canvas.drawRRect(RRect.fromRectAndRadius(rect, radius), paint);
-      }
+    final grid = g.grid;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(grid, Radius.circular(g.cell * 0.14)),
+      Paint()..color = EscapePalette.cell,
+    );
+    final joint = Paint()
+      ..color = EscapePalette.boardFill
+      ..strokeWidth = math.max(1.5, g.cell * 0.035);
+    for (var i = 1; i < g.columns; i++) {
+      final x = grid.left + i * g.cell;
+      canvas.drawLine(Offset(x, grid.top), Offset(x, grid.bottom), joint);
+    }
+    for (var i = 1; i < g.rows; i++) {
+      final y = grid.top + i * g.cell;
+      canvas.drawLine(Offset(grid.left, y), Offset(grid.right, y), joint);
     }
   }
 
-  /// Hedef satırı: tünele giden yol, çok hafif sıcak bir şerit ve tünelin
-  /// hemen önünde üç küçük ok.
+  /// Hedef satırı: tünelin hemen önünde üç küçük ok — çıkışın yönü.
+  ///
+  /// Başka süs yok: yolun kendisini metrolar ve tünel zaten anlatıyor.
   void _paintExitLane(Canvas canvas, EscapeGeometry g) {
     final row = layout.exitRow;
-    final lane = Rect.fromLTWH(
-      g.grid.left,
-      g.origin.dy + row * g.cell + g.cell * 0.18,
-      g.grid.width,
-      g.cell * 0.64,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(lane, Radius.circular(g.cell * 0.2)),
-      Paint()
-        ..shader =
-            ui.Gradient.linear(lane.centerLeft, lane.centerRight, <Color>[
-              EscapePalette.signal.withValues(alpha: 0),
-              EscapePalette.signal.withValues(alpha: 0.07),
-            ]),
-    );
-
     final y = g.origin.dy + (row + 0.5) * g.cell;
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -264,7 +252,7 @@ class EscapeBoardPainter extends CustomPainter {
     final h = g.cell * 0.11;
     for (var i = 0; i < 3; i++) {
       final x = g.grid.right - g.cell * (0.62 - i * 0.17);
-      paint.color = EscapePalette.signal.withValues(alpha: 0.28 + i * 0.16);
+      paint.color = EscapePalette.signal.withValues(alpha: 0.22 + i * 0.14);
       canvas.drawPath(
         Path()
           ..moveTo(x - h * 0.7, y - h)
@@ -273,24 +261,6 @@ class EscapeBoardPainter extends CustomPainter {
         paint,
       );
     }
-
-    // Peron kenarı: sağ kenar boyunca ince sarı çizgi, tünel ağzında kesik.
-    final edge = Paint()
-      ..color = EscapePalette.signal.withValues(alpha: 0.55)
-      ..strokeWidth = math.max(1.5, g.cell * 0.035)
-      ..strokeCap = StrokeCap.round;
-    final x = g.grid.right + g.frameInset * 0.5;
-    final mouth = g.tunnelMouth(row);
-    canvas.drawLine(
-      Offset(x, g.grid.top + g.cell * 0.12),
-      Offset(x, mouth.top - g.cell * 0.06),
-      edge,
-    );
-    canvas.drawLine(
-      Offset(x, mouth.bottom + g.cell * 0.06),
-      Offset(x, g.grid.bottom - g.cell * 0.12),
-      edge,
-    );
   }
 
   /// Tünelin karanlık içi — metro buraya girer.
@@ -304,20 +274,18 @@ class EscapeBoardPainter extends CustomPainter {
     canvas.drawRRect(inner, Paint()..color = EscapePalette.tunnelMouth);
   }
 
-  /// Tünelin ağzı: dışa taşan kemer ve içe doğru koyulaşan karanlık.
+  /// Tünelin ağzı: içe doğru koyulaşan karanlık ve tek renk kemer.
   ///
   /// Metrolardan **sonra** çizilir: tünele giren kırmızı metro karanlığın
-  /// altında kalır, gerçekten içeri girmiş gibi görünür.
+  /// altında kalır, gerçekten içeri girmiş gibi görünür. Metro kaybolurken
+  /// kemer bir an sinyal sarısına döner — bölümün bittiği an.
   void _paintTunnelFront(Canvas canvas, EscapeGeometry g) {
     final mouth = g.tunnelMouth(layout.exitRow);
+    final round = Radius.circular(mouth.height * 0.5);
 
     // İçe doğru karanlık: ağızda şeffaf, derinde tam siyah.
     canvas.drawRRect(
-      RRect.fromRectAndCorners(
-        mouth,
-        topRight: Radius.circular(mouth.height * 0.5),
-        bottomRight: Radius.circular(mouth.height * 0.5),
-      ),
+      RRect.fromRectAndCorners(mouth, topRight: round, bottomRight: round),
       Paint()
         ..shader = ui.Gradient.linear(
           Offset(mouth.left, mouth.center.dy),
@@ -331,54 +299,42 @@ class EscapeBoardPainter extends CustomPainter {
         ),
     );
 
-    // Kemer: ağzı üstten, sağdan ve alttan saran kalın bir halka.
-    final ring = g.cell * 0.13;
-    final outer = mouth.inflate(ring);
+    // Kemer: ağzı üstten, sağdan ve alttan saran düz bir halka.
+    final ring = EscapeGeometry.archFactor * g.cell;
+    final outer = Rect.fromLTRB(
+      g.frame.right - ring,
+      mouth.top - ring,
+      mouth.right + ring,
+      mouth.bottom + ring,
+    );
     final arch = Path()
       ..addRRect(
         RRect.fromRectAndCorners(
-          Rect.fromLTRB(outer.left, outer.top, outer.right, outer.bottom),
-          topLeft: Radius.circular(ring * 0.6),
-          bottomLeft: Radius.circular(ring * 0.6),
+          outer,
           topRight: Radius.circular(outer.height * 0.5),
           bottomRight: Radius.circular(outer.height * 0.5),
         ),
       )
       ..addRRect(
         RRect.fromRectAndCorners(
-          Rect.fromLTRB(
-            mouth.left - ring * 1.2,
-            mouth.top,
-            mouth.right,
-            mouth.bottom,
-          ),
-          topRight: Radius.circular(mouth.height * 0.5),
-          bottomRight: Radius.circular(mouth.height * 0.5),
+          Rect.fromLTRB(outer.left - 1, mouth.top, mouth.right, mouth.bottom),
+          topRight: round,
+          bottomRight: round,
         ),
       )
       ..fillType = PathFillType.evenOdd;
+    final glow = exitProgress <= 0.55
+        ? 0.0
+        : math.sin(math.pi * ((exitProgress - 0.55) / 0.45).clamp(0.0, 1.0));
     canvas.drawPath(
       arch,
       Paint()
-        ..shader = ui.Gradient.linear(
-          outer.topCenter,
-          outer.bottomCenter,
-          <Color>[EscapePalette.tunnelRingLight, EscapePalette.tunnelRing],
-        ),
+        ..color = Color.lerp(
+          EscapePalette.tunnelRing,
+          EscapePalette.signal,
+          glow,
+        )!,
     );
-    // Kemer taşları: halkada üç ince derz.
-    final joint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.28)
-      ..strokeWidth = math.max(1, g.cell * 0.02);
-    final c = Offset(mouth.right - mouth.height * 0.5, mouth.center.dy);
-    for (final angle in <double>[-0.9, 0, 0.9]) {
-      final dir = Offset(math.cos(angle), math.sin(angle));
-      canvas.drawLine(
-        c + dir * (mouth.height * 0.5),
-        c + dir * (mouth.height * 0.5 + ring),
-        joint,
-      );
-    }
   }
 
   // --- Metrolar ---
@@ -447,10 +403,9 @@ class EscapeBoardPainter extends CustomPainter {
   /// Üstten görünen bir metro gövdesi.
   ///
   /// Dilbilgisi her metroda aynı: gölge, gövde, açık renk tavan, koyu
-  /// pencereler, iki uçta farlar. Kırmızı metroyu ayıran renk **tek başına
-  /// değil**: iki vagonu ayıran körük, tünele bakan sivri burun ve
-  /// tavanındaki açık şerit yalnız onda var — renk körü oyuncu da hedefi
-  /// biçiminden tanır.
+  /// pencereler. Kırmızı metroyu ayıran renk **tek başına değil**: iki
+  /// vagonu ayıran körük ve tünele bakan sivri burundaki ok yalnız onda
+  /// var — renk körü oyuncu da hedefi biçiminden tanır.
   void _paintBody(
     Canvas canvas,
     EscapeGeometry g,
@@ -476,11 +431,12 @@ class EscapeBoardPainter extends CustomPainter {
           )
         : RRect.fromRectAndRadius(rect, radius);
 
-    // Gölge: kalkan metroda daha uzak ve yumuşak.
+    // Gölge: yalnız kalkan metroda belirgin — parmağın altındaki metro
+    // tahtadan kalkmış görünsün.
     canvas.drawRRect(
-      shape.shift(Offset(0, c * (lifted ? 0.12 : 0.05))),
+      shape.shift(Offset(0, c * (lifted ? 0.12 : 0.04))),
       Paint()
-        ..color = Colors.black.withValues(alpha: lifted ? 0.45 : 0.38)
+        ..color = Colors.black.withValues(alpha: lifted ? 0.45 : 0.3)
         ..maskFilter = MaskFilter.blur(
           BlurStyle.normal,
           c * (lifted ? 0.16 : 0.06),
@@ -526,17 +482,6 @@ class EscapeBoardPainter extends CustomPainter {
           ..color = edge
           ..strokeWidth = math.max(1.5, c * 0.045),
       );
-      // Tavan şeridi: vagon boyunca açık renk ince bant.
-      final stripe = Paint()
-        ..color = EscapePalette.targetStripe.withValues(alpha: 0.85)
-        ..strokeWidth = math.max(1.2, c * 0.035)
-        ..strokeCap = StrokeCap.round;
-      final y = rect.top + rect.height * 0.2;
-      canvas.drawLine(
-        Offset(rect.left + c * 0.22, y),
-        Offset(rect.right - c * 0.3, y),
-        stripe,
-      );
       // Burun ok işareti: tünele bakan uçta küçük beyaz ok.
       final nose = Offset(rect.right - c * 0.16, rect.center.dy - c * 0.02);
       final s = c * 0.08;
@@ -552,26 +497,6 @@ class EscapeBoardPainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round
           ..color = EscapePalette.targetStripe,
       );
-    }
-
-    // Farlar: iki uçta ikişer küçük ışık.
-    final lightPaint = Paint()..color = EscapePalette.light;
-    final r = c * 0.035;
-    final offsetAcross = across * 0.26;
-    for (final end in <double>[0.09, 0.91]) {
-      if (isTarget && end > 0.5) continue; // burunda ok var
-      for (final side in <double>[-1, 1]) {
-        final p = horizontal
-            ? Offset(
-                rect.left + rect.width * end,
-                rect.center.dy + side * offsetAcross,
-              )
-            : Offset(
-                rect.center.dx + side * offsetAcross,
-                rect.top + rect.height * end,
-              );
-        canvas.drawCircle(p, r, lightPaint);
-      }
     }
   }
 
@@ -701,8 +626,4 @@ class EscapeBoardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(EscapeBoardPainter old) => true;
-}
-
-extension on EscapeGeometry {
-  double get frameInset => EscapeGeometry.frameFactor * cell;
 }

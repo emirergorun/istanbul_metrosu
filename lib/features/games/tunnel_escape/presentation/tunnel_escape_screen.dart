@@ -371,13 +371,8 @@ class _MapView extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                _SquareButton(
-                  glyph: EscapeControlGlyph.map,
-                  semanticLabel: 'Oyundan çık',
-                  icon: Icons.arrow_back_rounded,
-                  onTap: onExit,
-                ),
-                const SizedBox(width: AppSpacing.md),
+                _BackButton(semanticLabel: 'Oyundan çık', onTap: onExit),
+                const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,6 +421,10 @@ class _MapView extends StatelessWidget {
 }
 
 /// Bölüm yüzü: başlık, tahta, denetimler ve tamamlanma paneli.
+///
+/// Hiyerarşi: önce oyun, sonra arayüz. Tahta kalan bütün yüksekliği alır;
+/// başlık tek satır, denetimler kutusuz tek sıra. Bölüm bitince panel
+/// denetimlerin yerine oturur, tahta arkada kararır.
 class _LevelView extends StatelessWidget {
   const _LevelView({
     required this.controller,
@@ -445,7 +444,6 @@ class _LevelView extends StatelessWidget {
   Widget build(BuildContext context) {
     final level = controller.level!;
     final station = EscapeStation.of(level.number, AppScope.of(context).metro);
-    final record = controller.levelProgress.recordOf(level.number);
     final completion = controller.completion;
     final solved = controller.phase == EscapePhase.solved && completion != null;
 
@@ -456,10 +454,9 @@ class _LevelView extends StatelessWidget {
           level: level,
           station: station,
           moves: controller.moves,
-          bestMoves: record?.bestMoves,
           onMap: controller.showMap,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.stack),
         Expanded(
           child: Stack(
             children: <Widget>[
@@ -476,12 +473,13 @@ class _LevelView extends StatelessWidget {
                         teachIdleHints: level.number <= 3,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.stack),
                     _Controls(controller: controller),
                   ],
                 ),
               ),
-              if (solved)
+              if (solved) ...<Widget>[
+                const Positioned.fill(child: _SolvedScrim()),
                 Positioned(
                   left: 0,
                   right: 0,
@@ -495,6 +493,7 @@ class _LevelView extends StatelessWidget {
                     onMap: controller.showMap,
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -503,64 +502,126 @@ class _LevelView extends StatelessWidget {
   }
 }
 
+/// Bölüm bitince tahtayı karartan perde: göz panele gitsin, tahta yine de
+/// arkada seçilsin. Dokunuşları yutar.
+class _SolvedScrim extends StatelessWidget {
+  const _SolvedScrim();
+
+  @override
+  Widget build(BuildContext context) {
+    final instant = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return AbsorbPointer(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: instant ? 1 : 0, end: 1),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        builder: (BuildContext context, double t, _) =>
+            ColoredBox(color: AppColors.background.withValues(alpha: 0.62 * t)),
+      ),
+    );
+  }
+}
+
+/// Bölüm başlığı: tek satır. Solda haritaya dönüş, ortada bölüm ve durak,
+/// sağda hamle sayacı.
+///
+/// Bölüm numarası tabela fontunda ve durağın hat renginde — oyunun
+/// kimliği orada. Geri kalan her şey gövde fontunda; yazıların hiçbiri
+/// logo gibi bağırmıyor.
 class _LevelHeader extends StatelessWidget {
   const _LevelHeader({
     required this.level,
     required this.station,
     required this.moves,
-    required this.bestMoves,
     required this.onMap,
   });
 
   final EscapeLevel level;
   final EscapeStation station;
   final int moves;
-  final int? bestMoves;
   final VoidCallback onMap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        _SquareButton(
-          glyph: EscapeControlGlyph.map,
-          semanticLabel: 'Hat haritasına dön',
-          onTap: onMap,
-        ),
-        const SizedBox(width: AppSpacing.md),
+        _BackButton(semanticLabel: 'Hat haritasına dön', onTap: onMap),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
                 'BÖLÜM ${level.number}',
                 style: AppText.label.copyWith(color: station.color),
               ),
+              const SizedBox(height: 2),
               Text(
                 station.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppText.bodyStrong.copyWith(fontWeight: FontWeight.w700),
+                style: AppText.lead,
               ),
             ],
           ),
         ),
+        const SizedBox(width: AppSpacing.md),
+        _MoveCounter(moves: moves, threeStarMoves: level.threeStarMoves),
+      ],
+    );
+  }
+}
+
+/// Hamle sayacı: büyük sayı, altında üç yıldızın sınırı.
+class _MoveCounter extends StatelessWidget {
+  const _MoveCounter({required this.moves, required this.threeStarMoves});
+
+  final int moves;
+  final int threeStarMoves;
+
+  @override
+  Widget build(BuildContext context) {
+    // Canlı bölge yalnız sayı: her hamlede ekran okuyucu kısa bir şey
+    // söylesin. Yıldız sınırı ayrı ve sessiz.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
         Semantics(
           liveRegion: true,
           label: '$moves hamle',
           child: ExcludeSemantics(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: <Widget>[
                 Text(
                   '$moves',
-                  style: AppText.stat.copyWith(fontSize: 22, height: 1.1),
+                  style: AppText.stat.copyWith(fontSize: 24, height: 1.1),
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                Text('HAMLE', style: AppText.micro),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 3),
+        Semantics(
+          label: 'Üç yıldız için en fazla $threeStarMoves hamle',
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const EscapeStarRow(count: 3, size: 10, gap: 1),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
-                  bestMoves == null
-                      ? 'HAMLE · 3★ ${level.threeStarMoves}'
-                      : 'HAMLE · EN İYİ $bestMoves',
-                  style: AppText.micro.copyWith(fontFeatures: kTabularFigures),
+                  '$threeStarMoves',
+                  style: AppText.caption.copyWith(
+                    fontFeatures: kTabularFigures,
+                    height: 1,
+                  ),
                 ),
               ],
             ),
@@ -571,6 +632,7 @@ class _LevelHeader extends StatelessWidget {
   }
 }
 
+/// Tahtanın altındaki denetim sırası: geri al, ipucu, baştan.
 class _Controls extends StatelessWidget {
   const _Controls({required this.controller});
 
@@ -584,16 +646,16 @@ class _Controls extends StatelessWidget {
         Expanded(
           child: EscapeControlButton(
             glyph: EscapeControlGlyph.undo,
-            label: 'GERİ AL',
+            label: 'Geri al',
             semanticLabel: 'Son hamleyi geri al',
+            emphasis: true,
             onTap: controller.canUndo ? controller.undo : null,
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: EscapeControlButton(
             glyph: EscapeControlGlyph.hint,
-            label: 'İPUCU',
+            label: 'İpucu',
             semanticLabel: 'Sıradaki hamleyi göster',
             busy: controller.isHintPending,
             onTap: playing && !controller.isHintPending
@@ -601,11 +663,10 @@ class _Controls extends StatelessWidget {
                 : null,
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: EscapeControlButton(
             glyph: EscapeControlGlyph.restart,
-            label: 'BAŞTAN',
+            label: 'Baştan',
             semanticLabel: 'Bölümü baştan başlat',
             onTap: playing && controller.moves > 0
                 ? controller.restartLevel
@@ -617,43 +678,32 @@ class _Controls extends StatelessWidget {
   }
 }
 
-/// Başlık satırının 44 piksellik kare düğmesi.
-class _SquareButton extends StatelessWidget {
-  const _SquareButton({
-    required this.glyph,
-    required this.semanticLabel,
-    required this.onTap,
-    this.icon,
-  });
+/// Geri düğmesi: kutusuz ok, 44 piksellik parmak alanı.
+///
+/// Sol kenara optik olarak hizalı: okun kendisi değil, dokunma alanı
+/// kenarda başlar.
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.semanticLabel, required this.onTap});
 
-  final EscapeControlGlyph glyph;
   final String semanticLabel;
   final VoidCallback onTap;
 
-  /// Verilirse çizilmiş işaret yerine bu (geri oku gibi evrensel işaretler).
-  final IconData? icon;
-
   @override
   Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      semanticLabel: semanticLabel,
-      borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 2),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 2),
-          border: Border.all(color: AppColors.outline.withValues(alpha: 0.7)),
-        ),
-        child: Center(
-          child: icon != null
-              ? Icon(icon, size: 22, color: AppColors.textPrimary)
-              : SizedBox.square(
-                  dimension: 20,
-                  child: EscapeGlyph(glyph: glyph),
-                ),
+    return Transform.translate(
+      offset: const Offset(-AppSpacing.sm, 0),
+      child: Pressable(
+        onTap: onTap,
+        semanticLabel: semanticLabel,
+        scale: 0.9,
+        borderRadius: BorderRadius.circular(22),
+        child: const SizedBox.square(
+          dimension: 44,
+          child: Icon(
+            Icons.chevron_left_rounded,
+            size: 32,
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
     );
