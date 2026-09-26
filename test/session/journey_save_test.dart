@@ -182,6 +182,28 @@ void main() {
       expect(host.restore(), isNull);
     });
 
+    test('saveNow kalp atışını beklemeden yazar', () async {
+      // Ray Döşe bölüm numarasını anında kaydediyor; yolculuk da aynı anda
+      // yazılmazsa zorla kapanan uygulamada bölümün puanı kaybolurdu.
+      final store = await storeWith(<String, Object>{});
+      final host = JourneyController(store: store, routes: routes);
+      addTearDown(host.dispose);
+      final session = host.start(
+        routes.estimate('m2_taksim', 'm2_levent').journey!,
+      );
+      session.addGameScore(gameId: 'rail_lay', raw: 15);
+      await Future<void>.delayed(Duration.zero);
+      final before = JourneySave.decode(store.savedJourney!)!;
+      expect(before.score, 0);
+
+      host.saveNow();
+      await Future<void>.delayed(Duration.zero);
+
+      final saved = JourneySave.decode(store.savedJourney!)!;
+      expect(saved.score, session.score);
+      expect(saved.scoreByGame['rail_lay'], session.scoreOf('rail_lay'));
+    });
+
     test('yolculuk kapanınca kayıt silinir', () async {
       final store = await storeWith(<String, Object>{
         'journey_save': sample().encode(),

@@ -20,6 +20,8 @@ import 'package:istanbul_metro_game/features/games/train_snake/domain/train_snak
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_hint_service.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_progress_controller.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
+import 'package:istanbul_metro_game/features/games/rail_lay/application/rail_lay_controller.dart';
+import 'package:istanbul_metro_game/features/games/rail_lay/domain/rail_lay_state.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/data/escape_levels.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/domain/escape_solver.dart';
 import 'package:istanbul_metro_game/features/journey/models/journey.dart';
@@ -732,6 +734,11 @@ final Map<String, ({String id, BotFactory make})> botFactories =
         make: ({required journey, required seed, required skill}) =>
             TunnelEscapeBot(journey: journey, seed: seed, skill: skill),
       ),
+      'Ray Döşe': (
+        id: 'rail_lay',
+        make: ({required journey, required seed, required skill}) =>
+            RailLayBot(journey: journey, seed: seed, skill: skill),
+      ),
       'Metro Bilgi': (
         id: 'metro_quiz',
         make: ({required journey, required seed, required skill}) =>
@@ -798,6 +805,146 @@ class MetroLineBot extends GameBot {
 /// yasal bir hamle (yanlış metro, yanlış yön). Düşünme süresi bölüm başına
 /// bir okuma payı ve hamle başına bir karar süresi; zor bölümde karar
 /// süresi uzar.
+/// Ray Döşe: açgözlü bir insan modeli.
+///
+/// Her hamlede en çok yeni kare döşeyen kayışı seçer; hiçbiri yeni kare
+/// döşemiyorsa döşeyebileceği en yakın duruşa yürür. Bu strateji bazen
+/// tek yönlü bir cebe girip sıkışıyor — gerçek oyuncu da öyle; o zaman
+/// bölümü baştan alır ve süre kaybeder.
+class RailLayBot extends GameBot {
+  RailLayBot({required super.journey, required super.seed, super.skill});
+
+  /// İlerleme kalıcı: gerçek oyuncu her yolculuğa farklı bir bölümden
+  /// başlar. Tünele Kaç botuyla aynı dağıtım.
+  late final int _startLevel = 1 + (seed * 7) % 40;
+
+  @override
+  RailLayController create(JourneySession session, Random random) =>
+      RailLayController(
+        journey: journey,
+        recordToBeat: 0,
+        startLevel: _startLevel,
+        session: session,
+      );
+
+  @override
+  void live(RailLayController controller, Random random) {
+    const dt = 1 / 60;
+    var readLevel = -1;
+    var idleMoves = 0;
+    var guard = 0;
+    // Baştan alınan bölümde oyuncu artık yolu biliyor: ikinci denemede
+    // bölümün bilinen çözümünü izler. Yoksa az hata yapan usta bot aynı
+    // çıkmaza tekrar tekrar giriyor ve acemiden az puan alıyordu
+    // (ölçüldü: usta 63, orta 77).
+    List<RailLayDirection>? route;
+    while (controller.status == GameStatus.playing &&
+        guard++ < 400000 &&
+        !expired(controller)) {
+      if (controller.isSliding || controller.isCelebrating) {
+        controller.debugAdvance(dt);
+        continue;
+      }
+      // Yeni bölüm: tahtayı okuma süresi, bölüm büyüdükçe uzar.
+      if (controller.levelNumber != readLevel) {
+        readLevel = controller.levelNumber;
+        idleMoves = 0;
+        route = null;
+        controller.debugAdvance(
+          _flaw(3.0, 1.2, skill) +
+              controller.openCount * _flaw(0.04, 0.015, skill),
+        );
+        continue;
+      }
+      // Sıkıştı (ya da uzun süredir hiçbir şey döşeyemiyor): baştan al.
+      if (controller.isStuck || idleMoves >= 12) {
+        controller.debugAdvance(_flaw(2.5, 0.8, skill));
+        if (controller.status != GameStatus.playing) break;
+        controller.restartLevel();
+        idleMoves = 0;
+        route = List<RailLayDirection>.of(controller.level.solution);
+        continue;
+      }
+
+      controller.debugAdvance(
+        _flaw(1.1, 0.45, skill) * (0.6 + random.nextDouble() * 0.8),
+      );
+      if (controller.status != GameStatus.playing) break;
+      final before = controller.paintedCount;
+      var planned = route;
+      // Yolu bilen oyuncu da ara sıra şaşar: kusursuz ikinci deneme botu
+      // gerçek oyuncudan hızlı gösterirdi. Şaşan oyuncu yolu kaybeder,
+      // açgözlü oynamaya döner ve belki yine tuzağa düşer.
+      if (planned != null &&
+          planned.isNotEmpty &&
+          random.nextDouble() < _flaw(0.12, 0.02, skill)) {
+        route = planned = null;
+      }
+      controller.swipe(
+        planned != null && planned.isNotEmpty
+            ? planned.removeAt(0)
+            : _choose(controller, random),
+      );
+      // Kayış bitene kadar zamanı akıt, sonra ilerleme var mı bak.
+      var frames = 0;
+      while (controller.isSliding && frames++ < 120) {
+        controller.debugAdvance(dt);
+      }
+      idleMoves = controller.paintedCount > before ? 0 : idleMoves + 1;
+    }
+  }
+
+  RailLayDirection _choose(RailLayController controller, Random random) {
+    const directions = RailLayDirection.values;
+    if (random.nextDouble() < _flaw(0.18, 0.03, skill)) {
+      return directions[random.nextInt(directions.length)];
+    }
+    final level = controller.level;
+
+    int gainOf(Point<int> from, RailLayDirection direction) {
+      var gain = 0;
+      for (final cell in level.slide(from, direction)) {
+        if (controller.paintAt(cell) == 0) gain++;
+      }
+      return gain;
+    }
+
+    // 1. Buradan yeni kare döşeyen en iyi kayış.
+    var best = <RailLayDirection>[];
+    var bestGain = 0;
+    for (final direction in directions) {
+      final gain = gainOf(controller.position, direction);
+      if (gain > bestGain) {
+        bestGain = gain;
+        best = <RailLayDirection>[direction];
+      } else if (gain == bestGain && gain > 0) {
+        best.add(direction);
+      }
+    }
+    if (best.isNotEmpty) return best[random.nextInt(best.length)];
+
+    // 2. Döşeyebileceği en yakın duruşa giden ilk adım (BFS).
+    final firstStep = <Point<int>, RailLayDirection>{};
+    final queue = <Point<int>>[controller.position];
+    final seen = <Point<int>>{controller.position};
+    while (queue.isNotEmpty) {
+      final stop = queue.removeAt(0);
+      for (final direction in directions) {
+        final path = level.slide(stop, direction);
+        if (path.isEmpty) continue;
+        final next = path.last;
+        if (!seen.add(next)) continue;
+        firstStep[next] = firstStep[stop] ?? direction;
+        for (final d in directions) {
+          if (gainOf(next, d) > 0) return firstStep[next]!;
+        }
+        queue.add(next);
+      }
+    }
+    return directions[random.nextInt(directions.length)];
+  }
+}
+
 class TunnelEscapeBot extends GameBot {
   TunnelEscapeBot({required super.journey, required super.seed, super.skill});
 

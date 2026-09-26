@@ -171,6 +171,12 @@ class AppColors {
   /// kutusunda kontrast ~4,1:1.
   static const Color gameTunnelEscape = Color(0xFFFF7A5C);
 
+  /// Ton açısı ~61°: kalan en geniş boşluk gameBlocks (40°) ile gameLanes
+  /// (85°) arası; ikisine de ~22° uzak. 35° kuralı Metro Hattı ve Tünele
+  /// Kaç'ta zaten bırakılmıştı: ayrımı glif ve kapak taşıyor, renk
+  /// destekliyor. Galata taşının gün batımındaki sarısı.
+  static const Color gameRailLay = Color(0xFFE2E44E);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

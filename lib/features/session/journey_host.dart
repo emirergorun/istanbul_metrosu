@@ -96,6 +96,16 @@ class JourneyController extends ChangeNotifier {
     _persistSave();
   }
 
+  /// Kaydı beklemeden hemen yazar.
+  ///
+  /// Kalp atışı kaydı beş saniyede bir; çoğu oyunda arada kalan birkaç
+  /// saniyelik puan önemsiz. Ama ilerlemesini kendi kaydına **anında**
+  /// yazan bir oyun (Ray Döşe'nin bölüm numarası) yolculuğu da aynı anda
+  /// yazmalı: yoksa uygulama zorla kapanınca bölüm ilerlemiş, o bölümün
+  /// puanı ise kaybolmuş olur — ve çözülmüş bölüm tekrar oynanamadığı için
+  /// geri de kazanılamaz.
+  void saveNow() => _persistSave();
+
   /// Açılışta yarım kalan yolculuğu geri getirir.
   ///
   /// Kapalı geçen süre **yolculuğa yazılmaz**: tren, uygulama kapalıyken

@@ -73,6 +73,11 @@ class LocalStore extends ChangeNotifier {
   static const String _platformNameKey = 'platform_display_name';
   static const String _escapeProgressKey = 'tunnel_escape_progress_v1';
 
+  /// v2: bölüm seti çözücüyle ölçülen yeni bölümlerle tümden değişti; eski
+  /// "16. bölüm" artık başka bir tahta. Herkes yeni rampaya 1. bölümden
+  /// başlar.
+  static const String _railLayLevelKey = 'rail_lay_level_v2';
+
   SharedPreferences? _prefs;
   bool _ready = false;
   bool _hapticsEnabled = true;
@@ -497,6 +502,19 @@ class LocalStore extends ChangeNotifier {
   Future<void> saveEscapeProgress(String raw) async {
     await _prefs?.setString(_escapeProgressKey, raw);
     notifyListeners();
+  }
+
+  /// Ray Döşe'de sıradaki bölüm. Bölümler numaradan deterministik
+  /// üretildiği için saklanacak tek şey bu sayı.
+  int get railLayLevel {
+    final level = _prefs?.getInt(_railLayLevelKey) ?? 1;
+    return level < 1 ? 1 : level;
+  }
+
+  /// Dinleyicilere haber verilmez: kayıt oyunun ortasında yazılıyor ve
+  /// bu sayıyı ekranda gösteren başka bir yer yok.
+  Future<void> saveRailLayLevel(int level) async {
+    await _prefs?.setInt(_railLayLevelKey, level);
   }
 
   /// Bu cihazın arkadaş kodu.

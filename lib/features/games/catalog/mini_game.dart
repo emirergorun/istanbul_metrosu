@@ -322,6 +322,32 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Ray Döşe — Maze Paint mantığı: metro duvara kadar kayar, geçtiği her
+  /// kareye ray döşer. Arka planda Galata Kulesi.
+  ///
+  /// Tünele Kaç gibi bölümlü ve kalıcı: oyuncu kaldığı bölümden devam
+  /// eder. Kapağı bilerek boş, bkz. [GameCoverScene.railLay].
+  static const MiniGame railLay = MiniGame(
+    id: 'rail_lay',
+    name: 'Ray Döşe',
+    tagline: 'Kaydır, metro duvara kadar gitsin; her kareye ray döşe.',
+    glyph: GameGlyph.railLay,
+    color: AppColors.gameRailLay,
+    coverScene: GameCoverScene.railLay,
+    description:
+        'Metroyu kaydır: duvara çarpana kadar gider ve geçtiği her kareye '
+        'hat renginde ray döşer.',
+    objective:
+        'Bütün kareler döşenince bölüm biter. Sırayı iyi seç: yanlış '
+        'kayış bazı kareleri döşenemez bırakır. Kaldığın bölümden sürer.',
+    howToPlay: <String>[
+      'Tahtada parmağını kaydır: metro o yönde duvara kadar gider.',
+      'Geçtiği her kare döşenir; boş kare kalmayınca bölüm biter.',
+      'Kalan kareye ulaşamıyorsan "Baştan al" ile bölümü yeniden başlat.',
+    ],
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -383,6 +409,7 @@ class MiniGames {
     crossing,
     metroLine,
     tunnelEscape,
+    railLay,
     transfer,
     signal,
     wagon,

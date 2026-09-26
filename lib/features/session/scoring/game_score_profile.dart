@@ -162,6 +162,18 @@ class GameScoreProfiles {
               'kasılamaz: aynı bölüm bir yolculukta en fazla bir kez küçük '
               'bir tekrar payı verir (EscapeRules.journeyPoints).',
         ),
+        'rail_lay': GameScoreProfile(
+          measuredPerMinute: 112,
+          scale: 0.72,
+          note:
+              'Puan yalnız biten bölümden: açık kare + 3 × en kısa çözüm '
+              'hamlesi (iş + düşünme). Bölümler çözücüyle ölçülüp seçildi; '
+              '3. bölümden itibaren tuzak var. "Sıkıştın" uyarısı çıkmazdan '
+              'üç hamle sonra geliyor, o hamleler de süre yiyor. Ölçekle '
+              'acemi ~83, orta 112, usta ~179. Bot ilk denemede açgözlü '
+              'oynar, uyarı gelince baştan alıp bilinen yolu izler ama '
+              'arada şaşar.',
+        ),
         'metro_quiz': GameScoreProfile(
           measuredPerMinute: 97,
           scale: 1.38,

@@ -11,6 +11,7 @@ import 'package:istanbul_metro_game/features/games/metro_merge/application/metro
 import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_quiz_controller.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_flight_controller.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
+import 'package:istanbul_metro_game/features/games/rail_lay/application/rail_lay_controller.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 
@@ -40,6 +41,7 @@ void main() {
         CrossingController.id,
         MetroLineController.id,
         TunnelEscapeController.id,
+        RailLayController.id,
       };
       final playableIds = MiniGames.playable.map((MiniGame g) => g.id).toSet();
       expect(playableIds, controllerIds);
@@ -136,6 +138,7 @@ void main() {
         'train_snake',
         'crossing',
         'metro_line',
+        'rail_lay',
       });
     });
 

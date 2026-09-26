@@ -56,6 +56,9 @@ enum GameGlyph {
   /// Kaydırılan bir metro ve önündeki tünel kemeri — Tünele Kaç.
   escape,
 
+  /// Yarısı döşenmiş L koridor ve ucundaki metro — Ray Döşe.
+  railLay,
+
   /// Kilitli kart.
   locked,
 }
@@ -126,6 +129,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintMetroLine(canvas, s, fill);
       case GameGlyph.escape:
         _paintEscape(canvas, s, fill, stroke);
+      case GameGlyph.railLay:
+        _paintRailLay(canvas, s, fill);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -480,6 +485,31 @@ class GameGlyphPainter extends CustomPainter {
         ..lineTo(s * 0.64, s * 0.28)
         ..lineTo(s * 0.64, s * 0.56)
         ..close(),
+      fill,
+    );
+  }
+
+  /// L biçimli koridor: döşenmiş kol dolu, döşenecek kol soluk, köşede
+  /// metro. Oyunun tek cümlesi: kaydır, geçtiğin yer döşensin.
+  void _paintRailLay(Canvas canvas, double s, Paint fill) {
+    final pending = Paint()..color = color.withValues(alpha: 0.3);
+    final side = s * 0.2;
+    // Dikey kol (döşenmiş) ve yatay kol (döşenecek).
+    for (var i = 0; i < 3; i++) {
+      _cell(canvas, s * 0.14, s * (0.14 + i * 0.24), side, fill);
+    }
+    for (var i = 1; i < 3; i++) {
+      _cell(canvas, s * (0.14 + i * 0.24), s * 0.62, side, pending);
+    }
+    // Metro: köşede, sağa bakan kabin.
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(s * 0.62, s * 0.60, s * 0.28, s * 0.24),
+        topLeft: Radius.circular(s * 0.04),
+        bottomLeft: Radius.circular(s * 0.04),
+        topRight: Radius.circular(s * 0.11),
+        bottomRight: Radius.circular(s * 0.11),
+      ),
       fill,
     );
   }

@@ -68,6 +68,12 @@ enum GameCoverScene {
   /// görsel yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
   tunnelEscape,
 
+  /// **Boş kapak** — Ray Döşe. Kullanıcı kararı: kapak ekipten gelene kadar
+  /// kartta yalnız oyunun adı yazar.
+  ///
+  /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
+  railLay,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -309,6 +315,7 @@ class _ScenePainter extends CustomPainter {
       case GameCoverScene.crossing:
       case GameCoverScene.metroLine:
       case GameCoverScene.tunnelEscape:
+      case GameCoverScene.railLay:
         // Sahne yok: zemin gradyanı ve başlık yeterli.
         break;
       case GameCoverScene.locked:
