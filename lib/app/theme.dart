@@ -177,6 +177,10 @@ class AppColors {
   /// destekliyor. Galata taşının gün batımındaki sarısı.
   static const Color gameRailLay = Color(0xFFE2E44E);
 
+  /// Ton açısı ~200°: tünel lambasının soğuk mavisi. Hat Birleştir'e
+  /// (195°) yakın; ayrımı glif (arkadan tren + fren pedalı) taşıyor.
+  static const Color gameMachinist = Color(0xFF5EC8E5);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

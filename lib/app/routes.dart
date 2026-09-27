@@ -18,6 +18,8 @@ import '../features/games/metro_quiz/application/metro_quiz_controller.dart';
 import '../features/games/metro_quiz/presentation/metro_quiz_screen.dart';
 import '../features/games/train_snake/application/train_snake_controller.dart';
 import '../features/games/train_snake/presentation/train_snake_screen.dart';
+import '../features/games/machinist/application/machinist_controller.dart';
+import '../features/games/machinist/presentation/machinist_screen.dart';
 import '../features/games/rail_lay/application/rail_lay_controller.dart';
 import '../features/games/rail_lay/presentation/rail_lay_screen.dart';
 import '../features/games/tunnel_escape/application/tunnel_escape_controller.dart';
@@ -206,6 +208,9 @@ class AppRoutes {
               }
               if (args.gameId == RailLayController.id) {
                 return RailLayScreen(journey: args.journey);
+              }
+              if (args.gameId == MachinistController.id) {
+                return MachinistScreen(journey: args.journey);
               }
               return GameScreen(
                 journey: args.journey,

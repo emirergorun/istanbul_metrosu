@@ -74,6 +74,10 @@ enum GameCoverScene {
   /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
   railLay,
 
+  /// Makinist. Raster kapağı var (`coverAsset`); sahne yalnız görsel
+  /// yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
+  machinist,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -316,6 +320,7 @@ class _ScenePainter extends CustomPainter {
       case GameCoverScene.metroLine:
       case GameCoverScene.tunnelEscape:
       case GameCoverScene.railLay:
+      case GameCoverScene.machinist:
         // Sahne yok: zemin gradyanı ve başlık yeterli.
         break;
       case GameCoverScene.locked:

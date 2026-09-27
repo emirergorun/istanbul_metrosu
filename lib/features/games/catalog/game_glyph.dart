@@ -59,6 +59,9 @@ enum GameGlyph {
   /// Yarısı döşenmiş L koridor ve ucundaki metro — Ray Döşe.
   railLay,
 
+  /// Arkadan görülen metro ve yanında fren pedalı — Makinist.
+  machinist,
+
   /// Kilitli kart.
   locked,
 }
@@ -131,6 +134,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintEscape(canvas, s, fill, stroke);
       case GameGlyph.railLay:
         _paintRailLay(canvas, s, fill);
+      case GameGlyph.machinist:
+        _paintMachinist(canvas, s, fill);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -512,6 +517,45 @@ class GameGlyphPainter extends CustomPainter {
       ),
       fill,
     );
+  }
+
+  /// Arkadan metro (kabin camı oyuk) ve sağ altta pedal. Oyunun tek
+  /// cümlesi: sür ve tam işarette dur.
+  void _paintMachinist(Canvas canvas, double s, Paint fill) {
+    final glass = Paint()..color = color.withValues(alpha: 0.3);
+    // Gövde: üstü yuvarlak kabin.
+    canvas.drawRRect(
+      RRect.fromRectAndCorners(
+        Rect.fromLTWH(s * 0.12, s * 0.14, s * 0.46, s * 0.6),
+        topLeft: Radius.circular(s * 0.12),
+        topRight: Radius.circular(s * 0.12),
+        bottomLeft: Radius.circular(s * 0.04),
+        bottomRight: Radius.circular(s * 0.04),
+      ),
+      fill,
+    );
+    // Ön cam oyuk.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(s * 0.19, s * 0.22, s * 0.32, s * 0.2),
+        Radius.circular(s * 0.04),
+      ),
+      glass,
+    );
+    // Raylar.
+    canvas.drawRect(Rect.fromLTWH(s * 0.08, s * 0.8, s * 0.54, s * 0.05), fill);
+    // Pedal: eğik plaka.
+    canvas.save();
+    canvas.translate(s * 0.78, s * 0.62);
+    canvas.rotate(0.25);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset.zero, width: s * 0.2, height: s * 0.34),
+        Radius.circular(s * 0.05),
+      ),
+      fill,
+    );
+    canvas.restore();
   }
 
   /// Kilit — kilitli kartlar için.

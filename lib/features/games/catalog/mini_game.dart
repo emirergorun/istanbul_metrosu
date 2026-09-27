@@ -348,6 +348,32 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Makinist — arkadan kamerayla metro sürme (prototip). Gaz ve fren
+  /// pedalıyla durak işaretinde durulur.
+  ///
+  /// Kapak: ekibin piksel sanat görselinden dikey kesit (kadın makinist,
+  /// tren, Süleymaniye silueti); başlık gökyüzüne denk geliyor.
+  static const MiniGame machinist = MiniGame(
+    id: 'machinist',
+    coverAsset: 'assets/images/games/makinist_cover.png',
+    name: 'Makinist',
+    tagline: 'Metroyu sen sür; tam işarette dur, yolcuları al.',
+    glyph: GameGlyph.machinist,
+    color: AppColors.gameMachinist,
+    coverScene: GameCoverScene.machinist,
+    description:
+        'Gaz ve fren pedalıyla metroyu sür, istasyonda durak işaretinde dur.',
+    objective:
+        'İşarete ne kadar yakın durursan o kadar puan ve yolcu. İşareti '
+        'geçen tren durağı kaçırır; üç kaçırılan durakta oyun biter.',
+    howToPlay: <String>[
+      'İLERİ pedalını basılı tut: tren hızlanır. FREN pedalı yavaşlatır.',
+      'Sarı ışık istasyonu, 3-2-1 levhaları kalan mesafeyi haber verir.',
+      'Ölçekteki yeşil bölgede dur: kapılar açılır, yolcular biner.',
+    ],
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -410,6 +436,7 @@ class MiniGames {
     metroLine,
     tunnelEscape,
     railLay,
+    machinist,
     transfer,
     signal,
     wagon,
