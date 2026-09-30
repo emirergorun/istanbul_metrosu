@@ -68,10 +68,8 @@ enum GameCoverScene {
   /// görsel yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
   tunnelEscape,
 
-  /// **Boş kapak** — Ray Döşe. Kullanıcı kararı: kapak ekipten gelene kadar
-  /// kartta yalnız oyunun adı yazar.
-  ///
-  /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
+  /// Ray Döşe — raster kapağı var (`ray_dose_cover.png`); çizim yalnız
+  /// görsel yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
   railLay,
 
   /// Makinist. Raster kapağı var (`coverAsset`); sahne yalnız görsel

@@ -5,6 +5,20 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme.dart';
 import '../domain/machinist_rules.dart';
 
+/// Makinist'in sinyal renkleri — tek yerde.
+///
+/// Oyun baştan sona trafik ışığı diliyle konuşuyor: yeşil kalk, sarı
+/// yavaşla, kırmızı dur. Her ekranda aynı üç ton; kırmızının ve yeşilin
+/// ikinci, üçüncü kopyaları yok. Kırmızı uygulamanın tehlike rengi.
+abstract final class MachinistPalette {
+  static const Color go = Color(0xFF34E07A);
+  static const Color caution = AppColors.warning;
+  static const Color stop = AppColors.danger;
+
+  /// HUD kartlarının zemini: sahnenin açık tünel duvarında da okunur.
+  static const Color panel = Color(0xF224282E);
+}
+
 /// Basılı tutulan pedal. Parmak değdiği sürece [onChanged] `true`.
 ///
 /// `GestureDetector` yerine `Listener`: dokunma tanıyıcıları basılı
@@ -237,7 +251,7 @@ class _GaugePainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 5
-        ..color = const Color(0xFFE53935),
+        ..color = MachinistPalette.stop,
     );
     final v = kmh.clamp(0.0, _max);
     canvas.drawArc(
@@ -292,14 +306,14 @@ class _GaugePainter extends CustomPainter {
       c + Offset(-r * 0.32, -r * 0.3),
       'G',
       throttle,
-      const Color(0xFF34E07A),
+      MachinistPalette.go,
     );
     _lamp(
       canvas,
       c + Offset(r * 0.32, -r * 0.3),
       'F',
       brake,
-      const Color(0xFFFF5252),
+      MachinistPalette.stop,
     );
   }
 
@@ -404,10 +418,10 @@ class _StopMeterPainter extends CustomPainter {
     zone(
       MachinistRules.stopTolerance,
       -MachinistRules.stopTolerance,
-      const Color(0xFFFFC21A),
+      MachinistPalette.caution,
     );
     zone(3, -3, const Color(0xFFB5E04A));
-    zone(1.5, -1.5, const Color(0xFF34E07A));
+    zone(1.5, -1.5, MachinistPalette.go);
     zone(0.5, -0.5, Colors.white);
     // Tren burnu.
     final x = xOf(distance.clamp(-behind, range));

@@ -7,6 +7,8 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/widgets/game_control_button.dart';
+import '../../../../core/widgets/line_badge.dart';
 import '../../../journey/models/journey.dart';
 import '../../../journey/models/station.dart';
 import '../../../session/journey_host.dart';
@@ -253,6 +255,13 @@ class _RailLayScreenState extends State<RailLayScreen>
                   child: CustomPaint(painter: GalataBackdropPainter()),
                 ),
               ),
+              // Sahne atmosfer, oyun değil: karartılır ki gözü tahta alsın.
+              // Kule ve gün batımı seçilir kalır ama tahtayla yarışmaz.
+              Positioned.fill(
+                child: ColoredBox(
+                  color: AppColors.background.withValues(alpha: 0.55),
+                ),
+              ),
               ListenableBuilder(
                 listenable: controller,
                 builder: (context, _) {
@@ -274,16 +283,15 @@ class _RailLayScreenState extends State<RailLayScreen>
                                 accent: accent,
                                 onPause: controller.pause,
                                 gameScore: controller.scoreThisGame,
-                                chips: <Widget>[
-                                  _HudChip(
-                                    label: 'Bölüm',
-                                    value:
-                                        '${controller.levelNumber} · ${line.id}',
-                                    accent: accent,
-                                  ),
-                                ],
                               ),
-                              const SizedBox(height: AppSpacing.md),
+                              const SizedBox(height: AppSpacing.stack),
+                              _LevelHeader(
+                                level: controller.levelNumber,
+                                line: line,
+                                painted: controller.paintedCount,
+                                open: controller.openCount,
+                              ),
+                              const SizedBox(height: AppSpacing.stack),
                               Expanded(
                                 child: _RailLayPlayArea(
                                   controller: controller,
@@ -293,7 +301,7 @@ class _RailLayScreenState extends State<RailLayScreen>
                                   onPanEnd: _handlePanEnd,
                                 ),
                               ),
-                              const SizedBox(height: AppSpacing.sm),
+                              const SizedBox(height: AppSpacing.stack),
                               _ControlRow(
                                 controller: controller,
                                 onRestart: controller.restartLevel,
@@ -377,45 +385,71 @@ class _RailLayScreenState extends State<RailLayScreen>
   }
 }
 
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
+/// Bölüm başlığı: tek satır, kutusuz. Solda bölümün hattı ve numarası,
+/// sağda döşenen kare sayacı.
+///
+/// Hat rozeti bölümün **kendi** hattının renginde (yolculuğun değil):
+/// raylar da o renkte döşeniyor.
+class _LevelHeader extends StatelessWidget {
+  const _LevelHeader({
+    required this.level,
+    required this.line,
+    required this.painted,
+    required this.open,
   });
 
-  final String label;
-  final String value;
-  final Color accent;
+  final int level;
+  final MetroLine line;
+  final int painted;
+  final int open;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
+    return Row(
+      children: <Widget>[
+        LineBadge(label: line.id, color: line.color),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'BÖLÜM $level',
             maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-              fontFeatures: kTabularFigures,
+            style: AppText.label.copyWith(
+              fontSize: 15,
+              color: AppColors.textPrimary,
             ),
           ),
-        ],
-      ),
+        ),
+        Semantics(
+          liveRegion: true,
+          label: '$painted / $open kare döşendi',
+          child: ExcludeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: <Widget>[
+                    Text(
+                      '$painted',
+                      style: AppText.stat.copyWith(fontSize: 24, height: 1.1),
+                    ),
+                    Text(
+                      ' / $open',
+                      style: AppText.statSmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                Text('KARE', style: AppText.micro),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -497,7 +531,6 @@ class _RailLayPlayArea extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           child: _Celebration(
                             progress: controller.celebrationProgress,
-                            levelsCleared: controller.levelsCleared,
                             award: controller.lastAward,
                             color: lineColor,
                           ),
@@ -513,60 +546,44 @@ class _RailLayPlayArea extends StatelessWidget {
   }
 }
 
-/// Bölüm sonu: kısa bir övgü ve kazanılan puan.
+/// Bölüm sonu: kısa, sakin bir onay ve kazanılan puan.
+///
+/// Dönen övgü listesi ("HARİKA!", "MÜKEMMEL!") ve gölgeli dev yazı yerine
+/// Tünele Kaç'la aynı dil: tabela fontunda HAT AÇILDI, altında hat renginde
+/// puan. Hafifçe yükselerek belirir, sonda solar; zıplama yok.
 class _Celebration extends StatelessWidget {
   const _Celebration({
     required this.progress,
-    required this.levelsCleared,
     required this.award,
     required this.color,
   });
 
   final double progress;
-  final int levelsCleared;
   final int award;
   final Color color;
 
-  static const List<String> _praise = <String>[
-    'HAT AÇILDI!',
-    'HARİKA!',
-    'MÜKEMMEL!',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    // İlk üçte birde büyüyerek belirir, sonda solar.
-    final grow = Curves.easeOutBack.transform((progress * 3).clamp(0.0, 1.0));
-    final fade = progress > 0.75 ? (1 - progress) / 0.25 : 1.0;
-    final text = _praise[(levelsCleared - 1) % _praise.length];
+    final rise = Curves.easeOutCubic.transform((progress * 4).clamp(0.0, 1.0));
+    final fade = progress > 0.75 ? (1 - progress) / 0.25 : rise;
     return IgnorePointer(
       child: Opacity(
         opacity: fade.clamp(0.0, 1.0),
-        child: Transform.scale(
-          scale: 0.6 + 0.4 * grow,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - rise)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                text,
+                'HAT AÇILDI',
                 textAlign: TextAlign.center,
-                style: AppText.display.copyWith(
-                  fontSize: 30,
-                  color: Colors.white,
-                  shadows: <Shadow>[
-                    Shadow(
-                      color: Color.lerp(color, Colors.black, 0.5)!,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
+                style: AppText.title.copyWith(height: 1.05),
               ),
               if (award > 0)
                 Text(
                   '+$award puan',
-                  style: AppText.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                  style: AppText.captionStrong.copyWith(
+                    color: LineTheme.from(color).accent,
                     fontFeatures: kTabularFigures,
                   ),
                 ),
@@ -578,10 +595,12 @@ class _Celebration extends StatelessWidget {
   }
 }
 
-/// Tahtanın altındaki satır: durum metni ve "Baştan al".
+/// Tahtanın altındaki satır: yalnız gerektiğinde bir cümle ve "Baştan".
 ///
-/// Sıkışınca metin uyarıya döner ve düğme dolu hâle geçer; bu türde
-/// oyuncu kalan kareye ulaşamayacağını her zaman kendisi fark etmiyor.
+/// İlerleme başlıktaki sayaçta; burada yalnız ilk bölümün ipucu ya da
+/// sıkışma uyarısı konuşur. Sıkışınca uyarı rengine döner ve "Baştan"
+/// ailenin öndeki denetimi olur — oyuncu kalan kareye ulaşamayacağını her
+/// zaman kendisi fark etmiyor.
 class _ControlRow extends StatelessWidget {
   const _ControlRow({required this.controller, required this.onRestart});
 
@@ -593,49 +612,39 @@ class _ControlRow extends StatelessWidget {
     final stuck = controller.isStuck;
     final firstMove = controller.moves == 0 && controller.levelsCleared == 0;
     final message = stuck
-        ? 'Sıkıştın — bölümü baştan al'
+        ? 'Sıkıştın: bölümü baştan al'
         : firstMove
         ? 'Kaydır: metro duvara kadar gider'
-        : '${controller.paintedCount} / ${controller.openCount} kare döşendi';
+        : null;
     final canRestart =
         controller.status == GameStatus.playing &&
         !controller.isCelebrating &&
         controller.paintedCount > 1;
-    const buttonSize = Size(0, 40);
     return Row(
       children: <Widget>[
         Expanded(
-          child: Text(
-            message,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: stuck ? AppColors.warning : AppColors.textSecondary,
-              fontFeatures: kTabularFigures,
-            ),
-          ),
+          child: message == null
+              ? const SizedBox.shrink()
+              : Text(
+                  message,
+                  maxLines: 2,
+                  style: AppText.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: stuck ? AppColors.warning : AppColors.textSecondary,
+                  ),
+                ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        stuck
-            ? FilledButton.icon(
-                onPressed: canRestart ? onRestart : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: buttonSize,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                ),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('BAŞTAN AL'),
-              )
-            : OutlinedButton.icon(
-                onPressed: canRestart ? onRestart : null,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: buttonSize,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                ),
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('BAŞTAN AL'),
-              ),
+        SizedBox(
+          width: 88,
+          child: GameControlButton(
+            glyph: GameControlGlyph.restart,
+            label: 'Baştan',
+            semanticLabel: 'Bölümü baştan al',
+            emphasis: stuck,
+            onTap: canRestart ? onRestart : null,
+          ),
+        ),
       ],
     );
   }

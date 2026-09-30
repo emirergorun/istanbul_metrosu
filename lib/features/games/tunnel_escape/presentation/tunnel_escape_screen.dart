@@ -7,6 +7,7 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/widgets/game_control_button.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_host.dart';
@@ -644,8 +645,8 @@ class _Controls extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: EscapeControlButton(
-            glyph: EscapeControlGlyph.undo,
+          child: GameControlButton(
+            glyph: GameControlGlyph.undo,
             label: 'Geri al',
             semanticLabel: 'Son hamleyi geri al',
             emphasis: true,
@@ -653,8 +654,8 @@ class _Controls extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: EscapeControlButton(
-            glyph: EscapeControlGlyph.hint,
+          child: GameControlButton(
+            glyph: GameControlGlyph.hint,
             label: 'İpucu',
             semanticLabel: 'Sıradaki hamleyi göster',
             busy: controller.isHintPending,
@@ -664,8 +665,8 @@ class _Controls extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: EscapeControlButton(
-            glyph: EscapeControlGlyph.restart,
+          child: GameControlButton(
+            glyph: GameControlGlyph.restart,
             label: 'Baştan',
             semanticLabel: 'Bölümü baştan başlat',
             onTap: playing && controller.moves > 0

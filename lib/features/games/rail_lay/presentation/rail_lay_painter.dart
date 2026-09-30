@@ -79,38 +79,25 @@ class RailLayPainter extends CustomPainter {
     }
   }
 
+  /// Tek kare: boşsa plakadan bir ton açık düz yüzey, döşendiyse hat
+  /// rengi. Çerçeve çizgisi ve "üst ışık" kapağı yok — kareler tek tek kutu
+  /// gibi değil, plakaya gömülü karolar gibi okunur; göz rayı izler.
   void _paintTile(Canvas canvas, math.Point<int> point, double cell, int bits) {
-    final gap = cell * 0.06;
+    final gap = cell * 0.035;
     final rect = Rect.fromLTWH(
       point.x * cell + gap,
       point.y * cell + gap,
       cell - gap * 2,
       cell - gap * 2,
     );
-    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(cell * 0.16));
+    final rrect = RRect.fromRectAndRadius(rect, Radius.circular(cell * 0.08));
 
     if (bits == 0) {
       canvas.drawRRect(rrect, Paint()..color = AppColors.emptyCell);
-      canvas.drawRRect(
-        rrect.deflate(0.5),
-        Paint()
-          ..color = AppColors.cellGrid.withValues(alpha: 0.35)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-      );
       return;
     }
 
     canvas.drawRRect(rrect, Paint()..color = lineColor);
-    // Blok Metro'nun "üst ışık" kapağı: düz rengi kabartır.
-    canvas.drawRRect(
-      RRect.fromRectAndCorners(
-        Rect.fromLTWH(rect.left, rect.top, rect.width, rect.height * 0.42),
-        topLeft: rrect.tlRadius,
-        topRight: rrect.trRadius,
-      ),
-      Paint()..color = Colors.white.withValues(alpha: 0.12),
-    );
 
     final center = Offset((point.x + 0.5) * cell, (point.y + 0.5) * cell);
     if (bits & railLayHorizontal != 0) {

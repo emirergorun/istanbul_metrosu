@@ -326,7 +326,10 @@ class MiniGames {
   /// kareye ray döşer. Arka planda Galata Kulesi.
   ///
   /// Tünele Kaç gibi bölümlü ve kalıcı: oyuncu kaldığı bölümden devam
-  /// eder. Kapağı bilerek boş, bkz. [GameCoverScene.railLay].
+  /// eder.
+  ///
+  /// Kapak oyunun kendi çiziminden üretildi: Galata sahnesi ve 9. bölüm,
+  /// metro kayarken (`test/rail_lay_cover_generator_test.dart`).
   static const MiniGame railLay = MiniGame(
     id: 'rail_lay',
     name: 'Ray Döşe',
@@ -334,6 +337,7 @@ class MiniGames {
     glyph: GameGlyph.railLay,
     color: AppColors.gameRailLay,
     coverScene: GameCoverScene.railLay,
+    coverAsset: 'assets/images/games/ray_dose_cover.png',
     description:
         'Metroyu kaydır: duvara çarpana kadar gider ve geçtiği her kareye '
         'hat renginde ray döşer.',

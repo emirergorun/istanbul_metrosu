@@ -73,9 +73,9 @@ void main() {
 
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(board, findsOneWidget);
-    expect(find.text('BÖLÜM'), findsOneWidget);
+    expect(find.text('BÖLÜM 1'), findsOneWidget);
     expect(find.textContaining('Kaydır'), findsOneWidget);
-    expect(find.text('BAŞTAN AL'), findsOneWidget);
+    expect(find.text('Baştan'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await disposeGame(tester);
@@ -85,7 +85,7 @@ void main() {
     await resetStore(level: 17);
     await pumpGame(tester);
 
-    expect(find.textContaining('17 · '), findsOneWidget);
+    expect(find.text('BÖLÜM 17'), findsOneWidget);
 
     await disposeGame(tester);
   });
@@ -99,8 +99,9 @@ void main() {
     await tester.drag(board, offset, warnIfMissed: false);
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.textContaining('kare döşendi'), findsOneWidget);
-    expect(find.textContaining('1 / '), findsNothing);
+    // İlk kayış birden çok kare döşer; sayaç 1'de kalmaz, ipucu kalkar.
+    expect(find.text('1'), findsNothing);
+    expect(find.textContaining('Kaydır'), findsNothing);
     expect(tester.takeException(), isNull);
 
     await disposeGame(tester);
@@ -116,13 +117,13 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.textContaining('kare döşendi'), findsOneWidget);
+    expect(find.textContaining('Kaydır'), findsNothing);
 
-    await tester.tap(find.text('BAŞTAN AL'));
+    await tester.tap(find.text('Baştan'));
     await tester.pump();
 
     // Döşeme ve hamle sayısı sıfırlandı: ilk bölümde ipucu geri gelir.
-    expect(find.textContaining('kare döşendi'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
     expect(find.textContaining('Kaydır'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
@@ -198,7 +199,7 @@ void main() {
       );
     }
 
-    final praise = find.text('HAT AÇILDI!');
+    final praise = find.text('HAT AÇILDI');
     expect(praise, findsOneWidget);
     expect(
       tester.getRect(praise).top,

@@ -179,7 +179,7 @@ class _MachinistScreenState extends State<MachinistScreen>
         left > 0
             ? '${result.station} kaçtı · $left hakkın kaldı'
             : '${result.station} de kaçtı',
-        const Color(0xFFE53935),
+        MachinistPalette.stop,
       );
       return;
     }
@@ -189,7 +189,7 @@ class _MachinistScreenState extends State<MachinistScreen>
     final streak = result.streak > 1 ? ' · ${result.streak} seri' : '';
     _showBanner(
       '${grade.label} +${result.points} · ${result.passengers} yolcu$streak',
-      grade.keepsStreak ? const Color(0xFF34E07A) : AppColors.gameBlocks,
+      grade.keepsStreak ? MachinistPalette.go : AppColors.gameBlocks,
     );
   }
 
@@ -346,18 +346,22 @@ class _MachinistScreenState extends State<MachinistScreen>
               onPause: controller.pause,
               gameScore: controller.scoreThisGame,
               chips: <Widget>[
-                _HudChip(
-                  label: 'Yolcu',
-                  value: '${controller.passengersTotal}',
-                  color: accent,
+                _HudStat(
+                  label: 'YOLCU',
+                  semanticLabel: '${controller.passengersTotal} yolcu',
+                  child: Text(
+                    '${controller.passengersTotal}',
+                    style: AppText.statSmall,
+                  ),
                 ),
-                _HudChip(
-                  label: 'Hak',
-                  value:
-                      '${MachinistRules.maxMisses - controller.misses}/${MachinistRules.maxMisses}',
-                  color: controller.misses == 0
-                      ? accent
-                      : const Color(0xFFFF7A5C),
+                _HudStat(
+                  label: 'HAK',
+                  semanticLabel:
+                      '${MachinistRules.maxMisses - controller.misses} hak kaldı',
+                  child: _Lives(
+                    left: MachinistRules.maxMisses - controller.misses,
+                    total: MachinistRules.maxMisses,
+                  ),
                 ),
               ],
             ),
@@ -375,14 +379,14 @@ class _MachinistScreenState extends State<MachinistScreen>
                 const Spacer(),
                 MachinistPedal(
                   label: 'İLERİ',
-                  color: const Color(0xFF34E07A),
+                  color: MachinistPalette.go,
                   pressed: controller.throttleHeld,
                   onChanged: controller.setThrottle,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 MachinistPedal(
                   label: 'FREN',
-                  color: const Color(0xFFFF5252),
+                  color: MachinistPalette.stop,
                   pressed: controller.brakeHeld,
                   onChanged: controller.setBrake,
                 ),
@@ -484,9 +488,9 @@ class _Scrims extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: <double>[0, 0.2, 0.62, 1],
+          stops: <double>[0, 0.24, 0.62, 1],
           colors: <Color>[
-            Color(0xCC000000),
+            Color(0xE6000000),
             Color(0x00000000),
             Color(0x00000000),
             Color(0xDD000000),
@@ -510,14 +514,14 @@ class _StationCard extends StatelessWidget {
     final String title;
     final String name;
     final String detail;
-    Color light = const Color(0xFF2DFF7A);
+    Color light = MachinistPalette.go;
     if (dwelling != null) {
       title = 'KAPILAR AÇIK';
       name = dwelling.name;
       final boarded = (dwelling.passengers * controller.boardingProgress)
           .round();
       detail = '$boarded/${dwelling.passengers} yolcu';
-      light = const Color(0xFFFF2D2D);
+      light = MachinistPalette.stop;
     } else {
       final d = controller.distanceToStop;
       final approaching = controller.approaching;
@@ -526,7 +530,9 @@ class _StationCard extends StatelessWidget {
       name = controller.target.name;
       detail = d >= 0 ? '${d.round()} m' : 'geçtin';
       if (approaching) {
-        light = blink ? const Color(0xFFFFC21A) : const Color(0xFF4A3C10);
+        light = blink
+            ? MachinistPalette.caution
+            : MachinistPalette.caution.withValues(alpha: 0.25);
       }
     }
     final showMeter =
@@ -534,29 +540,26 @@ class _StationCard extends StatelessWidget {
         controller.distanceToStop < MachinistStopMeter.range;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      // Düz, koyu panel; hat rengi yalnız soldaki şeritte. Yarı saydam
+      // lacivert ve renkli çerçeve açık tünel duvarında bulanıyordu.
       decoration: BoxDecoration(
-        color: const Color(0xD914264A),
+        color: MachinistPalette.panel,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withValues(alpha: 0.5)),
+        border: Border(left: BorderSide(color: accent, width: 4)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Row(
             children: <Widget>[
-              // Sinyal lambası.
+              // Sinyal lambası: düz renk, koyu yuva. Parlama yok.
               Container(
                 width: 14,
                 height: 14,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: light,
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: light.withValues(alpha: 0.7),
-                      blurRadius: 10,
-                    ),
-                  ],
+                  border: Border.all(color: Colors.black54, width: 2),
                 ),
               ),
               const SizedBox(width: 10),
@@ -564,12 +567,7 @@ class _StationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      title,
-                      style: AppText.micro.copyWith(
-                        color: const Color(0xFFB9C4D8),
-                      ),
-                    ),
+                    Text(title, style: AppText.micro),
                     Text(
                       name,
                       maxLines: 1,
@@ -607,9 +605,9 @@ class _Countdown extends StatelessWidget {
     } else if (controller.isDwelling) {
       warning = null;
     } else if (controller.tooFast) {
-      warning = 'ÇOK HIZLI! FREN!';
+      warning = 'Çok hızlı, fren yap';
     } else if (controller.shouldBrake && !controller.brakeHeld) {
-      warning = 'FRENE BAS';
+      warning = 'Frene bas';
     } else if (controller.speed == 0 && !controller.throttleHeld) {
       warning = controller.served == 0 && controller.misses == 0
           ? 'Kalkmak için İLERİ pedalını basılı tut'
@@ -617,8 +615,6 @@ class _Countdown extends StatelessWidget {
     } else {
       warning = null;
     }
-    final blink = (controller.clockSeconds * 4).floor().isEven;
-
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(0, -0.92),
@@ -637,26 +633,22 @@ class _Countdown extends StatelessWidget {
             ),
             if (warning != null) ...<Widget>[
               const SizedBox(height: 8),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 120),
-                opacity: controller.tooFast && !blink ? 0.35 : 1,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: controller.tooFast
-                        ? const Color(0xE6E53935)
-                        : const Color(0xCC101216),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    warning,
-                    style: AppText.captionStrong.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: controller.tooFast
+                      ? MachinistPalette.stop
+                      : MachinistPalette.panel,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  warning,
+                  style: AppText.captionStrong.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -676,22 +668,26 @@ class _CountdownBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (text, color) = switch (value) {
-      3 => ('3', const Color(0xFFFFD54F)),
-      2 => ('2', const Color(0xFFFFB300)),
-      1 => ('1', const Color(0xFFFF7043)),
-      _ => ('DUR', const Color(0xFFFF3D3D)),
+      // Sarıdan kırmızıya tek bir rampa: 3 yavaşla, DUR dur.
+      3 => ('3', MachinistPalette.caution),
+      2 => (
+        '2',
+        Color.lerp(MachinistPalette.caution, MachinistPalette.stop, 0.35)!,
+      ),
+      1 => (
+        '1',
+        Color.lerp(MachinistPalette.caution, MachinistPalette.stop, 0.7)!,
+      ),
+      _ => ('DUR', MachinistPalette.stop),
     };
     return Container(
       width: value == 0 ? 116 : 76,
       height: 76,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xCC101216),
-        borderRadius: BorderRadius.circular(20),
+        color: MachinistPalette.panel,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color, width: 3),
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 24),
-        ],
       ),
       child: Text(
         text,
@@ -701,42 +697,76 @@ class _CountdownBadge extends StatelessWidget {
   }
 }
 
-class _HudChip extends StatelessWidget {
-  const _HudChip({
+/// HUD'daki küçük gösterge: duraklat düğmesiyle aynı boyda, aynı düz
+/// zeminde. Sahnenin açık duvarında da okunur; renkli saydam kutu yok.
+class _HudStat extends StatelessWidget {
+  const _HudStat({
     required this.label,
-    required this.value,
-    required this.color,
+    required this.semanticLabel,
+    required this.child,
   });
 
   final String label;
-  final String value;
-  final Color color;
+  final String semanticLabel;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
+    return Semantics(
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(label, style: AppText.micro.copyWith(height: 1.1)),
+              const SizedBox(height: 2),
+              child,
+            ],
+          ),
+        ),
       ),
-      child: Column(
+    );
+  }
+}
+
+/// Kalan haklar: üç nokta. Giden hak boş halka olur; son hak kırmızıdır.
+class _Lives extends StatelessWidget {
+  const _Lives({required this.left, required this.total});
+
+  final int left;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = left <= 1 ? MachinistPalette.stop : AppColors.textPrimary;
+    return SizedBox(
+      height: 18,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: color),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: color,
+          for (var i = 0; i < total; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: 4),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: i < left ? fill : Colors.transparent,
+                border: Border.all(
+                  color: i < left ? fill : AppColors.outline,
+                  width: 1.5,
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -773,14 +803,7 @@ class _Banner extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x55000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   text ?? '',
