@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../session/journey_game_controller.dart';
@@ -49,6 +50,13 @@ class LaneRunnerController extends JourneyGameController {
   double _trainLaneVisual = 1.0;
   double _spawnDistance = 0.0;
 
+  /// Başlangıçtan beri kat edilen yol (engel koordinatı biriminde);
+  /// sahnenin traversleri ve tünel halkaları bununla akar.
+  double _travel = 0.0;
+
+  /// Son fizik adımının duvar saati; çizimde ileri kestirim için.
+  DateTime? _lastTickAt;
+
   List<LaneObstacle> get obstacles =>
       List<LaneObstacle>.unmodifiable(_obstacles);
   int get trainLane => _trainLane;
@@ -56,6 +64,22 @@ class LaneRunnerController extends JourneyGameController {
   /// Trenin çizilecek yumuşatılmış ray konumu.
   double get trainLaneVisual => _trainLaneVisual;
   int get passes => _passes;
+
+  /// Kat edilen yol, engel biriminde.
+  double get travel => _travel;
+
+  /// Son fizik adımından bu yana geçen sürede kat edilen yol.
+  ///
+  /// Fizik motorun `Timer`'ıyla ilerliyor ve o zamanlayıcı ekran
+  /// yenilemesine hizalı değil; çizim her vsync karesinde engelleri ve
+  /// zemini bu kadar ileri kaydırır, akış kasmaz (bkz. Makinist).
+  double get renderAdvance {
+    final at = _lastTickAt;
+    if (at == null || status != GameStatus.playing) return 0;
+    final s = clock.now().difference(at).inMicroseconds / 1e6;
+    return _speed * (s.clamp(0.0, 0.05) / _nominalFrameSeconds);
+  }
+
   int get lineLevel => laneRunnerLineLevelForPasses(_passes);
   String get lineLabel => laneRunnerLineLabelForPasses(_passes);
 
@@ -83,6 +107,8 @@ class LaneRunnerController extends JourneyGameController {
     _trainLane = 1;
     _trainLaneVisual = 1.0;
     _spawnDistance = 0.0;
+    _travel = 0.0;
+    _lastTickAt = null;
   }
 
   void moveLeft() => _setLane(_trainLane - 1);
@@ -108,6 +134,8 @@ class LaneRunnerController extends JourneyGameController {
   void onTick(double dt) {
     // `_speed` nominal (16 ms) kare için ayarlı; gerçek dt'ye oranlanır.
     final frameStep = _speed * (dt / _nominalFrameSeconds);
+    _travel += frameStep;
+    _lastTickAt = clock.now();
 
     // Ray değiştirme ışınlanmaz, hedefe doğru yumuşak kayar.
     _trainLaneVisual +=
