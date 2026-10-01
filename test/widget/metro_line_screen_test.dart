@@ -1,10 +1,14 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:istanbul_metro_game/app/app_scope.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
 import 'package:istanbul_metro_game/core/storage/local_store.dart';
+import 'package:istanbul_metro_game/features/games/metro_line/application/metro_line_controller.dart';
 import 'package:istanbul_metro_game/features/games/metro_line/domain/metro_line_state.dart';
+import 'package:istanbul_metro_game/features/games/metro_line/presentation/metro_line_board_painter.dart';
 import 'package:istanbul_metro_game/features/games/metro_line/presentation/metro_line_screen.dart';
 import 'package:istanbul_metro_game/features/journey/models/journey.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
@@ -60,7 +64,9 @@ void main() {
         .ancestor(of: find.text('KALAN'), matching: find.byType(Column))
         .first;
     final texts = tester
-        .widgetList<Text>(find.descendant(of: chip, matching: find.byType(Text)))
+        .widgetList<Text>(
+          find.descendant(of: chip, matching: find.byType(Text)),
+        )
         .toList();
     return texts.last.data!;
   }
@@ -127,6 +133,54 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('SEVİYE'), findsOneWidget);
+
+    await disposeGame(tester);
+  });
+
+  testWidgets('bölüm geçişi: dokunuşlar beklenir, yeni ada oynanır', (
+    tester,
+  ) async {
+    await pumpGame(tester);
+    final state = tester.state(find.byType(MetroLineScreen)) as dynamic;
+    final controller = state.debugController as MetroLineController;
+    final rect = tester.getRect(find.byKey(boardKey));
+
+    /// Hücrenin ekrandaki bir noktası: tahtayı tarayıp ters yansıtmayla
+    /// aynı hücreye düşen ilk noktayı bulur.
+    Offset screenOf(Point<int> cell) {
+      final pj = MetroLineBoardProjection(controller.size, rect.size);
+      for (var y = 0.0; y < rect.height; y += 2) {
+        for (var x = 0.0; x < rect.width; x += 2) {
+          if (pj.cellAt(Offset(x, y)) == cell) {
+            return rect.topLeft + Offset(x + 1, y + 1);
+          }
+        }
+      }
+      fail('hücre ekranda bulunamadı: $cell');
+    }
+
+    final level = controller.level;
+    // Bölümdeki bütün trenleri çözüm sırasıyla çıkar.
+    while (controller.level == level) {
+      final train = controller.solvableTrain()!;
+      await tester.tapAt(screenOf(train.cells.last));
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(controller.level, level + 1);
+
+    // Geçiş sürüyor: dokunuş yok sayılır, kalan tren sayısı değişmez.
+    final before = controller.trainsLeft;
+    final next = controller.solvableTrain()!;
+    await tester.tapAt(screenOf(next.cells.last));
+    await tester.pump();
+    expect(controller.trainsLeft, before);
+
+    // Geçiş bitince yeni ada oynanır.
+    await tester.pump(const Duration(milliseconds: 1800));
+    await tester.tapAt(screenOf(next.cells.last));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(controller.trainsLeft, lessThan(before));
+    expect(tester.takeException(), isNull);
 
     await disposeGame(tester);
   });
