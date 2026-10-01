@@ -90,6 +90,57 @@ void main() {
     });
   });
 
+  group('Makinist kumanda kolu', () {
+    test('kol yukarıda çeker, ortada boşta, aşağıda frenler', () {
+      final c = controllerFor();
+      addTearDown(c.dispose);
+      c.setLever(1);
+      c.step(6);
+      final cruising = c.speed;
+      expect(cruising, greaterThan(2));
+      c.setLever(0);
+      c.step(1);
+      // Boşta: yalnız sürtünme, hız çok az düşer.
+      expect(c.speed, lessThan(cruising + 0.5));
+      expect(c.speed, greaterThan(cruising - 1));
+      c.setLever(-1);
+      c.step(20);
+      expect(c.speed, 0);
+    });
+
+    test('yarım çekiş tam çekişten yavaş hızlandırır', () {
+      final half = controllerFor()..setLever(0.5);
+      final full = controllerFor()..setLever(1);
+      addTearDown(half.dispose);
+      addTearDown(full.dispose);
+      half.step(5);
+      full.step(5);
+      expect(half.speed, lessThan(full.speed));
+      expect(half.speed, greaterThan(0));
+    });
+
+    test('kademe adımları P4 ile B4 arasında kalır', () {
+      final c = controllerFor();
+      addTearDown(c.dispose);
+      for (var i = 0; i < 9; i++) {
+        c.stepLever(1);
+      }
+      expect(c.leverNotch, MachinistRules.leverNotches);
+      for (var i = 0; i < 20; i++) {
+        c.stepLever(-1);
+      }
+      expect(c.leverNotch, -MachinistRules.leverNotches);
+      expect(c.braking, isTrue);
+    });
+
+    test('yeniden başlatma kolu boşa alır', () {
+      final c = controllerFor()..setLever(0.75);
+      addTearDown(c.dispose);
+      c.restart();
+      expect(c.lever, 0);
+    });
+  });
+
   group('Makinist durakları', () {
     test('işarette duran tren yolcu alır ve puan yazar', () {
       final c = controllerFor();

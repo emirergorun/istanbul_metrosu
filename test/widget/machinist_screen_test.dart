@@ -52,15 +52,14 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('ekran açılır: iki pedal, hız göstergesi, durak kartı', (
+  testWidgets('ekran açılır: kumanda kolu, hız göstergesi, durak kartı', (
     tester,
   ) async {
     await pumpGame(tester);
 
-    expect(find.byType(MachinistPedal), findsNWidgets(2));
-    expect(find.text('İLERİ'), findsOneWidget);
-    expect(find.text('FREN'), findsOneWidget);
+    expect(find.byType(MachinistMasterLever), findsOneWidget);
     expect(find.byType(MachinistSpeedometer), findsOneWidget);
+    expect(find.text('TAKİP'), findsOneWidget);
     expect(find.text('SONRAKİ İSTASYON'), findsOneWidget);
     // Hattın ikinci istasyonu: Taksim'den sonra Osmanbey.
     expect(find.text('Osmanbey'), findsOneWidget);
@@ -70,30 +69,52 @@ void main() {
     await disposeGame(tester);
   });
 
-  testWidgets('İLERİ pedalı basılı tutulunca tren kalkar', (tester) async {
+  testWidgets('kol yukarı itilince tren kalkar, aşağı çekilince fren', (
+    tester,
+  ) async {
     final controller = await pumpGame(tester);
+    final lever = tester.getRect(find.byType(MachinistMasterLever));
 
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(MachinistPedal).first),
-    );
+    // Kolu yuvanın tepesine (P4) sürükle ve bırak.
+    final gesture = await tester.startGesture(lever.center);
     await tester.pump();
-    expect(controller.throttleHeld, isTrue);
+    await gesture.moveTo(Offset(lever.center.dx, lever.top + 4));
+    await gesture.up();
+    await tester.pump();
+    expect(controller.leverNotch, 4);
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(controller.speed, greaterThan(0));
 
-    await gesture.up();
+    // Aşağı çek: fren kademesine oturur ve orada kalır.
+    final brake = await tester.startGesture(lever.center);
     await tester.pump();
-    expect(controller.throttleHeld, isFalse);
-
-    final brake = await tester.startGesture(
-      tester.getCenter(find.byType(MachinistPedal).last),
-    );
-    await tester.pump();
-    expect(controller.brakeHeld, isTrue);
+    await brake.moveTo(Offset(lever.center.dx, lever.bottom - 4));
     await brake.up();
+    await tester.pump();
+    expect(controller.leverNotch, -4);
+    expect(controller.braking, isTrue);
     expect(tester.takeException(), isNull);
+
+    await disposeGame(tester);
+  });
+
+  testWidgets('kamera düğmesi kabine geçirir ve seçimi hatırlar', (
+    tester,
+  ) async {
+    await pumpGame(tester);
+
+    await tester.tap(find.text('TAKİP'));
+    await tester.pump();
+    expect(find.text('KABİN'), findsOneWidget);
+    expect(store.machinistCabView, isTrue);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('KABİN'));
+    await tester.pump();
+    expect(find.text('TAKİP'), findsOneWidget);
+    expect(store.machinistCabView, isFalse);
 
     await disposeGame(tester);
   });

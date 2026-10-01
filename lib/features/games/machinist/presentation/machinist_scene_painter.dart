@@ -29,6 +29,9 @@ class MachinistScenePainter extends CustomPainter {
   }) : super(repaint: frame ?? controller);
 
   final MachinistController controller;
+
+  /// Kamera kipi; ekran değiştirir, bir sonraki karede geçerli olur.
+  MachinistCamera camera = MachinistCamera.chase;
   final Color lineColor;
   final String lineCode;
   final String destination;
@@ -36,6 +39,12 @@ class MachinistScenePainter extends CustomPainter {
   // ------------------------------------------------------------ kamera
 
   static const double _camX = 3.1;
+
+  /// Kabin gözü: ön uçtan geride, ortada, makinist oturuş yüksekliğinde.
+  static const double _cabEyeBack = 1.6;
+  static const double _cabEyeX = -0.15;
+  static const double _cabEyeY = 2.75;
+  static const double _cabPitch = 0.04;
   static const double _camY = 4.85;
   static const double _pitch = 0.17;
   static const double _near = 0.8;
@@ -177,35 +186,68 @@ class MachinistScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _stations = controller.stations;
-    _front = controller.renderPosition;
+    _front = _warmFront ?? controller.renderPosition;
     _t = controller.renderClock;
     final front = _front;
     final speed = controller.speed;
 
-    final camBack = 7.5 + speed * 0.12;
-    final camZ = front - MachinistRules.trainLength - camBack;
-    final lookZ = front - MachinistRules.trainLength * 0.35;
-    final base = trackOffsetAt(_stations, camZ);
-    final slope = (trackOffsetAt(_stations, lookZ) - base) / (lookZ - camZ);
-    // Hızla hafif titreşim; durunca susar.
-    final shake = speed <= 0.1 ? 0.0 : math.sin(_t * 23) * 0.012 * (speed / 20);
-
+    final cab = camera == MachinistCamera.cab;
     final f = math.min(size.width * 0.92, size.height * 0.62);
-    _cam = _Cam(
-      z: camZ,
-      x: _camX,
-      y: _camY + shake,
-      base: base,
-      slope: slope,
-      // Kamera hafif sola döner: trenin ortası ekranın ortasına gelsin.
-      yaw: _camX / (lookZ - camZ),
-      cosP: math.cos(_pitch),
-      sinP: math.sin(_pitch),
-      f: f,
-      cx: size.width / 2,
-      cy: size.height * 0.40,
-      stations: _stations,
-    );
+    final double camZ;
+    if (cab) {
+      // Kabin: göz makinist koltuğunda, ön camın biraz gerisinde. Bakış
+      // rayın teğeti boyunca; tren çizilmez, üstüne kokpit biner.
+      camZ = front - _cabEyeBack;
+      const lookAhead = 30.0;
+      final base = trackOffsetAt(_stations, camZ);
+      final slope =
+          (trackOffsetAt(_stations, camZ + lookAhead) - base) / lookAhead;
+      // Kabinde titreşim daha belirgin: ray ekleri ve boji.
+      final bounce = speed <= 0.1
+          ? 0.0
+          : (math.sin(_t * 19) * 0.6 + math.sin(_t * 7.3) * 0.4) *
+                0.018 *
+                (speed / MachinistRules.maxSpeed);
+      _cam = _Cam(
+        z: camZ,
+        x: _cabEyeX,
+        y: _cabEyeY + bounce,
+        base: base,
+        slope: slope,
+        yaw: 0,
+        cosP: math.cos(_cabPitch),
+        sinP: math.sin(_cabPitch),
+        f: f,
+        cx: size.width / 2,
+        cy: size.height * 0.42,
+        stations: _stations,
+      );
+    } else {
+      final camBack = 7.5 + speed * 0.12;
+      camZ = front - MachinistRules.trainLength - camBack;
+      final lookZ = front - MachinistRules.trainLength * 0.35;
+      final base = trackOffsetAt(_stations, camZ);
+      final slope = (trackOffsetAt(_stations, lookZ) - base) / (lookZ - camZ);
+      // Hızla hafif titreşim; durunca susar.
+      final shake = speed <= 0.1
+          ? 0.0
+          : math.sin(_t * 23) * 0.012 * (speed / 20);
+      _cam = _Cam(
+        z: camZ,
+        x: _camX,
+        y: _camY + shake,
+        base: base,
+        slope: slope,
+        // Kamera hafif sola döner: trenin ortası ekranın ortasına gelsin.
+        yaw: _camX / (lookZ - camZ),
+        cosP: math.cos(_pitch),
+        sinP: math.sin(_pitch),
+        f: f,
+        cx: size.width / 2,
+        cy: size.height * 0.40,
+        stations: _stations,
+      );
+    }
 
     canvas.save();
     canvas.clipRect(Offset.zero & size);
@@ -215,9 +257,10 @@ class MachinistScenePainter extends CustomPainter {
     // Tren kendi arka ucunun hizasında çizilir: ondan uzak her şey önce,
     // yakın dilimler sonra. Peron tarafında trenin boyunca duran nesneler
     // (yolcu, DUR levhası) kamerayla tren arasında kalır; trenden sonra.
-    final rear = front - MachinistRules.trainLength;
+    // Kabinde tren kameranın arkasında: hiç çizilmez, nesneler sırayla.
+    final rear = cab ? camZ : front - MachinistRules.trainLength;
     final deferred = <_Obj>[];
-    var trainDrawn = false;
+    var trainDrawn = cab;
     void emit(_Obj o) {
       if (!trainDrawn && o.x > 1.5 && o.z >= rear && o.z <= front + 1) {
         deferred.add(o);
@@ -254,6 +297,7 @@ class MachinistScenePainter extends CustomPainter {
         o.draw(canvas);
       }
     }
+    if (cab) _drawCockpit(canvas, size);
     canvas.restore();
   }
 
@@ -264,7 +308,7 @@ class MachinistScenePainter extends CustomPainter {
   List<double> _sliceCuts(double camZ, double trainRear) {
     final start = camZ + _near;
     final end = camZ + _far;
-    final cuts = <double>[start, trainRear];
+    final cuts = <double>[start, if (trainRear > start) trainRear];
     var z = start;
     while (z < end) {
       final dz = z - camZ;
@@ -1366,6 +1410,143 @@ class MachinistScenePainter extends CustomPainter {
     c.drawLine(s0, l0, _stroke);
   }
 
+  // -------------------------------------------------------------- kokpit
+
+  /// Kabin içi: ön camın çerçevesi, A dikmeleri, tavan, silecek ve
+  /// gösterge paneli. Ekran uzayında çizilir; sahne camın ardında kalır.
+  void _drawCockpit(Canvas c, Size size) {
+    final w = size.width;
+    final h = size.height;
+    const frame = Color(0xFF15171B);
+    const frameHi = Color(0xFF2C3036);
+
+    // Camda hafif yansıma ve kenarlara doğru koyulaşma.
+    _fill.shader = ui.Gradient.linear(
+      Offset(w * 0.15, 0),
+      Offset(w * 0.85, h * 0.7),
+      <Color>[
+        const Color(0x14FFFFFF),
+        const Color(0x00FFFFFF),
+        const Color(0x0DFFFFFF),
+      ],
+      <double>[0, 0.55, 1],
+    );
+    c.drawRect(Rect.fromLTWH(0, 0, w, h * 0.7), _fill);
+    _fill.shader = null;
+
+    // Tavan bandı ve güneşlik.
+    final dash = h * 0.71;
+    final roof = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w, 0)
+      ..lineTo(w, h * 0.1)
+      ..quadraticBezierTo(w / 2, h * 0.135, 0, h * 0.1)
+      ..close();
+    _fill.color = frame;
+    c.drawPath(roof, _fill);
+    _stroke
+      ..color = frameHi
+      ..strokeWidth = 2;
+    c.drawPath(
+      Path()
+        ..moveTo(0, h * 0.1)
+        ..quadraticBezierTo(w / 2, h * 0.135, w, h * 0.1),
+      _stroke,
+    );
+
+    // A dikmeleri: aşağı doğru genişleyen koyu sütunlar.
+    for (final left in <bool>[true, false]) {
+      double x(double v) => left ? v : w - v;
+      final pillar = Path()
+        ..moveTo(x(0), 0)
+        ..lineTo(x(w * 0.075), 0)
+        ..lineTo(x(w * 0.115), dash + 4)
+        ..lineTo(x(0), dash + 4)
+        ..close();
+      _fill.shader = ui.Gradient.linear(
+        Offset(x(0), 0),
+        Offset(x(w * 0.115), 0),
+        <Color>[const Color(0xFF0D0E11), frame],
+      );
+      c.drawPath(pillar, _fill);
+      _fill.shader = null;
+      _stroke
+        ..color = frameHi
+        ..strokeWidth = 1.5;
+      c.drawLine(Offset(x(w * 0.075), 0), Offset(x(w * 0.115), dash), _stroke);
+    }
+
+    // Silecek: camın altında park hâlinde.
+    _stroke
+      ..color = const Color(0xFF0B0C0E)
+      ..strokeWidth = 3.5;
+    c.drawLine(
+      Offset(w * 0.47, dash - 3),
+      Offset(w * 0.17, dash - h * 0.07),
+      _stroke,
+    );
+    _stroke.strokeWidth = 1.5;
+    c.drawLine(
+      Offset(w * 0.47, dash - 3),
+      Offset(w * 0.3, dash - h * 0.03),
+      _stroke,
+    );
+
+    // Gösterge paneli: ortası hafif kabarık, üst kenarı parlak.
+    final panel = Path()
+      ..moveTo(0, dash + 6)
+      ..quadraticBezierTo(w / 2, dash - 14, w, dash + 6)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    _fill.shader = ui.Gradient.linear(
+      Offset(0, dash - 14),
+      Offset(0, h),
+      <Color>[
+        const Color(0xFF30353C),
+        const Color(0xFF16181C),
+        const Color(0xFF0E0F12),
+      ],
+      <double>[0, 0.35, 1],
+    );
+    c.drawPath(panel, _fill);
+    _fill.shader = null;
+    _stroke
+      ..color = const Color(0xFF5A616B)
+      ..strokeWidth = 2;
+    c.drawPath(
+      Path()
+        ..moveTo(0, dash + 6)
+        ..quadraticBezierTo(w / 2, dash - 14, w, dash + 6),
+      _stroke,
+    );
+
+    // Uyarı lambaları: panelin ortasında, kol ve hız göstergesinin arası.
+    final doorsClosed = controller.doorOpen == 0;
+    final lamps = <(String, Color, bool)>[
+      ('KAPI', const Color(0xFF34E07A), doorsClosed),
+      ('ÇEKİŞ', const Color(0xFF4FC3F7), controller.throttleLevel > 0.05),
+      ('FREN', const Color(0xFFFF5252), controller.brakeLevel > 0.05),
+    ];
+    final y = dash + 18;
+    for (var k = 0; k < lamps.length; k++) {
+      final (label, color, on) = lamps[k];
+      final cx = w / 2 + (k - 1) * 44;
+      final lamp = Offset(cx, y);
+      if (on) {
+        _fill.shader = ui.Gradient.radial(lamp, 14, <Color>[
+          color.withValues(alpha: 0.55),
+          color.withValues(alpha: 0),
+        ]);
+        c.drawCircle(lamp, 14, _fill);
+        _fill.shader = null;
+      }
+      _fill.color = on ? color : Color.lerp(color, Colors.black, 0.75)!;
+      c.drawCircle(lamp, 5, _fill);
+      _paintText(c, label, Offset(cx, y + 13), 8, const Color(0x99FFFFFF));
+    }
+  }
+
   // --------------------------------------------------------------- tren
 
   static const List<double> _doorOffsets = <double>[3.4, 9.25, 15.1];
@@ -2045,11 +2226,53 @@ class MachinistScenePainter extends CustomPainter {
     c.restore();
   }
 
+  // --------------------------------------------------------- ısınma
+
+  /// Isınma çiziminde trenin ön ucu; `null` ise gerçek oyun.
+  double? _warmFront;
+
+  /// Ekran gözükmeden sahneyi iki kamerada, istasyonda ve tünelde bir kez
+  /// görünmez bir görüntüye çizer.
+  ///
+  /// GPU her çizim türünü (doku, degrade, `drawVertices`) ilk gördüğünde
+  /// derliyor; tarayıcıda ilk saniyelerde kare kaçırtıyordu. Dönen
+  /// görüntüler bir kare sonra atılmalı.
+  List<ui.Image> warmUp(Size size) {
+    final images = <ui.Image>[];
+    final w = size.width.ceil().clamp(1, 4096);
+    final h = size.height.ceil().clamp(1, 4096);
+    final mode = camera;
+    final here = controller.position;
+    for (final cam in MachinistCamera.values) {
+      for (final front in <double>[here, here + 220]) {
+        camera = cam;
+        _warmFront = front;
+        final rec = ui.PictureRecorder();
+        paint(Canvas(rec), size);
+        final picture = rec.endRecording();
+        images.add(picture.toImageSync(w, h));
+        picture.dispose();
+      }
+    }
+    camera = mode;
+    _warmFront = null;
+    return images;
+  }
+
   @override
   bool shouldRepaint(MachinistScenePainter old) =>
       old.controller != controller ||
       old.lineColor != lineColor ||
       old.destination != destination;
+}
+
+/// Makinist kamerası.
+enum MachinistCamera {
+  /// Trenin arkasından ve sağ omzunun üstünden takip.
+  chase,
+
+  /// Kabinden, makinistin gözünden (birinci şahıs).
+  cab,
 }
 
 enum _Aspect { red, yellow, green, dark }

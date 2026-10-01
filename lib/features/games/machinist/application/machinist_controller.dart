@@ -76,6 +76,10 @@ class MachinistController extends JourneyGameController {
   double _speed = 0;
   bool _throttleHeld = false;
   bool _brakeHeld = false;
+
+  /// Kumanda kolu: +1 tam çekiş, 0 boş (N), −1 tam fren. Bırakılınca
+  /// olduğu kademede kalır, gerçek bir trendeki gibi.
+  double _lever = 0;
   double _throttle = 0;
   double _brake = 0;
 
@@ -110,6 +114,13 @@ class MachinistController extends JourneyGameController {
   double get brakeLevel => _brake;
   bool get throttleHeld => _throttleHeld;
   bool get brakeHeld => _brakeHeld;
+  double get lever => _lever;
+
+  /// Kolun kademesi: −4 (B4) … 0 (N) … +4 (P4).
+  int get leverNotch => (_lever * MachinistRules.leverNotches).round();
+
+  /// Fren isteniyor mu (kol fren bölgesinde ya da fren tuşu basılı)?
+  bool get braking => _brakeHeld || _lever < -0.01;
   int get served => _served;
   int get misses => _misses;
   int get streak => _streak;
@@ -208,6 +219,18 @@ class MachinistController extends JourneyGameController {
     notifyListeners();
   }
 
+  /// Kolu [value] konumuna getirir (−1 … +1).
+  void setLever(double value) {
+    final v = value.clamp(-1.0, 1.0);
+    if (v == _lever) return;
+    _lever = v;
+    notifyListeners();
+  }
+
+  /// Kolu bir kademe oynatır: artı yukarı (çekiş), eksi aşağı (fren).
+  void stepLever(int notches) =>
+      setLever((leverNotch + notches) / MachinistRules.leverNotches);
+
   // ----------------------------------------------------------------- akış
 
   @override
@@ -218,6 +241,7 @@ class MachinistController extends JourneyGameController {
     _brake = 0;
     _throttleHeld = false;
     _brakeHeld = false;
+    _lever = 0;
     _dwell = null;
     _dwellStation = null;
     _served = 0;
@@ -257,7 +281,7 @@ class MachinistController extends JourneyGameController {
     if (dwell != null) {
       _speed = 0;
       _throttle = 0;
-      _brake = _rampTo(_brake, _brakeHeld ? 1 : 0, dt, 0.35);
+      _brake = _rampTo(_brake, _brakeTarget, dt, 0.35);
       final next = dwell + dt;
       if (next >= MachinistRules.dwellSeconds) {
         _dwell = null;
@@ -268,20 +292,16 @@ class MachinistController extends JourneyGameController {
       return;
     }
 
-    // Aynı anda iki pedal: fren kazanır, gaz kesilir.
-    final wantThrottle = _throttleHeld && !_brakeHeld;
+    // Çekiş ve fren birlikte istenirse fren kazanır, çekiş kesilir.
+    final brakeTarget = _brakeTarget;
+    final throttleTarget = brakeTarget > 0 ? 0.0 : _throttleTarget;
     _throttle = _rampTo(
       _throttle,
-      wantThrottle ? 1 : 0,
+      throttleTarget,
       dt,
       MachinistRules.throttleRampSeconds,
     );
-    _brake = _rampTo(
-      _brake,
-      _brakeHeld ? 1 : 0,
-      dt,
-      MachinistRules.brakeRampSeconds,
-    );
+    _brake = _rampTo(_brake, brakeTarget, dt, MachinistRules.brakeRampSeconds);
 
     final wasMoving = _speed > 0;
     final accel =
@@ -301,6 +321,9 @@ class MachinistController extends JourneyGameController {
     }
     if (wasMoving && _speed == 0) _onStopped(station, error);
   }
+
+  double get _throttleTarget => _throttleHeld ? 1 : max(0, _lever);
+  double get _brakeTarget => _brakeHeld ? 1 : max(0, -_lever);
 
   double _rampTo(double value, double goal, double dt, double seconds) {
     final stepSize = dt / seconds;

@@ -24,6 +24,9 @@ class MachinistRules {
 
   /// Pedallar anında tam güce çıkmaz; basınç kısa sürede dolar. Kısa
   /// dokunuşla ince ayar yapılabilsin diye.
+  /// Kumanda kolunun her yöndeki kademe sayısı: P1–P4 ve B1–B4.
+  static const int leverNotches = 4;
+
   static const double throttleRampSeconds = 0.3;
   static const double brakeRampSeconds = 0.35;
 

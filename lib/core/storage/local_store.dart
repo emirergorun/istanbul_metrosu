@@ -78,6 +78,9 @@ class LocalStore extends ChangeNotifier {
   /// başlar.
   static const String _railLayLevelKey = 'rail_lay_level_v2';
 
+  /// Makinist'te son seçilen kamera: kabin (birinci şahıs) mı?
+  static const String _machinistCabViewKey = 'machinist_cab_view';
+
   SharedPreferences? _prefs;
   bool _ready = false;
   bool _hapticsEnabled = true;
@@ -515,6 +518,14 @@ class LocalStore extends ChangeNotifier {
   /// bu sayıyı ekranda gösteren başka bir yer yok.
   Future<void> saveRailLayLevel(int level) async {
     await _prefs?.setInt(_railLayLevelKey, level);
+  }
+
+  /// Makinist kamerası: `true` kabin, `false` arkadan takip (varsayılan).
+  bool get machinistCabView => _prefs?.getBool(_machinistCabViewKey) ?? false;
+
+  /// Dinleyicilere haber verilmez: değeri yalnız oyun ekranı okuyor.
+  Future<void> saveMachinistCabView(bool value) async {
+    await _prefs?.setBool(_machinistCabViewKey, value);
   }
 
   /// Bu cihazın arkadaş kodu.

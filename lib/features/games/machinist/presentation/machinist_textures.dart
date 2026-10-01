@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Sahnenin yüzey dokuları.
 ///
@@ -77,7 +78,7 @@ class MachinistTextures {
   static Future<MachinistTextures> _build() async {
     final shaders = <SurfaceTexture, ImageShader>{};
     for (final t in SurfaceTexture.values) {
-      final pixels = _generate(t);
+      final pixels = await _generate(t);
       final image = await _decode(pixels);
       shaders[t] = ImageShader(
         image,
@@ -110,10 +111,22 @@ class MachinistTextures {
 
   // ------------------------------------------------------------- üretim
 
-  static Uint8List _generate(SurfaceTexture t) {
+  /// Bir karede dokuya ayrılan en uzun süre.
+  ///
+  /// Üretim ana iş parçacığında; tek seferde yapılınca açılışta birkaç
+  /// yüz milisaniye ekranı donduruyordu. Satırlar küçük dilimlerle
+  /// üretilir, aralarda sıradaki kare beklenir: oyun kare kaçırmaz.
+  static const Duration _frameBudget = Duration(milliseconds: 5);
+
+  static Future<Uint8List> _generate(SurfaceTexture t) async {
     final noise = _Noise(t.index * 97 + 11);
     final out = Uint8List(size * size * 4);
+    final budget = Stopwatch()..start();
     for (var y = 0; y < size; y++) {
+      if (budget.elapsed > _frameBudget) {
+        await SchedulerBinding.instance.endOfFrame;
+        budget.reset();
+      }
       for (var x = 0; x < size; x++) {
         final (r, g, b) = switch (t) {
           SurfaceTexture.lining => _lining(noise, x, y),

@@ -19,65 +19,116 @@ abstract final class MachinistPalette {
   static const Color panel = Color(0xF224282E);
 }
 
-/// Basılı tutulan pedal. Parmak değdiği sürece [onChanged] `true`.
+/// Kombine kumanda kolu: yukarı itince çekiş, aşağı çekince fren.
 ///
-/// `GestureDetector` yerine `Listener`: dokunma tanıyıcıları basılı
-/// tutmayı ancak gecikmeyle bildiriyor, pedalda her milisaniye sayılıyor.
-class MachinistPedal extends StatelessWidget {
-  const MachinistPedal({
+/// Gerçek metro kabinlerindeki tek kollu kumanda gibi: ortada boş (N),
+/// üstte P1–P4 çekiş, altta B1–B4 fren kademeleri. Kol bırakıldığı
+/// kademede kalır. Parmak kolu sürükler; kalkınca en yakın kademeye oturur.
+///
+/// `GestureDetector` yerine `Listener`: sürükleme tanıyıcısı ilk birkaç
+/// pikseli yutuyor, kolda gecikme hissediliyordu.
+class MachinistMasterLever extends StatefulWidget {
+  const MachinistMasterLever({
     super.key,
-    required this.label,
-    required this.color,
-    required this.pressed,
+    required this.value,
     required this.onChanged,
-    this.width = 84,
-    this.height = 118,
+    this.onNotch,
+    this.width = 104,
+    this.height = 216,
   });
 
-  final String label;
-  final Color color;
-  final bool pressed;
-  final ValueChanged<bool> onChanged;
+  /// Kol konumu: +1 tam çekiş, 0 boş, −1 tam fren.
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  /// Kol yeni bir kademeye geçince (titreşim için).
+  final ValueChanged<int>? onNotch;
   final double width;
   final double height;
 
+  static const int notches = MachinistRules.leverNotches;
+
+  /// Kademenin adı: P4 … P1, N, B1 … B4.
+  static String notchLabel(int notch) => notch > 0
+      ? 'P$notch'
+      : notch < 0
+      ? 'B${-notch}'
+      : 'N';
+
+  @override
+  State<MachinistMasterLever> createState() => _MachinistMasterLeverState();
+}
+
+class _MachinistMasterLeverState extends State<MachinistMasterLever> {
+  bool _dragging = false;
+  int? _lastNotch;
+
+  /// Yuvanın üst ve alt ucu (kolun gidebildiği aralık), piksel.
+  double get _top => 30;
+  double get _bottom => widget.height - 26;
+
+  double _valueAt(double y) {
+    final t = ((y - _top) / (_bottom - _top)).clamp(0.0, 1.0);
+    return 1 - 2 * t;
+  }
+
+  int _notchOf(double v) => (v * MachinistMasterLever.notches).round();
+
+  void _move(Offset local, {bool snap = false}) {
+    var v = _valueAt(local.dy);
+    final notch = _notchOf(v);
+    if (snap) v = notch / MachinistMasterLever.notches;
+    if (notch != _lastNotch) {
+      _lastNotch = notch;
+      widget.onNotch?.call(notch);
+    }
+    widget.onChanged(v);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final notch = _notchOf(widget.value);
     return Semantics(
-      button: true,
-      label: '$label pedalı',
+      slider: true,
+      label: 'Kumanda kolu',
+      value: MachinistMasterLever.notchLabel(notch),
+      increasedValue: MachinistMasterLever.notchLabel(
+        math.min(notch + 1, MachinistMasterLever.notches),
+      ),
+      decreasedValue: MachinistMasterLever.notchLabel(
+        math.max(notch - 1, -MachinistMasterLever.notches),
+      ),
+      onIncrease: () => widget.onChanged(
+        math.min(notch + 1, MachinistMasterLever.notches) /
+            MachinistMasterLever.notches,
+      ),
+      onDecrease: () => widget.onChanged(
+        math.max(notch - 1, -MachinistMasterLever.notches) /
+            MachinistMasterLever.notches,
+      ),
       child: Listener(
         behavior: HitTestBehavior.opaque,
-        onPointerDown: (_) => onChanged(true),
-        onPointerUp: (_) => onChanged(false),
-        onPointerCancel: (_) => onChanged(false),
-        child: SizedBox(
-          width: width,
-          height: height + 22,
-          child: Column(
-            children: <Widget>[
-              Expanded(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 70),
-                  transformAlignment: Alignment.bottomCenter,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.0022)
-                    ..rotateX(pressed ? 0.55 : 0.12),
-                  child: CustomPaint(
-                    painter: _PedalPainter(color: color, pressed: pressed),
-                    size: Size(width, height),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppText.micro.copyWith(
-                  color: pressed ? color : AppColors.textSecondary,
-                  letterSpacing: 1.4,
-                ),
-              ),
-            ],
+        onPointerDown: (e) {
+          setState(() => _dragging = true);
+          _lastNotch = notch;
+          _move(e.localPosition);
+        },
+        onPointerMove: (e) => _move(e.localPosition),
+        onPointerUp: (e) {
+          _move(e.localPosition, snap: true);
+          setState(() => _dragging = false);
+        },
+        onPointerCancel: (_) {
+          widget.onChanged(notch / MachinistMasterLever.notches);
+          setState(() => _dragging = false);
+        },
+        child: CustomPaint(
+          size: Size(widget.width, widget.height),
+          painter: _LeverPainter(
+            value: widget.value,
+            dragging: _dragging,
+            top: _top,
+            bottom: _bottom,
           ),
         ),
       ),
@@ -85,95 +136,209 @@ class MachinistPedal extends StatelessWidget {
   }
 }
 
-class _PedalPainter extends CustomPainter {
-  _PedalPainter({required this.color, required this.pressed});
+class _LeverPainter extends CustomPainter {
+  _LeverPainter({
+    required this.value,
+    required this.dragging,
+    required this.top,
+    required this.bottom,
+  });
 
-  final Color color;
-  final bool pressed;
+  final double value;
+  final bool dragging;
+  final double top;
+  final double bottom;
 
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    // Pedal plakası: aşağı doğru hafif daralan, köşeleri yuvarlak.
-    final plate = Path()
-      ..moveTo(w * 0.08, h * 0.06)
-      ..quadraticBezierTo(w * 0.08, 0, w * 0.2, 0)
-      ..lineTo(w * 0.8, 0)
-      ..quadraticBezierTo(w * 0.92, 0, w * 0.92, h * 0.06)
-      ..lineTo(w * 0.84, h * 0.94)
-      ..quadraticBezierTo(w * 0.83, h, w * 0.74, h)
-      ..lineTo(w * 0.26, h)
-      ..quadraticBezierTo(w * 0.17, h, w * 0.16, h * 0.94)
-      ..close();
-    if (pressed) {
-      canvas.drawPath(
-        plate,
-        Paint()
-          ..color = color.withValues(alpha: 0.55)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
-      );
-    }
-    canvas.drawPath(
-      plate.shift(const Offset(0, 4)),
-      Paint()..color = const Color(0xAA000000),
-    );
-    canvas.drawPath(
+    const n = MachinistMasterLever.notches;
+    final notch = (value * n).round();
+    double yOf(double v) => top + (1 - v) / 2 * (bottom - top);
+
+    // Taban plakası: koyu fırçalanmış metal, köşelerde vida.
+    final plate = RRect.fromLTRBR(0, 0, w, h, const Radius.circular(16));
+    canvas.drawRRect(
       plate,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[
-            const Color(0xFF9AA1A9),
-            const Color(0xFF4B5058),
-            const Color(0xFF30343A),
-          ],
+          colors: <Color>[Color(0xF23A3F46), Color(0xF21B1E22)],
         ).createShader(Offset.zero & size),
     );
-    // Kauçuk kaydırmaz şeritler.
-    final rib = Paint()..color = const Color(0xFF16181B);
-    final ribHi = Paint()..color = const Color(0x33FFFFFF);
-    for (var i = 0; i < 6; i++) {
-      final y = h * (0.14 + i * 0.13);
-      final inset = w * (0.2 + i * 0.012);
-      final r = RRect.fromLTRBR(
-        inset,
-        y,
-        w - inset,
-        y + h * 0.07,
-        Radius.circular(h * 0.035),
-      );
-      canvas.drawRRect(r, rib);
-      canvas.drawLine(
-        Offset(inset + 4, y + 1),
-        Offset(w - inset - 4, y + 1),
-        ribHi..strokeWidth = 1,
-      );
-    }
-    // Renk kodu: üstte şerit.
     canvas.drawRRect(
-      RRect.fromLTRBR(
-        w * 0.3,
-        h * 0.035,
-        w * 0.7,
-        h * 0.075,
-        const Radius.circular(3),
-      ),
-      Paint()..color = pressed ? color : color.withValues(alpha: 0.55),
-    );
-    canvas.drawPath(
-      plate,
+      plate.deflate(0.75),
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..color = pressed ? color : const Color(0x66FFFFFF),
+        ..color = const Color(0x33FFFFFF),
+    );
+    for (final p in <Offset>[
+      const Offset(10, 10),
+      Offset(w - 10, 10),
+      Offset(10, h - 10),
+      Offset(w - 10, h - 10),
+    ]) {
+      canvas.drawCircle(p, 3, Paint()..color = const Color(0xFF15171A));
+      canvas.drawCircle(p, 1.4, Paint()..color = const Color(0x55FFFFFF));
+    }
+
+    // Kademe bölgeleri: üstte çekiş (yeşil), altta fren (kırmızı).
+    final slotX = w * 0.38;
+    final scaleX = w * 0.62;
+    final powerRect = Rect.fromLTRB(slotX - 9, yOf(1) - 6, slotX + 9, yOf(0));
+    final brakeRect = Rect.fromLTRB(slotX - 9, yOf(0), slotX + 9, yOf(-1) + 6);
+    canvas.drawRect(
+      powerRect,
+      Paint()..color = MachinistPalette.go.withValues(alpha: 0.16),
+    );
+    canvas.drawRect(
+      brakeRect,
+      Paint()..color = MachinistPalette.stop.withValues(alpha: 0.18),
+    );
+    // Yuva.
+    final slot = RRect.fromLTRBR(
+      slotX - 5,
+      top - 6,
+      slotX + 5,
+      bottom + 6,
+      const Radius.circular(5),
+    );
+    canvas.drawRRect(slot, Paint()..color = const Color(0xFF0B0C0E));
+    canvas.drawRRect(
+      slot,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0x22FFFFFF),
+    );
+
+    // Kademe çentikleri ve adları.
+    for (var k = n; k >= -n; k--) {
+      final y = yOf(k / n);
+      final active = k == notch;
+      final color = k > 0
+          ? MachinistPalette.go
+          : k < 0
+          ? MachinistPalette.stop
+          : Colors.white;
+      canvas.drawLine(
+        Offset(slotX + 9, y),
+        Offset(slotX + (k == 0 ? 20 : 15), y),
+        Paint()
+          ..strokeWidth = k == 0 ? 2 : 1.4
+          ..color = active ? color : color.withValues(alpha: 0.45),
+      );
+      _text(
+        canvas,
+        MachinistMasterLever.notchLabel(k),
+        Offset(scaleX + 14, y),
+        active ? 12 : 10,
+        active ? color : const Color(0x99FFFFFF),
+      );
+    }
+
+    // Kol: yuvadan çıkan şaft ve T başlıklı tutamak.
+    final y = yOf(value);
+    final shaft = Paint()
+      ..shader = const LinearGradient(
+        colors: <Color>[
+          Color(0xFF6E757D),
+          Color(0xFFD4D9DE),
+          Color(0xFF5D636A),
+        ],
+      ).createShader(Rect.fromLTRB(slotX - 4, y - 8, slotX + 4, y + 8));
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        slotX - 4,
+        y - 7,
+        slotX + 4,
+        y + 7,
+        const Radius.circular(2),
+      ),
+      shaft,
+    );
+    final grip = RRect.fromLTRBR(
+      slotX - 30,
+      y - 12,
+      slotX + 30,
+      y + 12,
+      const Radius.circular(10),
+    );
+    canvas.drawRRect(
+      grip.shift(const Offset(0, 3)),
+      Paint()..color = const Color(0x88000000),
+    );
+    final gripColor = notch > 0
+        ? MachinistPalette.go
+        : notch < 0
+        ? MachinistPalette.stop
+        : const Color(0xFFE6E8EB);
+    canvas.drawRRect(
+      grip,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color.lerp(gripColor, Colors.white, 0.35)!,
+            gripColor,
+            Color.lerp(gripColor, Colors.black, 0.35)!,
+          ],
+        ).createShader(grip.outerRect),
+    );
+    // Kavrama çizgileri.
+    final ridge = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..strokeWidth = 1.2;
+    for (final dx in <double>[-16, -8, 0, 8, 16]) {
+      canvas.drawLine(
+        Offset(slotX + dx, y - 6),
+        Offset(slotX + dx, y + 6),
+        ridge,
+      );
+    }
+    if (dragging) {
+      canvas.drawRRect(
+        grip.inflate(3),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2
+          ..color = Colors.white.withValues(alpha: 0.6),
+      );
+    }
+    // Üstte kademe adı.
+    _text(
+      canvas,
+      MachinistMasterLever.notchLabel(notch),
+      Offset(w / 2, 14),
+      13,
+      gripColor == const Color(0xFFE6E8EB) ? Colors.white : gripColor,
     );
   }
 
+  void _text(Canvas canvas, String text, Offset center, double size, Color c) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: AppFonts.body,
+          fontSize: size,
+          fontWeight: FontWeight.w800,
+          color: c,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
+  }
+
   @override
-  bool shouldRepaint(_PedalPainter old) =>
-      old.pressed != pressed || old.color != color;
+  bool shouldRepaint(_LeverPainter old) =>
+      old.value != value || old.dragging != dragging;
 }
 
 /// Kadranlı hız göstergesi (km/sa).

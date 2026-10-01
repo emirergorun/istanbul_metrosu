@@ -77,8 +77,20 @@ class _MachinistScreenState extends State<MachinistScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Dokular açılışta bir kez üretilir; hazır olana dek düz renk.
-    MachinistTextures.load();
+    // Dokular açılışta, kare kaçırmadan dilim dilim üretilir; hazır olana
+    // dek düz renk. Hazır olunca sahne bir kez görünmez çizilip GPU
+    // ısıtılır: ilk saniyelerdeki takılma oyundan önceye kayar.
+    MachinistTextures.load().then((_) {
+      if (!mounted) return;
+      final painter = _painter;
+      if (painter == null) return;
+      final warm = painter.warmUp(MediaQuery.sizeOf(context));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final image in warm) {
+          image.dispose();
+        }
+      });
+    });
     _ticker.start();
   }
 
@@ -108,13 +120,17 @@ class _MachinistScreenState extends State<MachinistScreen>
     _controller = controller;
 
     final line = scope.metro.lineById(journey.lineId);
-    _painter = MachinistScenePainter(
-      controller: controller,
-      lineColor: line?.color ?? AppColors.success,
-      lineCode: line?.id ?? journey.lineId.toUpperCase(),
-      destination: journey.destination.name,
-      frame: _frame,
-    );
+    _painter =
+        MachinistScenePainter(
+            controller: controller,
+            lineColor: line?.color ?? AppColors.success,
+            lineCode: line?.id ?? journey.lineId.toUpperCase(),
+            destination: journey.destination.name,
+            frame: _frame,
+          )
+          ..camera = scope.store.machinistCabView
+              ? MachinistCamera.cab
+              : MachinistCamera.chase;
     controller.start();
   }
 
@@ -250,18 +266,40 @@ class _MachinistScreenState extends State<MachinistScreen>
     });
   }
 
+  /// ↑/W kolu bir kademe yukarı (çekiş), ↓/S bir kademe aşağı (fren)
+  /// oynatır; basılı tutunca kademe kademe ilerler. Boşluk tam fren, C
+  /// kamerayı değiştirir.
   void _handleKeyEvent(KeyEvent event) {
     final controller = _controller;
-    if (controller == null || event is KeyRepeatEvent) return;
-    final down = event is KeyDownEvent;
+    if (controller == null || event is KeyUpEvent) return;
     final key = event.logicalKey;
+    final before = controller.leverNotch;
     if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) {
-      controller.setThrottle(down);
+      controller.stepLever(1);
     } else if (key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.keyS ||
-        key == LogicalKeyboardKey.space) {
-      controller.setBrake(down);
+        key == LogicalKeyboardKey.keyS) {
+      controller.stepLever(-1);
+    } else if (key == LogicalKeyboardKey.space) {
+      controller.setLever(-1);
+    } else if (key == LogicalKeyboardKey.keyC && event is KeyDownEvent) {
+      _toggleCamera();
     }
+    if (controller.leverNotch != before) {
+      _haptic(HapticFeedback.selectionClick);
+    }
+  }
+
+  bool get _cabView => _painter?.camera == MachinistCamera.cab;
+
+  void _toggleCamera() {
+    final painter = _painter;
+    if (painter == null) return;
+    final cab = !_cabView;
+    setState(() {
+      painter.camera = cab ? MachinistCamera.cab : MachinistCamera.chase;
+    });
+    AppScope.of(context).store.saveMachinistCabView(cab);
+    _haptic(HapticFeedback.lightImpact);
   }
 
   void _exitToHome() {
@@ -367,7 +405,21 @@ class _MachinistScreenState extends State<MachinistScreen>
             ),
             const SizedBox(height: AppSpacing.sm),
             _StationCard(controller: controller, accent: accent),
-            Expanded(child: _Countdown(controller: controller)),
+            Expanded(
+              child: Stack(
+                children: <Widget>[
+                  Positioned.fill(child: _Countdown(controller: controller)),
+                  Positioned(
+                    left: 0,
+                    top: AppSpacing.sm,
+                    child: _CameraButton(
+                      cab: _cabView,
+                      onPressed: _toggleCamera,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
@@ -377,18 +429,10 @@ class _MachinistScreenState extends State<MachinistScreen>
                   brake: controller.brakeLevel,
                 ),
                 const Spacer(),
-                MachinistPedal(
-                  label: 'İLERİ',
-                  color: MachinistPalette.go,
-                  pressed: controller.throttleHeld,
-                  onChanged: controller.setThrottle,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                MachinistPedal(
-                  label: 'FREN',
-                  color: MachinistPalette.stop,
-                  pressed: controller.brakeHeld,
-                  onChanged: controller.setBrake,
+                MachinistMasterLever(
+                  value: controller.lever,
+                  onChanged: controller.setLever,
+                  onNotch: (_) => _haptic(HapticFeedback.selectionClick),
                 ),
               ],
             ),
@@ -606,11 +650,11 @@ class _Countdown extends StatelessWidget {
       warning = null;
     } else if (controller.tooFast) {
       warning = 'Çok hızlı, fren yap';
-    } else if (controller.shouldBrake && !controller.brakeHeld) {
-      warning = 'Frene bas';
-    } else if (controller.speed == 0 && !controller.throttleHeld) {
+    } else if (controller.shouldBrake && !controller.braking) {
+      warning = 'Kolu aşağı çek, fren yap';
+    } else if (controller.speed == 0 && controller.lever <= 0) {
       warning = controller.served == 0 && controller.misses == 0
-          ? 'Kalkmak için İLERİ pedalını basılı tut'
+          ? 'Kalkmak için kolu yukarı it'
           : null;
     } else {
       warning = null;
@@ -699,6 +743,51 @@ class _CountdownBadge extends StatelessWidget {
 
 /// HUD'daki küçük gösterge: duraklat düğmesiyle aynı boyda, aynı düz
 /// zeminde. Sahnenin açık duvarında da okunur; renkli saydam kutu yok.
+/// Sol üstte yarı saydam kamera düğmesi: takip ↔ kabin.
+class _CameraButton extends StatelessWidget {
+  const _CameraButton({required this.cab, required this.onPressed});
+
+  final bool cab;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: cab ? 'Takip kamerasına geç' : 'Kabin kamerasına geç',
+      child: Material(
+        color: const Color(0x59101216),
+        shape: const StadiumBorder(side: BorderSide(color: Color(0x40FFFFFF))),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.videocam_rounded,
+                  size: 18,
+                  color: Color(0xE6FFFFFF),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  cab ? 'KABİN' : 'TAKİP',
+                  style: AppText.micro.copyWith(
+                    color: const Color(0xE6FFFFFF),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HudStat extends StatelessWidget {
   const _HudStat({
     required this.label,
