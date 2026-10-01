@@ -82,9 +82,13 @@ class _ChallengeResultSectionState extends State<ChallengeResultSection> {
     // "sıfırı geç" bir davet değil.
     if (widget.score <= 0) return const SizedBox.shrink();
 
+    // Davet, bilgi bölümünün son satırı: düz metin düğme. Çerçeveli ve
+    // tabela fontlu hâli birincil "Tekrar oyna"nın hemen üstünde ona eş
+    // ağırlıkta duruyordu; oyuncu hangisinin asıl eylem olduğunu
+    // seçemiyordu.
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.stack),
-      child: OutlinedButton(
+      child: TextButton(
         onPressed: AppFeedback.onTap(context, () {
           final challenge = social.createChallenge(
             journey: widget.journey,
@@ -93,7 +97,11 @@ class _ChallengeResultSectionState extends State<ChallengeResultSection> {
           );
           AppRoutes.openChallengeShare(context, challenge);
         }),
-        child: const Text('ARKADAŞINA MEYDAN OKU'),
+        style: TextButton.styleFrom(
+          foregroundColor: widget.accent,
+          minimumSize: const Size.fromHeight(44),
+        ),
+        child: const Text('Bu skorla arkadaşına meydan oku'),
       ),
     );
   }

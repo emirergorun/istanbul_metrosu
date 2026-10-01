@@ -13,6 +13,7 @@ import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_breakdown.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -145,7 +146,7 @@ class _MetroLineScreenState extends State<MetroLineScreen>
       _transition.forward(from: _LevelTransition.inStart);
       _haptic(HapticFeedback.mediumImpact);
       _sound(GameSound.clear);
-      _showBanner('DEPO BOŞALDI · ${controller.level}. SEVİYE');
+      _showBanner('Depo boşaldı · ${controller.level}. seviye');
     }
 
     if (controller.status == GameStatus.gameOver && !_playedGameOverSound) {
@@ -402,7 +403,6 @@ class _MetroLineScreenState extends State<MetroLineScreen>
                           ),
                           child: Column(
                             children: <Widget>[
-                              _HeartRow(hearts: controller.hearts),
                               const SizedBox(height: AppSpacing.sm),
                               Expanded(
                                 child: _MetroLineBoard(
@@ -430,20 +430,10 @@ class _MetroLineScreenState extends State<MetroLineScreen>
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                'Dokun: önü açık treni çıkar · Basılı tut: ipucu',
-                                textAlign: TextAlign.center,
-                                // Denizin üstünde okunsun: beyaz ve gölgeli.
-                                style: AppText.caption.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  shadows: const <Shadow>[
-                                    Shadow(
-                                      color: Color(0xCC0B2236),
-                                      blurRadius: 6,
-                                    ),
-                                  ],
-                                ),
+                              // Denizin üstünde okunsun: düz panel üstünde.
+                              const HudHint(
+                                text:
+                                    'Dokun: önü açık treni çıkar · Basılı tut: ipucu',
                               ),
                               const SizedBox(height: AppSpacing.md),
                               JourneyStatusBar(
@@ -587,89 +577,15 @@ class _MetroLineHud extends StatelessWidget {
       onPause: onPause,
       gameScore: controller.scoreThisGame,
       chips: <Widget>[
-        _HudChip(label: 'SEVİYE', value: '${controller.level}', accent: accent),
-        _HudChip(
+        // Seviye HUD'da yok: üç kutu skor satırını kırpıyordu. Seviye
+        // geçişte zaten duyuruluyor; oyun sırasında gereken kalan tren ve hak.
+        HudStat.value(
           label: 'KALAN',
           value: '${controller.trainsLeft}',
-          accent: accent,
+          semanticLabel: '${controller.trainsLeft} tren kaldı',
         ),
+        HudLivesStat(left: controller.hearts, total: metroLineHearts),
       ],
-    );
-  }
-}
-
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          // Etiket zaten büyük harf yazılır: Dart'ın `toUpperCase`'i
-          // Türkçe'yi bilmiyor, 'Seviye' → 'SEVIYE' oluyordu (noktalı İ
-          // değil). Yerelleştirilmiş bir dönüşüm eklemek yerine metni
-          // doğrudan doğru yazmak daha basit.
-          Text(label, style: AppText.micro.copyWith(color: accent)),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Kalan hak: dolu jeton yanar, harcanan söner.
-///
-/// İlham alınan oyundaki su damlalarının metro karşılığı — jeton.
-class _HeartRow extends StatelessWidget {
-  const _HeartRow({required this.hearts});
-
-  final int hearts;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Kalan hak $hearts',
-      child: ExcludeSemantics(
-        child: Row(
-          children: <Widget>[
-            for (var i = 0; i < metroLineHearts; i++)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Icon(
-                  Icons.confirmation_number_rounded,
-                  size: 20,
-                  color: i < hearts
-                      ? AppColors.warning
-                      : AppColors.textMuted.withValues(alpha: 0.35),
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -958,21 +874,7 @@ class _Banner extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHigh,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: accent.withValues(alpha: 0.7)),
-          ),
-          child: Text(
-            text ?? '',
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-            ),
-          ),
-        ),
+        child: HudToast(text: text ?? '', accent: accent),
       ),
     );
   }

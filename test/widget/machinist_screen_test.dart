@@ -59,7 +59,7 @@ void main() {
 
     expect(find.byType(MachinistMasterLever), findsOneWidget);
     expect(find.byType(MachinistSpeedometer), findsOneWidget);
-    expect(find.text('TAKİP'), findsOneWidget);
+    expect(find.text('Takip'), findsOneWidget);
     expect(find.text('SONRAKİ İSTASYON'), findsOneWidget);
     // Hattın ikinci istasyonu: Taksim'den sonra Osmanbey.
     expect(find.text('Osmanbey'), findsOneWidget);
@@ -105,15 +105,15 @@ void main() {
   ) async {
     await pumpGame(tester);
 
-    await tester.tap(find.text('TAKİP'));
+    await tester.tap(find.text('Takip'));
     await tester.pump();
-    expect(find.text('KABİN'), findsOneWidget);
+    expect(find.text('Kabin'), findsOneWidget);
     expect(store.machinistCabView, isTrue);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('KABİN'));
+    await tester.tap(find.text('Kabin'));
     await tester.pump();
-    expect(find.text('TAKİP'), findsOneWidget);
+    expect(find.text('Takip'), findsOneWidget);
     expect(store.machinistCabView, isFalse);
 
     await disposeGame(tester);

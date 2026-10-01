@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 
 const int mergeDropMinLevel = 1;
@@ -9,6 +10,15 @@ const int mergeDropMaxLevel = 11;
 /// azaldı, oyun daha çabuk biter. Önce 0.15 → 0.18 (11 seviyeye çıkarken),
 /// sonra 0.18 → 0.20 (genel zorluk artışı) olarak sıkılaştırıldı.
 const double mergeDropDangerLine = 0.20;
+
+/// Havuzun en/boy oranı (yükseklik / genişlik) — **sabit**.
+///
+/// Havuz eskiden sahne görselinin (PNG) içindeki elle ölçülmüş bir
+/// dikdörtgendi ve oranı ~1,03 çıkıyordu. Artık Flutter çiziyor; oran
+/// ekran boyundan bağımsız sabit tutuluyor çünkü oran zorluğun kendisi:
+/// uzun havuz daha geç taşar. Değer eski ölçüme yakın seçildi ki oyunun
+/// zorluğu değişmesin; meydan okumada iki cihaz aynı havuzda oynar.
+const double mergeDropPoolAspect = 1.04;
 
 const List<String> mergeDropLabels = <String>[
   'M1',
@@ -40,6 +50,92 @@ const List<double> mergeDropRadii = <double>[
   0.232,
 ];
 
+/// Doğan parçanın seviye ağırlıkları (M1, M2, M3, M4).
+///
+/// Simülasyonla seçildi (`test/balance/merge_drop_spawn_report_test.dart`).
+/// Eşit dağılım (1:1:1:1) havuza erken M4 yığıyordu: büyük parçalar
+/// boşluğu doldurduğu için ortalama koşu kısa, M8+ nadirdi. Küçük
+/// parçaların daha sık gelmesi oyuncuya birleştirme malzemesi veriyor;
+/// M4 hâlâ geliyor ama sürpriz olarak.
+const List<int> mergeDropSpawnWeights = <int>[4, 3, 2, 1];
+
+/// Bir birleşmenin ham puanı: yeni parçanın seviyesiyle **katlanarak** artar.
+///
+/// Mantık: bir üst seviye, iki alt seviyeden doğar. M8'i kurmak 64 tane
+/// M2'lik emek demek; doğrusal puan (eski `seviye × 10`) M8'i M2'nin yalnız
+/// dört katı sayıyordu. Şimdi her seviye bir öncekinin iki katı:
+/// M2 10, M5 80, M8 640, M11 5120. Zincirin her halkası çarpanı
+/// [mergeDropChainStep] kadar büyütür, [mergeDropChainCap]'te durur.
+int mergeDropMergePoints(int level, {int chain = 1}) {
+  final base = 10 * (1 << (level - 2).clamp(0, 30));
+  final multiplier = min(
+    1 + mergeDropChainStep * (chain - 1),
+    mergeDropChainCap,
+  );
+  return (base * multiplier).round();
+}
+
+/// Zincirin her ek halkasının puan çarpanına katkısı.
+const double mergeDropChainStep = 0.25;
+
+/// Zincir çarpanının tavanı.
+const double mergeDropChainCap = 2.0;
+
+/// Birleşmeden doğan bir parçanın zincire bağlanabileceği süre (saniye).
+///
+/// Ölçümle: birleşen parça ortalama 0,1-0,6 saniyede komşusuna değiyor.
+/// 0,9 saniye, yuvarlanıp duran bir parçayı da sayıyor; ondan sonraki
+/// birleşme oyuncunun yeni bıraktığı parçanın işi, zincir değil.
+const double mergeDropChainWindow = 0.9;
+
+/// Tehlike durumu: çizim ve ses buna bakar.
+enum MergeDropDanger {
+  /// Yığın çizgiden uzak.
+  calm,
+
+  /// Oturmuş bir parça çizgiye yaklaştı.
+  near,
+
+  /// Oturmuş bir parça çizgiyi aştı; bekleme sayacı işliyor.
+  critical,
+}
+
+/// Bir birleşmenin çizim için gereken her şeyi.
+@immutable
+class MergeDropEvent {
+  const MergeDropEvent({
+    required this.level,
+    required this.x,
+    required this.y,
+    required this.parentA,
+    required this.parentB,
+    required this.points,
+    required this.chain,
+    required this.newRunMax,
+  });
+
+  /// Doğan parçanın seviyesi.
+  final int level;
+
+  /// Doğduğu yer (dünya birimi).
+  final double x;
+  final double y;
+
+  /// Birleşen iki parçanın merkezleri (dünya birimi) — çizim onları
+  /// birleşme noktasına doğru çekip söndürür.
+  final (double, double) parentA;
+  final (double, double) parentB;
+
+  /// Yolculuğa yazılan puan (ölçek uygulanmış, ekrandaki birim).
+  final int points;
+
+  /// Zincir halkası: 1 = tek birleşme, 2+ = zincir.
+  final int chain;
+
+  /// Bu koşunun yeni en büyük hattı mı?
+  final bool newRunMax;
+}
+
 @immutable
 class DropBall {
   const DropBall({
@@ -51,6 +147,8 @@ class DropBall {
     this.vy = 0,
     this.settled = false,
     this.pop = 1,
+    this.chain = 0,
+    this.bornAt = 0,
   });
 
   final int id;
@@ -73,6 +171,12 @@ class DropBall {
   /// oturmuş toplara bakıyor.
   final bool settled;
 
+  /// Bu parçayı doğuran birleşmenin zincir halkası; bırakılan parçada 0.
+  final int chain;
+
+  /// Doğduğu an (koşu saati, saniye) — zincir penceresi buna bakar.
+  final double bornAt;
+
   String get label => mergeDropLabelForLevel(level);
   double get radius => mergeDropRadiusForLevel(level);
 
@@ -93,6 +197,8 @@ class DropBall {
     double? vy,
     bool? settled,
     double? pop,
+    int? chain,
+    double? bornAt,
   }) {
     return DropBall(
       id: id ?? this.id,
@@ -103,6 +209,8 @@ class DropBall {
       vy: vy ?? this.vy,
       settled: settled ?? this.settled,
       pop: pop ?? this.pop,
+      chain: chain ?? this.chain,
+      bornAt: bornAt ?? this.bornAt,
     );
   }
 
@@ -117,14 +225,17 @@ class DropBall {
   /// da büyütmek yığını her birleşmede iteklerdi.
   final double pop;
 
-  /// Çizimde kullanılacak yarıçap: hafif bir aşma ile şişer, sonra oturur.
+  /// Çizimde kullanılacak yarıçap: 0,9'dan doğar, 1,08'e aşar, oturur.
+  ///
+  /// Eskiden 0,62'den başlıyordu: yeni parça önce küçülüp sonra büyüyor,
+  /// birleşme "söndü, sonra şişti" gibi okunuyordu. 0,9 başlangıç yeni
+  /// parçanın iki eskisinden **büyük** doğduğunu hissettiriyor.
   double get drawRadius {
     if (pop >= 1) return radius;
     final t = pop.clamp(0.0, 1.0);
-    // 0.62'den başlayıp 1.08'e kadar aşar, sonra 1'e iner.
-    final eased = t < 0.6
-        ? 0.62 + (1.08 - 0.62) * (t / 0.6)
-        : 1.08 - 0.08 * ((t - 0.6) / 0.4);
+    final eased = t < 0.55
+        ? 0.9 + (1.08 - 0.9) * Curves.easeOutCubic.transform(t / 0.55)
+        : 1.08 - 0.08 * Curves.easeInOutCubic.transform((t - 0.55) / 0.45);
     return radius * eased;
   }
 }

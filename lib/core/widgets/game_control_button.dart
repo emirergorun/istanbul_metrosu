@@ -6,7 +6,7 @@ import '../../app/theme.dart';
 import 'pressable.dart';
 
 /// Oyun denetimlerinin işaretleri — çizilmiş, stok simge değil.
-enum GameControlGlyph { undo, hint, restart }
+enum GameControlGlyph { undo, hint, restart, left, right }
 
 /// Oyun alanının altındaki denetim: işaret ve kısa etiket, kutusuz.
 ///
@@ -137,6 +137,19 @@ class _GlyphPainter extends CustomPainter {
         canvas.drawLine(
           Offset(s * 0.44, s * 0.92),
           Offset(s * 0.56, s * 0.92),
+          paint,
+        );
+      case GameControlGlyph.left:
+      case GameControlGlyph.right:
+        // Ray değiştirme oku: kısa gövde ve açık uç, yön verilene bakar.
+        final dir = glyph == GameControlGlyph.left ? -1.0 : 1.0;
+        final tip = Offset(s * (0.5 + dir * 0.32), s * 0.5);
+        canvas.drawLine(Offset(s * (0.5 - dir * 0.3), s * 0.5), tip, paint);
+        canvas.drawPath(
+          Path()
+            ..moveTo(tip.dx - dir * s * 0.24, s * 0.26)
+            ..lineTo(tip.dx, tip.dy)
+            ..lineTo(tip.dx - dir * s * 0.24, s * 0.74),
           paint,
         );
       case GameControlGlyph.restart:

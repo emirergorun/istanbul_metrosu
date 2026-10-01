@@ -55,6 +55,11 @@ enum AchievementMetric {
   /// [AchievementDefinition.gameId] ile seçilir.
   gameRunsFinished,
 
+  /// Bir oyunun kalıcı en iyi değeri ([AchievementDefinition.gameId] ve
+  /// [AchievementDefinition.stat] ile seçilir) — Hat Düşür'ün en büyük
+  /// hattı ve en uzun zinciri gibi.
+  gameBest,
+
   /// Tünele Kaç'ta bitirilen bölüm sayısı — bölüm kaydından.
   escapeLevelsCompleted,
 
@@ -79,6 +84,7 @@ class AchievementDefinition {
     required this.description,
     required this.target,
     this.gameId,
+    this.stat,
   });
 
   /// Kayıtta duran kalıcı kimlik. Değiştirilmemeli.
@@ -98,6 +104,9 @@ class AchievementDefinition {
 
   /// Oyuna bağlı ölçülerde hangi oyun; diğerlerinde `null`.
   final String? gameId;
+
+  /// [AchievementMetric.gameBest] için oyunun hangi ölçüsü.
+  final String? stat;
 
   @override
   bool operator ==(Object other) =>
@@ -368,6 +377,85 @@ class Achievements {
     target: EscapeLevels.count * EscapeRules.maxStars,
   );
 
+  // --- Hat Düşür ---
+  //
+  // Hepsi koşunun ortasında açılır: oyun yeni bir hat ya da zincir
+  // doğduğu an en iyi değeri yazar. Eşikler simülasyondan: M8 iyi bir
+  // koşu, M11 ustalık; ×4 zincir koşuların çoğunda, ×7 nadir
+  // (`test/balance/merge_drop_spawn_report_test.dart`).
+
+  static const String _mergeDrop = 'merge_drop';
+
+  static const AchievementDefinition mergeDropFirst = AchievementDefinition(
+    id: 'merge_drop_first',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'max_level',
+    title: 'İlk Birleşme',
+    description: 'Hat Düşür\'de iki eş jetonu birleştir.',
+    target: 2,
+  );
+
+  static const AchievementDefinition mergeDropM5 = AchievementDefinition(
+    id: 'merge_drop_m5',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'max_level',
+    title: 'Hat Büyüyor',
+    description: 'Hat Düşür\'de M5 jetonuna ulaş.',
+    target: 5,
+  );
+
+  static const AchievementDefinition mergeDropM8 = AchievementDefinition(
+    id: 'merge_drop_m8',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'max_level',
+    title: 'Büyük Hat',
+    description: 'Hat Düşür\'de M8 jetonuna ulaş.',
+    target: 8,
+  );
+
+  static const AchievementDefinition mergeDropM11 = AchievementDefinition(
+    id: 'merge_drop_m11',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'max_level',
+    title: 'Bütün Hatlar',
+    description: 'Hat Düşür\'de M11 jetonunu kur.',
+    target: mergeDropMaxLevelForBadge,
+  );
+
+  static const AchievementDefinition mergeDropChain4 = AchievementDefinition(
+    id: 'merge_drop_chain_4',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'best_chain',
+    title: 'Zincirleme Aktarma',
+    description: 'Hat Düşür\'de dört birleşmelik bir zincir kur.',
+    target: 4,
+  );
+
+  static const AchievementDefinition mergeDropChain7 = AchievementDefinition(
+    id: 'merge_drop_chain_7',
+    category: AchievementCategory.gameplay,
+    metric: AchievementMetric.gameBest,
+    gameId: _mergeDrop,
+    stat: 'best_chain',
+    title: 'Usta Aktarma',
+    description: 'Hat Düşür\'de yedi birleşmelik bir zincir kur.',
+    target: 7,
+  );
+
+  /// Hat Düşür'ün son seviyesi (M11). Alan katmanı içe aktarılmasın diye
+  /// sayı burada; Hat Düşür testi ikisinin aynı kaldığını doğruluyor.
+  static const int mergeDropMaxLevelForBadge = 11;
+
   /// Çizim sırası.
   static List<AchievementDefinition> get all => <AchievementDefinition>[
     firstDiscovery,
@@ -382,18 +470,24 @@ class Achievements {
     interchange,
     quizMilestone,
     escapeFirst,
+    mergeDropFirst,
     blocksMaster,
     crossingMaster,
     escapeSwitchman,
     escapePerfect,
+    mergeDropM5,
+    mergeDropChain4,
     threeLines,
     journeyTwenty,
     everyGame,
     streakSeven,
     thirtyDays,
     escapeFinale,
+    mergeDropM8,
+    mergeDropChain7,
     journeyHundred,
     escapeMaster,
+    mergeDropM11,
   ];
 
   static AchievementDefinition? byId(String id) {

@@ -72,6 +72,29 @@ void main() {
       expect(controller.status, GameStatus.gameOver);
     });
 
+    test('ısınma: dokunmayan oyuncu ilk engellere çarpmaz', () {
+      // Her tohum için: hiç ray değiştirmeyen tren ilk ısınma engellerini
+      // yan raylardan geçirir.
+      for (var seed = 0; seed < 20; seed++) {
+        final controller = controllerFor(seed: seed);
+        addTearDown(controller.dispose);
+        var frames = 0;
+        while (controller.passes < LaneRunnerController.warmupObstacles &&
+            frames++ < 2000) {
+          controller.step();
+          expect(
+            controller.status,
+            GameStatus.playing,
+            reason: 'tohum $seed: ${controller.passes}. engelde çarptı',
+          );
+        }
+        expect(
+          controller.passes,
+          greaterThanOrEqualTo(LaneRunnerController.warmupObstacles),
+        );
+      }
+    });
+
     test('7 geçişten sonra M2 trenine dönüşür', () {
       final controller = controllerFor();
       addTearDown(controller.dispose);

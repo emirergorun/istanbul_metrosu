@@ -56,7 +56,6 @@ flutter:
     # Sentezlenmiş arayüz sesleri.
     - assets/audio/
     # Hat Düşür arka plan sahnesi (tren içi + kutu).
-    - assets/images/merge_drop_scene.png
     # Oyun kapakları. Referans tabakasından kesildi, gömülü başlıkları
     # temizlendi; ad Bungee ile Flutter katmanında biniyor.
     - assets/images/games/

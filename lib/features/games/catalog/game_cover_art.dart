@@ -13,7 +13,7 @@ import '../../../core/widgets/metro_train.dart';
 ///
 /// Neden raster değil de çizim:
 ///
-/// * Depoda tek bir raster var (`merge_drop_scene.png`); yedi oyun için
+/// * Bu karar verildiğinde depoda tek bir raster vardı; yedi oyun için
 ///   üretilecek kapaklar ayrı bir sanat çalışması gerektirir ve kod
 ///   ortamında üretilen düşük kaliteli bir PNG'yi "hazır" diye koymak
 ///   ürünü aşağı çeker.

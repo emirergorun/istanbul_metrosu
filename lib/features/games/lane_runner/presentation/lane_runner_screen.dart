@@ -8,10 +8,12 @@ import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
 import '../../../../core/audio/audio_service.dart';
+import '../../../../core/widgets/game_control_button.dart';
 import '../../../journey/models/journey.dart';
 import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
@@ -297,13 +299,10 @@ class _LaneRunnerScreenState extends State<LaneRunnerScreen>
                               onPause: controller.pause,
                             ),
                             const Spacer(),
-                            IgnorePointer(
-                              child: Text(
-                                'Sağa/sola kaydır ya da ok tuşlarıyla ray değiştir',
-                                style: AppText.caption.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                ),
+                            // Sahnenin üstünde okunsun: ortak ipucu paneli.
+                            const IgnorePointer(
+                              child: HudHint(
+                                text: 'Kaydır ya da dokun: ray değiştir',
                               ),
                             ),
                             const SizedBox(height: AppSpacing.sm),
@@ -427,55 +426,18 @@ class _RunnerHud extends StatelessWidget {
       onPause: onPause,
       gameScore: controller.scoreThisGame,
       chips: <Widget>[
-        _HudChip(
-          label: 'Tren',
-          value: '${controller.lineLabel} · ${controller.passes}',
+        HudStat.value(
+          label: 'HAT',
+          value: controller.lineLabel,
+          semanticLabel: 'Tren hattı ${controller.lineLabel}',
           accent: _runnerLineColor(controller.lineLevel),
         ),
+        HudStat.value(
+          label: 'GEÇİŞ',
+          value: '${controller.passes}',
+          semanticLabel: '${controller.passes} engel geçildi',
+        ),
       ],
-    );
-  }
-}
-
-/// Oyuna özgü küçük gösterge; ortak HUD'un yanında durur.
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -504,6 +466,8 @@ class _Scrims extends StatelessWidget {
   }
 }
 
+/// Ray değiştirme denetimleri: bulmaca oyunlarıyla aynı kutusuz aile,
+/// iki büyük dokunma alanı. Kaydırmak da çalışır; düğmeler ek yol.
 class _LaneControls extends StatelessWidget {
   const _LaneControls({required this.onLeft, required this.onRight});
 
@@ -513,21 +477,21 @@ class _LaneControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         Expanded(
-          child: FilledButton.tonalIcon(
-            onPressed: onLeft,
-            icon: const Icon(Icons.chevron_left_rounded),
-            label: const Text('Sol ray'),
+          child: GameControlButton(
+            glyph: GameControlGlyph.left,
+            label: 'Sol ray',
+            emphasis: true,
+            onTap: onLeft,
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: FilledButton.tonalIcon(
-            onPressed: onRight,
-            icon: const Icon(Icons.chevron_right_rounded),
-            label: const Text('Sağ ray'),
+          child: GameControlButton(
+            glyph: GameControlGlyph.right,
+            label: 'Sağ ray',
+            emphasis: true,
+            onTap: onRight,
           ),
         ),
       ],
@@ -559,32 +523,9 @@ class _Banner extends StatelessWidget {
                 begin: const Offset(0, -0.3),
                 end: Offset.zero,
               ).animate(animation),
-              child: Container(
-                margin: const EdgeInsets.only(top: AppSpacing.xl),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  text ?? '',
-                  // Ray Uçuşu şeridiyle aynı: açık hat renklerinde beyaz
-                  // yazı okunmuyordu, rengi hat renginden türetilir.
-                  style: AppText.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: LineTheme.readableOn(accent),
-                  ),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xl),
+                child: HudToast(text: text ?? '', accent: accent),
               ),
             ),
           ),

@@ -55,7 +55,8 @@ void main() {
   testWidgets('oyun ekranı hatasız açılır ve HUD gösterilir', (tester) async {
     await pumpGame(tester);
 
-    expect(find.text('M1 · 0'), findsOneWidget);
+    expect(find.text('M1'), findsOneWidget);
+    expect(find.text('GEÇİŞ'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(tester.takeException(), isNull);

@@ -13,6 +13,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
@@ -840,25 +841,9 @@ class _Banner extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          margin: const EdgeInsets.all(AppSpacing.md),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            color: accent,
-            borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-          ),
-          child: Text(
-            text ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.bodyStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: LineTheme.readableOn(accent),
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: HudToast(text: text ?? '', accent: accent),
         ),
       ),
     );

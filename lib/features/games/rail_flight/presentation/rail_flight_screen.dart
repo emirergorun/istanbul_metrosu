@@ -12,6 +12,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/sprint_banner.dart';
@@ -366,55 +367,18 @@ class _FlightHud extends StatelessWidget {
       onPause: onPause,
       gameScore: controller.scoreThisGame,
       chips: <Widget>[
-        _HudChip(
-          label: 'Tren',
-          value: '${controller.lineLabel} · ${controller.gatesPassed}',
+        HudStat.value(
+          label: 'HAT',
+          value: controller.lineLabel,
+          semanticLabel: 'Tren hattı ${controller.lineLabel}',
           accent: _railFlightLineColor(controller.lineLevel),
         ),
+        HudStat.value(
+          label: 'GEÇİŞ',
+          value: '${controller.gatesPassed}',
+          semanticLabel: '${controller.gatesPassed} kapı geçildi',
+        ),
       ],
-    );
-  }
-}
-
-/// Oyuna özgü küçük gösterge; ortak HUD'un yanında durur.
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -439,13 +403,7 @@ class _FlightPlayArea extends StatelessWidget {
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: EdgeInsets.only(bottom: AppSpacing.md),
-                child: Text(
-                  'Dokun, tıkla veya Space ile treni uçur',
-                  style: AppText.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
+                child: HudHint(text: 'Dokun ya da Space: treni uçur'),
               ),
             ),
           ),
@@ -815,25 +773,9 @@ class _Banner extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          margin: const EdgeInsets.all(AppSpacing.md),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            color: accent,
-            borderRadius: BorderRadius.circular(AppSpacing.fieldRadius),
-          ),
-          child: Text(
-            text ?? '',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.bodyStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: LineTheme.readableOn(accent),
-            ),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: HudToast(text: text ?? '', accent: accent),
         ),
       ),
     );

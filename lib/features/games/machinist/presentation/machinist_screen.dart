@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../../../app/app_scope.dart';
 import '../../../../app/routes.dart';
 import '../../../../app/theme.dart';
+import '../../../../core/widgets/pressable.dart';
 import '../../../../core/audio/audio_service.dart';
 import '../../../journey/models/journey.dart';
 import '../../../journey/models/station.dart';
@@ -14,6 +15,7 @@ import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_breakdown.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -384,22 +386,14 @@ class _MachinistScreenState extends State<MachinistScreen>
               onPause: controller.pause,
               gameScore: controller.scoreThisGame,
               chips: <Widget>[
-                _HudStat(
+                HudStat.value(
                   label: 'YOLCU',
+                  value: '${controller.passengersTotal}',
                   semanticLabel: '${controller.passengersTotal} yolcu',
-                  child: Text(
-                    '${controller.passengersTotal}',
-                    style: AppText.statSmall,
-                  ),
                 ),
-                _HudStat(
-                  label: 'HAK',
-                  semanticLabel:
-                      '${MachinistRules.maxMisses - controller.misses} hak kaldı',
-                  child: _Lives(
-                    left: MachinistRules.maxMisses - controller.misses,
-                    total: MachinistRules.maxMisses,
-                  ),
+                HudLivesStat(
+                  left: MachinistRules.maxMisses - controller.misses,
+                  total: MachinistRules.maxMisses,
                 ),
               ],
             ),
@@ -741,9 +735,8 @@ class _CountdownBadge extends StatelessWidget {
   }
 }
 
-/// HUD'daki küçük gösterge: duraklat düğmesiyle aynı boyda, aynı düz
-/// zeminde. Sahnenin açık duvarında da okunur; renkli saydam kutu yok.
-/// Sol üstte yarı saydam kamera düğmesi: takip ↔ kabin.
+/// Kamera düğmesi: takip ↔ kabin. Duraklat düğmesiyle aynı aile — düz
+/// zemin, 44 piksel, 12 köşe; yarı saydam hap yok.
 class _CameraButton extends StatelessWidget {
   const _CameraButton({required this.cab, required this.onPressed});
 
@@ -755,108 +748,36 @@ class _CameraButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: cab ? 'Takip kamerasına geç' : 'Kabin kamerasına geç',
-      child: Material(
-        color: const Color(0x59101216),
-        shape: const StadiumBorder(side: BorderSide(color: Color(0x40FFFFFF))),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+      child: ExcludeSemantics(
+        child: Pressable(
           onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const Icon(
                   Icons.videocam_rounded,
-                  size: 18,
-                  color: Color(0xE6FFFFFF),
+                  size: 20,
+                  color: AppColors.textPrimary,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  cab ? 'KABİN' : 'TAKİP',
-                  style: AppText.micro.copyWith(
-                    color: const Color(0xE6FFFFFF),
-                    letterSpacing: 1.2,
+                  cab ? 'Kabin' : 'Takip',
+                  style: AppText.captionStrong.copyWith(
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HudStat extends StatelessWidget {
-  const _HudStat({
-    required this.label,
-    required this.semanticLabel,
-    required this.child,
-  });
-
-  final String label;
-  final String semanticLabel;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      child: ExcludeSemantics(
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHigh,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(label, style: AppText.micro.copyWith(height: 1.1)),
-              const SizedBox(height: 2),
-              child,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Kalan haklar: üç nokta. Giden hak boş halka olur; son hak kırmızıdır.
-class _Lives extends StatelessWidget {
-  const _Lives({required this.left, required this.total});
-
-  final int left;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = left <= 1 ? MachinistPalette.stop : AppColors.textPrimary;
-    return SizedBox(
-      height: 18,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          for (var i = 0; i < total; i++) ...<Widget>[
-            if (i > 0) const SizedBox(width: 4),
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: i < left ? fill : Colors.transparent,
-                border: Border.all(
-                  color: i < left ? fill : AppColors.outline,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -881,28 +802,7 @@ class _Banner extends StatelessWidget {
           alignment: const Alignment(0, 0.1),
           child: FadeTransition(
             opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.85, end: 1).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  text ?? '',
-                  style: AppText.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: LineTheme.readableOn(color),
-                  ),
-                ),
-              ),
-            ),
+            child: HudToast(text: text ?? '', accent: color),
           ),
         ),
       ),

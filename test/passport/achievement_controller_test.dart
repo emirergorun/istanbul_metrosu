@@ -65,6 +65,57 @@ void main() {
     return (achievements: achievements, discovery: discovery, store: store);
   }
 
+  group('Oyuna özel en iyi değerler (Hat Düşür)', () {
+    test('en büyük hat rozetleri koşu ortasında açılır', () async {
+      final world = build(await storeWith());
+      world.achievements.recordGameBest('merge_drop', 'max_level', 5);
+      expect(
+        world.achievements.isUnlocked(Achievements.mergeDropFirst),
+        isTrue,
+      );
+      expect(world.achievements.isUnlocked(Achievements.mergeDropM5), isTrue);
+      expect(world.achievements.isUnlocked(Achievements.mergeDropM8), isFalse);
+      final fresh = world.achievements.consumeUnlocked().map((d) => d.id);
+      expect(fresh, containsAll(<String>['merge_drop_first', 'merge_drop_m5']));
+    });
+
+    test('değer yalnız büyür; küçük değer rozeti geri almaz', () async {
+      final world = build(await storeWith());
+      world.achievements
+        ..recordGameBest('merge_drop', 'max_level', 8)
+        ..recordGameBest('merge_drop', 'max_level', 3);
+      expect(world.achievements.gameBest('merge_drop', 'max_level'), 8);
+      expect(world.achievements.isUnlocked(Achievements.mergeDropM8), isTrue);
+    });
+
+    test('zincir rozetleri kendi ölçüsünden okunur', () async {
+      final world = build(await storeWith());
+      world.achievements.recordGameBest('merge_drop', 'best_chain', 4);
+      expect(
+        world.achievements.isUnlocked(Achievements.mergeDropChain4),
+        isTrue,
+      );
+      expect(
+        world.achievements.isUnlocked(Achievements.mergeDropChain7),
+        isFalse,
+      );
+      expect(world.achievements.isUnlocked(Achievements.mergeDropM5), isFalse);
+    });
+
+    test('en iyi değer uygulama kapanıp açılınca korunur', () async {
+      final store = await storeWith();
+      final first = build(store);
+      first.achievements.recordGameBest('merge_drop', 'max_level', 9);
+      await first.achievements.flush();
+      final reopened = build(store);
+      expect(reopened.achievements.gameBest('merge_drop', 'max_level'), 9);
+      expect(
+        reopened.achievements.isUnlocked(Achievements.mergeDropM8),
+        isTrue,
+      );
+    });
+  });
+
   test('yeni oyuncuda hiçbir başarım açık değil', () async {
     final world = build(await storeWith());
     expect(world.achievements.unlockedCount, 0);

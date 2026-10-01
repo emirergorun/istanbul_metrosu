@@ -13,6 +13,7 @@ class PlayerStats {
     this.journeysCompleted = 0,
     this.playedGameIds = const <String>{},
     this.gameRuns = const <String, int>{},
+    this.gameBests = const <String, int>{},
   });
 
   static const PlayerStats empty = PlayerStats();
@@ -32,20 +33,29 @@ class PlayerStats {
 
   int runsOf(String gameId) => gameRuns[gameId] ?? 0;
 
+  /// Oyunlara özel en iyi değerler: `oyun.ölçü` → değer (ör.
+  /// `merge_drop.max_level` → 9). Yalnız büyür; rozetler buradan okur.
+  final Map<String, int> gameBests;
+
+  int bestOf(String gameId, String stat) => gameBests['$gameId.$stat'] ?? 0;
+
   PlayerStats copyWith({
     int? journeysCompleted,
     Set<String>? playedGameIds,
     Map<String, int>? gameRuns,
+    Map<String, int>? gameBests,
   }) => PlayerStats(
     journeysCompleted: journeysCompleted ?? this.journeysCompleted,
     playedGameIds: playedGameIds ?? this.playedGameIds,
     gameRuns: gameRuns ?? this.gameRuns,
+    gameBests: gameBests ?? this.gameBests,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
     'journeys': journeysCompleted,
     'games': playedGameIds.toList()..sort(),
     'runs': gameRuns,
+    if (gameBests.isNotEmpty) 'bests': gameBests,
   };
 
   String encode() => jsonEncode(toJson());
@@ -60,6 +70,7 @@ class PlayerStats {
       final journeys = map['journeys'];
       final games = map['games'];
       final runs = map['runs'];
+      final bests = map['bests'];
       return PlayerStats(
         journeysCompleted: journeys is int && journeys > 0 ? journeys : 0,
         playedGameIds: <String>{
@@ -70,6 +81,12 @@ class PlayerStats {
         gameRuns: <String, int>{
           if (runs is Map)
             for (final entry in runs.entries)
+              if (entry.key is String && entry.value is int && entry.value > 0)
+                entry.key as String: entry.value as int,
+        },
+        gameBests: <String, int>{
+          if (bests is Map)
+            for (final entry in bests.entries)
               if (entry.key is String && entry.value is int && entry.value > 0)
                 entry.key as String: entry.value as int,
         },
@@ -86,7 +103,8 @@ class PlayerStats {
       (other is PlayerStats &&
           other.journeysCompleted == journeysCompleted &&
           setEquals(other.playedGameIds, playedGameIds) &&
-          mapEquals(other.gameRuns, gameRuns));
+          mapEquals(other.gameRuns, gameRuns) &&
+          mapEquals(other.gameBests, gameBests));
 
   @override
   int get hashCode => Object.hash(
@@ -94,6 +112,11 @@ class PlayerStats {
     Object.hashAllUnordered(playedGameIds),
     Object.hashAllUnordered(
       gameRuns.entries.map(
+        (MapEntry<String, int> e) => Object.hash(e.key, e.value),
+      ),
+    ),
+    Object.hashAllUnordered(
+      gameBests.entries.map(
         (MapEntry<String, int> e) => Object.hash(e.key, e.value),
       ),
     ),

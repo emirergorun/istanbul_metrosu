@@ -105,11 +105,12 @@ class GameScoreProfiles {
               'kalıyordu.',
         ),
         'merge_drop': GameScoreProfile(
-          measuredPerMinute: 122,
-          scale: 0.052,
+          measuredPerMinute: 120,
+          scale: 0.027,
           note:
-              'Açık ara en cömert oyun: saniyede birkaç birleşme ve seviye '
-              'çarpanı birleşince dakikada 2000 puanı aşıyor.',
+              'Birleşme puanı seviyeyle katlanarak artıyor (M2 10, M8 640) '
+              've zincir çarpanı var. Ölçek 0,052 iken orta seviye dakikada '
+              '233 veriyordu; 0,027 ile ~120.',
         ),
         'lane_runner': GameScoreProfile(
           measuredPerMinute: 120,

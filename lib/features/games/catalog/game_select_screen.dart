@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../app/app_scope.dart';
 import '../../../app/routes.dart';
@@ -78,6 +79,17 @@ class _GameSelectScreenState extends State<GameSelectScreen> {
     if (_session?.status == GameStatus.arrived && !_playedArrivalSound) {
       _playedArrivalSound = true;
       AppScope.of(context).audio.play(GameSound.arrival);
+    }
+    // Oyun ekranı açılırken denetleyici `didChangeDependencies` içinde
+    // başlıyor ve oturumu bilgilendiriyor; o an çerçeve kuruluyor ve
+    // burada `setState` çağırmak "build sırasında setState" hatası verirdi.
+    // Kurulum sürüyorsa yenileme bir sonraki kareye ertelenir.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      return;
     }
     setState(() {});
   }

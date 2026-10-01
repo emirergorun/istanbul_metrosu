@@ -74,6 +74,7 @@ const Set<String> kMasterAchievementIds = <String>{
   'streak_7',
   'escape_levels_all',
   'escape_stars_all',
+  'merge_drop_m11',
 };
 
 /// Rozetin ortasındaki işaret.
@@ -148,7 +149,13 @@ enum BadgeGlyph {
   flawless,
 
   /// Yıldız — bütün yıldızlar.
-  star;
+  star,
+
+  /// İki iç içe halka: büyüyen hat jetonu — Hat Düşür'ün seviye rozetleri.
+  token,
+
+  /// Birbirine geçmiş iki halka — zincirleme birleşme.
+  chainLink;
 
   /// Başarımın işaretini kimliğinden seçer.
   ///
@@ -180,6 +187,11 @@ enum BadgeGlyph {
         'escape_levels_all' => terminus,
         'escape_perfect' => flawless,
         'escape_stars_all' => star,
+        'merge_drop_first' ||
+        'merge_drop_m5' ||
+        'merge_drop_m8' ||
+        'merge_drop_m11' => token,
+        'merge_drop_chain_4' || 'merge_drop_chain_7' => chainLink,
         _ => switch (definition.category) {
           AchievementCategory.exploration => station,
           AchievementCategory.journey => train,
@@ -578,6 +590,16 @@ class BadgePinPainter extends CustomPainter {
                     (r * (i.isEven ? 0.95 : 0.42)),
         ];
         canvas.drawPath(Path()..addPolygon(points, true), fill);
+
+      case BadgeGlyph.token:
+        // Dolu jeton ve onu saran halka.
+        canvas.drawCircle(center, r * 0.85, stroke);
+        canvas.drawCircle(center, r * 0.48, fill);
+
+      case BadgeGlyph.chainLink:
+        // İki halka, yan yana ve iç içe geçmiş.
+        canvas.drawCircle(center.translate(-r * 0.32, 0), r * 0.5, stroke);
+        canvas.drawCircle(center.translate(r * 0.32, 0), r * 0.5, stroke);
     }
   }
 

@@ -14,6 +14,7 @@ import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_breakdown.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -293,12 +294,8 @@ class _CrossingScreenState extends State<CrossingScreen>
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Dokun: bir adım ileri · Kaydır: yön ver',
-                          style: AppText.caption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
+                        const HudHint(
+                          text: 'Dokun: bir adım ileri · Kaydır: yön ver',
                         ),
                         const SizedBox(height: AppSpacing.md),
                         JourneyStatusBar(
@@ -406,55 +403,12 @@ class _CrossingHud extends StatelessWidget {
       onPause: onPause,
       gameScore: controller.scoreThisGame,
       chips: <Widget>[
-        _HudChip(
-          label: 'Sıra',
+        HudStat.value(
+          label: 'SIRA',
           value: '${controller.rowsCrossed}',
-          accent: accent,
+          semanticLabel: '${controller.rowsCrossed} sıra geçildi',
         ),
       ],
-    );
-  }
-}
-
-class _HudChip extends StatelessWidget {
-  const _HudChip({
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label.toUpperCase(),
-            style: AppText.micro.copyWith(color: accent),
-          ),
-          Text(
-            value,
-            maxLines: 1,
-            style: AppText.captionStrong.copyWith(
-              fontWeight: FontWeight.w800,
-              color: accent,
-              fontFeatures: kTabularFigures,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -882,30 +836,9 @@ class _Banner extends StatelessWidget {
                 begin: const Offset(0, -0.3),
                 end: Offset.zero,
               ).animate(animation),
-              child: Container(
-                margin: const EdgeInsets.only(top: AppSpacing.xl),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  text ?? '',
-                  style: AppText.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: LineTheme.readableOn(accent),
-                  ),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xl),
+                child: HudToast(text: text ?? '', accent: accent),
               ),
             ),
           ),

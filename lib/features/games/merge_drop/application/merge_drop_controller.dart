@@ -13,11 +13,14 @@ class MergeDropController extends JourneyGameController {
     super.store,
     super.discovery,
     Random? random,
+    List<int> spawnWeights = mergeDropSpawnWeights,
     super.tick = const Duration(milliseconds: 16),
     super.session,
   }) : _random = random ?? Random(),
+       _spawnWeights = List<int>.unmodifiable(spawnWeights),
        super(gameId: id) {
     _currentLevel = _randomLevel();
+    _nextLevel = _randomLevel();
   }
 
   /// Rekor anahtarında kullanılır; değiştirilmemeli.
@@ -163,6 +166,21 @@ class MergeDropController extends JourneyGameController {
 
   final Random _random;
 
+  /// Doğum ağırlıkları, M1'den başlayarak (bkz. [mergeDropSpawnWeights]).
+  final List<int> _spawnWeights;
+
+  /// "Yaklaşıyor" uyarısının başladığı pay: oturmuş bir parçanın tepesi
+  /// tehlike çizgisine bu kadar (dünya birimi) yaklaşınca çizgi sararır.
+  static const double _nearMargin = 0.1;
+
+  /// Koşu saati (saniye) — zincir penceresi ölçümü için.
+  double _time = 0;
+
+  int _nextLevel = mergeDropMinLevel;
+  int _bestChain = 0;
+  MergeDropDanger _danger = MergeDropDanger.calm;
+  final List<MergeDropEvent> _events = <MergeDropEvent>[];
+
   double _aimX = 0.5;
   double _dropCooldown = 0;
   double _overflowSeconds = 0;
@@ -175,6 +193,25 @@ class MergeDropController extends JourneyGameController {
   double get aimX => _aimX;
   int get currentLevel => _currentLevel;
   String get currentLabel => mergeDropLabelForLevel(_currentLevel);
+
+  /// Şimdikinden sonra gelecek parça — planlama için.
+  int get nextLevel => _nextLevel;
+  String get nextLabel => mergeDropLabelForLevel(_nextLevel);
+
+  /// Bu koşunun en uzun zinciri (0: hiç birleşme yok).
+  int get bestChain => _bestChain;
+
+  MergeDropDanger get danger => _danger;
+
+  /// Son çağrıdan beri olan birleşmeler; liste boşalır. Çizim katmanı her
+  /// karede okur ve birleşme efektlerini bunlardan kurar.
+  List<MergeDropEvent> takeEvents() {
+    if (_events.isEmpty) return const <MergeDropEvent>[];
+    final taken = List<MergeDropEvent>.unmodifiable(_events);
+    _events.clear();
+    return taken;
+  }
+
   int get merges => _merges;
   int get maxLevel => _maxLevel;
   String get maxLabel => mergeDropLabelForLevel(_maxLevel);
@@ -217,7 +254,12 @@ class MergeDropController extends JourneyGameController {
     _merges = 0;
     _maxLevel = mergeDropMinLevel;
     _balls = const <DropBall>[];
+    _time = 0;
+    _bestChain = 0;
+    _danger = MergeDropDanger.calm;
+    _events.clear();
     _currentLevel = _randomLevel();
+    _nextLevel = _randomLevel();
   }
 
   void moveAim(double x) {
@@ -236,20 +278,31 @@ class MergeDropController extends JourneyGameController {
         level: _currentLevel,
         x: _aimX.clamp(radius, worldWidth - radius),
         y: radius + 0.015,
+        bornAt: _time,
       ),
     ];
-    _currentLevel = _randomLevel();
+    // Sıradaki öne geçer, arkasına yenisi gelir.
+    _currentLevel = _nextLevel;
+    _nextLevel = _randomLevel();
     _dropCooldown = 0.32;
     notifyListeners();
     return true;
   }
 
-  // 3'ten 4'e genişletildi: zorluk artışının bir parçası olarak doğan
-  // parçalara biraz daha fazla çeşitlilik/boy geldi.
-  int _randomLevel() => _random.nextInt(4) + mergeDropMinLevel;
+  /// Ağırlıklı doğum: M1-M4, [_spawnWeights] oranında.
+  int _randomLevel() {
+    final total = _spawnWeights.fold<int>(0, (int a, int b) => a + b);
+    var roll = _random.nextInt(total);
+    for (var i = 0; i < _spawnWeights.length; i++) {
+      roll -= _spawnWeights[i];
+      if (roll < 0) return mergeDropMinLevel + i;
+    }
+    return mergeDropMinLevel;
+  }
 
   @override
   void onTick(double dt) {
+    _time += dt;
     _dropCooldown = max(0, _dropCooldown - dt);
 
     // Tek büyük adım yerine küçük alt-adımlar: hızlı düşen bir top, altındaki
@@ -275,7 +328,13 @@ class MergeDropController extends JourneyGameController {
     _advancePop(dt);
     _updateSettled();
 
-    if (_isOverflowing()) {
+    final overflowing = _isOverflowing();
+    _danger = overflowing
+        ? MergeDropDanger.critical
+        : _isNear()
+        ? MergeDropDanger.near
+        : MergeDropDanger.calm;
+    if (overflowing) {
       _overflowSeconds += dt;
       if (_overflowSeconds > _overflowGraceSeconds) endGame();
     } else {
@@ -348,9 +407,11 @@ class MergeDropController extends JourneyGameController {
           ),
           vx: (a.vx * a.mass + b.vx * b.mass) / totalMass,
           vy: (a.vy * a.mass + b.vy * b.mass) / totalMass,
-          // agar.io hissi: yeni top küçük doğup gözle görülür şekilde şişer.
+          // Yeni parça biraz küçük doğup gözle görülür şekilde şişer.
           // Yalnızca çizim; fizik ilk kareden itibaren tam yarıçapla çalışır.
           pop: 0,
+          chain: _chainOf(a, b),
+          bornAt: _time,
         );
         _balls = <DropBall>[
           for (var k = 0; k < _balls.length; k++)
@@ -358,9 +419,26 @@ class MergeDropController extends JourneyGameController {
           merged,
         ];
         _merges++;
+        final newRunMax = merged.level > _maxLevel;
         _maxLevel = max(_maxLevel, merged.level);
-        addScore(merged.level * 10);
+        _bestChain = max(_bestChain, merged.chain);
+        final before = score;
+        addScore(mergeDropMergePoints(merged.level, chain: merged.chain));
         markStationProgress();
+        // Okuyan yoksa (denge botu, birim testi) liste sınırsız büyümesin.
+        if (_events.length >= 64) _events.removeAt(0);
+        _events.add(
+          MergeDropEvent(
+            level: merged.level,
+            x: merged.x,
+            y: merged.y,
+            parentA: (a.x, a.y),
+            parentB: (b.x, b.y),
+            points: score - before,
+            chain: merged.chain,
+            newRunMax: newRunMax,
+          ),
+        );
         return true;
       }
     }
@@ -487,6 +565,21 @@ class MergeDropController extends JourneyGameController {
     _balls = balls;
   }
 
+  /// Birleşmenin zincir halkası.
+  ///
+  /// Zincir nedensel: birleşen parçalardan biri az önce ([mergeDropChainWindow]
+  /// içinde) **bir birleşmeden doğduysa**, bu birleşme onun devamıdır.
+  /// Bırakılan parça zincir taşımaz. Böylece "M2+M2 → M3 düştü, M3+M3 →
+  /// M4" zincir sayılır; aynı anda havuzun iki ucunda olan ilgisiz iki
+  /// birleşme sayılmaz.
+  int _chainOf(DropBall a, DropBall b) {
+    int link(DropBall ball) =>
+        ball.chain > 0 && _time - ball.bornAt <= mergeDropChainWindow
+        ? ball.chain
+        : 0;
+    return max(link(a), link(b)) + 1;
+  }
+
   double _distance(DropBall a, DropBall b) {
     final dx = a.x - b.x;
     final dy = a.y - b.y;
@@ -547,6 +640,11 @@ class MergeDropController extends JourneyGameController {
     }
     _balls = updated;
   }
+
+  /// Oturmuş bir parçanın tepesi tehlike çizgisine yaklaştı mı?
+  bool _isNear() => _balls.any(
+    (ball) => ball.settled && ball.y - ball.radius < dangerY + _nearMargin,
+  );
 
   /// Yalnızca gerçekten oturmuş toplar sayılır.
   bool _isOverflowing() {

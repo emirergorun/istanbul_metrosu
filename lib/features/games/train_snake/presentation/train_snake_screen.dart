@@ -12,6 +12,7 @@ import '../../../journey/models/journey.dart';
 import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../../core/widgets/line_badge.dart';
 import '../../../session/widgets/journey_status_bar.dart';
@@ -854,30 +855,9 @@ class _Banner extends StatelessWidget {
                 begin: const Offset(0, -0.3),
                 end: Offset.zero,
               ).animate(animation),
-              child: Container(
-                margin: const EdgeInsets.only(top: AppSpacing.xl),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  text ?? '',
-                  style: AppText.bodyStrong.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: LineTheme.readableOn(accent),
-                  ),
-                ),
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xl),
+                child: HudToast(text: text ?? '', accent: accent),
               ),
             ),
           ),

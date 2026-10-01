@@ -136,6 +136,10 @@ class AchievementController extends ChangeNotifier implements RunReporter {
     AchievementMetric.gameRunsFinished => _stats.runsOf(
       definition.gameId ?? '',
     ),
+    AchievementMetric.gameBest => _stats.bestOf(
+      definition.gameId ?? '',
+      definition.stat ?? '',
+    ),
     final metric => _metric(metric),
   };
 
@@ -152,6 +156,7 @@ class AchievementController extends ChangeNotifier implements RunReporter {
       store?.bestScoreForGame(_quizGameId) ?? 0,
     // Oyuna bağlı; [_valueOf] çözüyor.
     AchievementMetric.gameRunsFinished => 0,
+    AchievementMetric.gameBest => 0,
     AchievementMetric.escapeLevelsCompleted => escape?.completedCount ?? 0,
     AchievementMetric.escapeStars => escape?.totalStars ?? 0,
     AchievementMetric.escapePerfectLevels => escape?.perfectCount ?? 0,
@@ -164,6 +169,25 @@ class AchievementController extends ChangeNotifier implements RunReporter {
       discovery.completedLineCount(discovery.catalog.lineIds);
 
   // --- Yazma ---
+
+  /// Oyunun bu koşudaki en iyi değeri — rozetlerin oyuna özel ölçüleri.
+  ///
+  /// Koşunun **ortasında** çağrılır (Hat Düşür'de yeni bir hat doğduğu an):
+  /// rozet o an açılır, koşunun bitmesini ya da anlamlı sayılmasını
+  /// beklemez. Değer yalnız büyür; aynı değerle tekrar çağırmak hiçbir şey
+  /// yapmaz.
+  void recordGameBest(String gameId, String stat, int value) {
+    if (_disposed || value <= _stats.bestOf(gameId, stat)) return;
+    _stats = _stats.copyWith(
+      gameBests: <String, int>{..._stats.gameBests, '$gameId.$stat': value},
+    );
+    unawaited(_persistStats());
+    _evaluate();
+    notifyListeners();
+  }
+
+  /// Oyunun kalıcı en iyi değeri; yoksa 0.
+  int gameBest(String gameId, String stat) => _stats.bestOf(gameId, stat);
 
   /// Yeni koşu başladı: bekleyen kutlamalar temizlenir.
   @override

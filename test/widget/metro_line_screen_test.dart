@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:istanbul_metro_game/features/session/widgets/hud_widgets.dart';
 import 'package:istanbul_metro_game/app/app_scope.dart';
 import 'package:istanbul_metro_game/app/theme.dart';
 import 'package:istanbul_metro_game/core/audio/audio_service.dart';
@@ -75,7 +76,7 @@ void main() {
   testWidgets('oyun ekranı hatasız açılır ve HUD gösterilir', (tester) async {
     await pumpGame(tester);
 
-    expect(find.text('SEVİYE'), findsOneWidget);
+    expect(find.text('KALAN'), findsOneWidget);
     expect(find.text('KALAN'), findsOneWidget);
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
@@ -110,14 +111,12 @@ void main() {
     await disposeGame(tester);
   });
 
-  testWidgets('kalan hak jetonları çizilir', (tester) async {
+  testWidgets('kalan haklar ortak HUD göstergesinde', (tester) async {
     await pumpGame(tester);
 
-    expect(
-      find.byIcon(Icons.confirmation_number_rounded),
-      findsNWidgets(3),
-      reason: 'üç hak da görünmeli',
-    );
+    expect(find.byType(HudLivesStat), findsOneWidget);
+    final lives = tester.widget<HudLives>(find.byType(HudLives));
+    expect(lives.left, 3, reason: 'üç hak da dolu başlar');
 
     await disposeGame(tester);
   });
@@ -159,7 +158,7 @@ void main() {
     await pumpGame(tester, size: const Size(750, 1334));
 
     expect(tester.takeException(), isNull);
-    expect(find.text('SEVİYE'), findsOneWidget);
+    expect(find.text('KALAN'), findsOneWidget);
 
     await disposeGame(tester);
   });

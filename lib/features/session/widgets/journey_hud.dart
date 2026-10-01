@@ -4,6 +4,7 @@ import '../../../app/theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../journey_run.dart';
 import '../../../core/widgets/pressable.dart';
+import 'hud_widgets.dart';
 
 /// Oyun ekranlarının üst bilgi alanı — **her oyun için ortak**.
 ///
@@ -46,7 +47,7 @@ class JourneyHud extends StatelessWidget {
   ///
   /// Üstünde [FittedBox] devreye girer ve rozetleri küçültür. Skorun
   /// okunur kalması rozetlerden önce gelir.
-  static const double _maxChipShare = 0.58;
+  static const double _maxChipShare = 0.5;
 
   /// Yolculuğun toplamı bu oyunun katkısından büyükse ayrım anlamlı.
   bool get _showGameScore {
@@ -116,34 +117,45 @@ class JourneyHud extends StatelessWidget {
                                   : AppColors.textMuted,
                             ),
                           ),
+                          // Skor satırın sahibi: hiçbir zaman kaybolmaz.
+                          // Yer daralırsa önce "bu oyunda" eki kısalır,
+                          // dokuz haneli skor da kesilmez, küçülür.
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: <Widget>[
                               Flexible(
-                                child: Text(
-                                  Formatters.score(run.score),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  // Skor sık değişir: iri başlık fontu
-                                  // değil, sabit genişlikli rakamlarla
-                                  // M PLUS Rounded 1c.
-                                  style: AppText.stat.copyWith(
-                                    fontSize: 28,
-                                    height: 1.1,
+                                flex: 3,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    Formatters.score(run.score),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    // Skor sık değişir: iri başlık fontu
+                                    // değil, sabit genişlikli rakamlarla
+                                    // M PLUS Rounded 1c.
+                                    style: AppText.stat.copyWith(
+                                      fontSize: 28,
+                                      height: 1.1,
+                                    ),
                                   ),
                                 ),
                               ),
                               if (_showGameScore) ...<Widget>[
                                 const SizedBox(width: 6),
-                                Text(
-                                  'bu oyunda +${Formatters.score(gameScore!)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppText.label.copyWith(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textMuted,
+                                Flexible(
+                                  flex: 2,
+                                  child: Text(
+                                    'bu oyunda +${Formatters.score(gameScore!)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppText.label.copyWith(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textMuted,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -211,28 +223,17 @@ class JourneyHud extends StatelessWidget {
 class SprintChip extends StatelessWidget {
   const SprintChip({super.key});
 
+  /// Ortak HUD göstergesi; kimliği sarı nokta ve "×2" taşıyor.
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Icon(Icons.flag_rounded, size: 15, color: AppColors.warning),
-          SizedBox(width: 3),
-          Text(
-            'SON DURAK ×2',
-            style: AppText.label.copyWith(color: AppColors.warning),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => HudStat(
+    label: 'SON DURAK',
+    semanticLabel: 'Son durak sprinti, puanlar iki kat',
+    accent: AppColors.warning,
+    child: Text(
+      '×2',
+      style: AppText.statSmall.copyWith(color: AppColors.warning, height: 1.1),
+    ),
+  );
 }
 
 /// Ardışık temizlik göstergesi. Oyunlar `chips` ile ekler.

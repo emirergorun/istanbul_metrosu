@@ -250,6 +250,8 @@ String achievementRemainingText(
     AchievementMetric.escapeLevelsCompleted ||
     AchievementMetric.escapePerfectLevels => 'BÖLÜM',
     AchievementMetric.escapeStars => 'YILDIZ',
+    AchievementMetric.gameBest =>
+      definition.stat == 'best_chain' ? 'HALKA' : 'SEVİYE',
   };
   return '$left $unit KALDI';
 }

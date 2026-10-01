@@ -14,6 +14,7 @@ import '../../../session/journey_host.dart';
 import '../../../session/journey_status.dart';
 import '../../../session/widgets/arrival_sequence.dart';
 import '../../../session/widgets/journey_breakdown.dart';
+import '../../../session/widgets/hud_widgets.dart';
 import '../../../session/widgets/journey_hud.dart';
 import '../../../session/widgets/journey_status_bar.dart';
 import '../../../session/widgets/overlay_panel.dart';
@@ -734,21 +735,7 @@ class _Banner extends StatelessWidget {
         child: FadeTransition(
           opacity: animation,
           child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHigh,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: accent.withValues(alpha: 0.6)),
-              ),
-              child: Text(
-                value,
-                style: AppText.captionStrong.copyWith(color: accent),
-              ),
-            ),
+            child: HudToast(text: value, accent: accent),
           ),
         ),
       ),

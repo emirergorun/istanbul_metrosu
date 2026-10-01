@@ -57,6 +57,17 @@ class LaneRunnerController extends JourneyGameController {
   /// Son fizik adımının duvar saati; çizimde ileri kestirim için.
   DateTime? _lastTickAt;
 
+  /// Bu koşuda doğan engel sayısı — ısınma için.
+  int _spawned = 0;
+
+  /// Isınma: her koşunun ilk bu kadar engeli trenin o anki rayına doğmaz.
+  ///
+  /// Önce hiçbir şeye dokunmayan oyuncu 4-5 saniyede ilk engele çarpıyor,
+  /// oyunun ne istediğini görmeden bitiyordu. Şimdi ilk trenler yan
+  /// raylardan geçer: oyuncu engeli ve ray değiştirmenin anlamını görür,
+  /// sonra gerçek oyun başlar. Ray değiştiren oyuncu yine çarpabilir.
+  static const int warmupObstacles = 3;
+
   List<LaneObstacle> get obstacles =>
       List<LaneObstacle>.unmodifiable(_obstacles);
   int get trainLane => _trainLane;
@@ -109,6 +120,7 @@ class LaneRunnerController extends JourneyGameController {
     _spawnDistance = 0.0;
     _travel = 0.0;
     _lastTickAt = null;
+    _spawned = 0;
   }
 
   void moveLeft() => _setLane(_trainLane - 1);
@@ -182,6 +194,11 @@ class LaneRunnerController extends JourneyGameController {
       lane =
           (_obstacles.last.lane + 1 + _random.nextInt(2)) % laneRunnerLaneCount;
     }
+    if (_spawned < warmupObstacles && lane == _trainLane) {
+      // Diğer iki raydan biri.
+      lane = (_trainLane + 1 + _random.nextInt(2)) % laneRunnerLaneCount;
+    }
+    _spawned++;
     _obstacles.add(LaneObstacle(id: _nextObstacleId++, lane: lane, y: -0.12));
   }
 }

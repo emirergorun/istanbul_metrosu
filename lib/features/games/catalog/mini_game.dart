@@ -166,16 +166,16 @@ class MiniGames {
     id: 'merge_drop',
     coverAsset: 'assets/images/games/hat_dusur_cover.png',
     name: 'Hat Düşür',
-    tagline: 'M1 rozetlerini düşür, aynı hatları M7’ye kadar büyüt.',
+    tagline: 'Hat jetonlarını depoya bırak, eş hatları M11’e kadar büyüt.',
     glyph: GameGlyph.drop,
     color: AppColors.gameDrop,
     coverScene: GameCoverScene.drop,
     description:
-        'Hat rozetlerini havuza bırak; değen iki eş rozet birleşip bir üst '
-        'hatta büyür.',
+        'Jetonu sürükleyip nişan al, bırak. Değen iki eş jeton birleşir ve '
+        'bir üst hat doğar.',
     objective:
-        'Aynı hattan iki rozet birleşince bir üst hat doğar ve puan yazar. '
-        'Yığın tepedeki tehlike çizgisine oturduğunda oyun biter.',
+        'Büyük hat daha çok puan yazar, zincirleme birleşme daha da çok. '
+        'Jetonlar tehlike çizgisinin üstüne yığılırsa depo dolar.',
     isAvailable: true,
   );
 
