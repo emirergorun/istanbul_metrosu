@@ -360,74 +360,108 @@ class _MetroLineScreenState extends State<MetroLineScreen>
                     child: CustomPaint(painter: MetroLineIstanbulBackdrop()),
                   ),
                 ),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                      AppSpacing.lg,
-                      AppSpacing.md,
-                    ),
-                    child: Column(
-                      children: <Widget>[
-                        _MetroLineHud(
-                          controller: controller,
-                          accent: accent,
-                          onPause: controller.pause,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _HeartRow(hearts: controller.hearts),
-                        const SizedBox(height: AppSpacing.sm),
-                        Expanded(
-                          child: _MetroLineBoard(
+                Column(
+                  children: <Widget>[
+                    // Üst bilgi alanının arkası mat. HUD'ın renkleri (soluk
+                    // gri künye, yarı saydam hat rengi rozetler, rekor
+                    // çubuğu) uygulamanın koyu zeminine göre ayarlı; gün
+                    // batımı göğünün üstünde okunmuyordu. Şerit HUD'ı
+                    // değiştirmiyor, yalnızca diğer oyunlardaki zemini
+                    // arkasına koyuyor — üst alan her oyunda aynı kalsın.
+                    ColoredBox(
+                      color: AppColors.background,
+                      child: SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                            AppSpacing.lg,
+                            AppSpacing.sm,
+                          ),
+                          child: _MetroLineHud(
                             controller: controller,
                             accent: accent,
-                            departure: _departure,
-                            blocked: _blocked,
-                            departingTrain: controller.level == _departingLevel
-                                ? _departingTrain
-                                : null,
-                            departingSize: _departingSize,
-                            blockedTrainId: _blockedTrainId,
-                            bump: _bump,
-                            transition: _transition,
-                            outgoingTrain: _outgoingTrain,
-                            outgoingSize: _outgoingSize,
-                            onTapTrain: _tapTrain,
-                            onHint: () {
-                              if (!_transition.isAnimating) {
-                                controller.requestHint();
-                              }
-                            },
-                            onTapEmpty: controller.clearHint,
+                            onPause: controller.pause,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Dokun: önü açık treni çıkar · Basılı tut: ipucu',
-                          textAlign: TextAlign.center,
-                          // Denizin üstünde okunsun: beyaz ve gölgeli.
-                          style: AppText.caption.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            shadows: const <Shadow>[
-                              Shadow(color: Color(0xCC0B2236), blurRadius: 6),
+                      ),
+                    ),
+                    // Şeridin alt kenarı göğe yumuşakça karışır; keskin bir
+                    // çizgi sahneyi başlık çubuğuyla kesilmiş gösterirdi.
+                    const _HudFade(),
+                    Expanded(
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            0,
+                            AppSpacing.lg,
+                            AppSpacing.md,
+                          ),
+                          child: Column(
+                            children: <Widget>[
+                              _HeartRow(hearts: controller.hearts),
+                              const SizedBox(height: AppSpacing.sm),
+                              Expanded(
+                                child: _MetroLineBoard(
+                                  controller: controller,
+                                  accent: accent,
+                                  departure: _departure,
+                                  blocked: _blocked,
+                                  departingTrain:
+                                      controller.level == _departingLevel
+                                      ? _departingTrain
+                                      : null,
+                                  departingSize: _departingSize,
+                                  blockedTrainId: _blockedTrainId,
+                                  bump: _bump,
+                                  transition: _transition,
+                                  outgoingTrain: _outgoingTrain,
+                                  outgoingSize: _outgoingSize,
+                                  onTapTrain: _tapTrain,
+                                  onHint: () {
+                                    if (!_transition.isAnimating) {
+                                      controller.requestHint();
+                                    }
+                                  },
+                                  onTapEmpty: controller.clearHint,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'Dokun: önü açık treni çıkar · Basılı tut: ipucu',
+                                textAlign: TextAlign.center,
+                                // Denizin üstünde okunsun: beyaz ve gölgeli.
+                                style: AppText.caption.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  shadows: const <Shadow>[
+                                    Shadow(
+                                      color: Color(0xCC0B2236),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              JourneyStatusBar(
+                                gameId: MetroLineController.id,
+                                run: controller,
+                                lineStations: AppScope.of(
+                                  context,
+                                ).metro.stationsOfLine(journey.lineId),
+                                accent: accent,
+                                isMoving:
+                                    controller.status == GameStatus.playing,
+                              ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        JourneyStatusBar(
-                          gameId: MetroLineController.id,
-                          run: controller,
-                          lineStations: AppScope.of(
-                            context,
-                          ).metro.stationsOfLine(journey.lineId),
-                          accent: accent,
-                          isMoving: controller.status == GameStatus.playing,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
                 _Banner(
                   animation: _bannerAnimation,
@@ -502,6 +536,34 @@ class _MetroLineScreenState extends State<MetroLineScreen>
       onRestart: controller.restart,
       onExit: _exitToHome,
       showBackdrop: showBackdrop,
+    );
+  }
+}
+
+/// Mat HUD şeridinden sahneye geçiş: zeminden saydama kısa bir gradyan.
+class _HudFade extends StatelessWidget {
+  const _HudFade();
+
+  /// Jeton satırıyla HUD arasındaki eski boşluğun yerini tutar.
+  static const double height = 14;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[
+              AppColors.background,
+              AppColors.background.withValues(alpha: 0),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

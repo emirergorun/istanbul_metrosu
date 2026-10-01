@@ -12,6 +12,7 @@ import 'package:istanbul_metro_game/features/games/metro_line/presentation/metro
 import 'package:istanbul_metro_game/features/games/metro_line/presentation/metro_line_screen.dart';
 import 'package:istanbul_metro_game/features/journey/models/journey.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
+import 'package:istanbul_metro_game/features/session/widgets/journey_hud.dart';
 import 'package:istanbul_metro_game/features/session/widgets/journey_progress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,6 +80,32 @@ void main() {
     expect(find.byType(JourneyProgressBar), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
     expect(tester.takeException(), isNull);
+
+    await disposeGame(tester);
+  });
+
+  testWidgets('üst bilgi alanının arkası mat, ekranın en üstünden başlar', (
+    tester,
+  ) async {
+    // HUD renkleri koyu zemine göre ayarlı; gün batımı göğünün üstünde
+    // skor künyesi ve rozetler okunmuyordu.
+    await pumpGame(tester);
+
+    final band = find.ancestor(
+      of: find.byType(JourneyHud),
+      matching: find.byWidgetPredicate(
+        (Widget w) => w is ColoredBox && w.color == AppColors.background,
+      ),
+    );
+    expect(band, findsOneWidget);
+
+    final bandRect = tester.getRect(band);
+    final hudRect = tester.getRect(find.byType(JourneyHud));
+    expect(bandRect.top, 0);
+    expect(bandRect.left, 0);
+    expect(bandRect.right, tester.getRect(find.byType(Scaffold)).right);
+    // Rekor çubuğu (HUD'ın en altı) şeridin içinde kalır.
+    expect(bandRect.bottom, greaterThanOrEqualTo(hudRect.bottom));
 
     await disposeGame(tester);
   });
