@@ -378,6 +378,32 @@ class MiniGames {
     isAvailable: true,
   );
 
+  /// Simit Kap — Flappy Dunk mantığı: martı simitlerin içinden yukarıdan
+  /// aşağı süzülür.
+  ///
+  /// Kapağı bilerek boş, bkz. [GameCoverScene.simitCatch].
+  static const MiniGame simitCatch = MiniGame(
+    id: 'simit_catch',
+    name: 'Simit Kap',
+    tagline: 'Kanat çırp, simitlerin içinden süzül.',
+    glyph: GameGlyph.simitCatch,
+    color: AppColors.gameSimitCatch,
+    coverScene: GameCoverScene.simitCatch,
+    description:
+        'Boğaz\'ın üstünde bir martı: kanat çırparak yüksel, simitlerin '
+        'içinden yukarıdan aşağı geç.',
+    objective:
+        'Geçtiğin her simit puan yazar; kenarına değmeden geçersen TAM '
+        'İSABET ve seri büyür. Bir simidi kaçırırsan ya da denize düşersen '
+        'oyun biter.',
+    howToPlay: <String>[
+      'Ekrana dokun: martı kanat çırpıp yükselir.',
+      'Simidin üstüne çık, sonra içine süzül; yalnız yukarıdan giriş sayılır.',
+      'Kenarına değmeden geçmek TAM İSABET: seri büyüdükçe puan artar.',
+    ],
+    isAvailable: true,
+  );
+
   static const MiniGame transfer = MiniGame(
     id: 'transfer',
     name: 'Aktarma',
@@ -441,6 +467,7 @@ class MiniGames {
     tunnelEscape,
     railLay,
     machinist,
+    simitCatch,
     transfer,
     signal,
     wagon,

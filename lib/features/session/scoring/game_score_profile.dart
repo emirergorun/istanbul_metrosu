@@ -175,6 +175,29 @@ class GameScoreProfiles {
               'oynar, uyarı gelince baştan alıp bilinen yolu izler ama '
               'arada şaşar.',
         ),
+        'machinist': GameScoreProfile(
+          measuredPerMinute: 117,
+          scale: 2.35,
+          note:
+              'Sonradan eklendi ve ölçeksiz (×1) geçiyordu. Oyun yavaş '
+              'tempolu: iki durak arası 460-640 m, kalkış-fren-kapı '
+              'döngüsü durak başına ~1 dakika; duruş notu 14-60 puan. Ham '
+              'tempo orta seviyede dakikada ~50, hedefin yarısından azdı. '
+              'Ölçekle acemi ~92, orta 117, usta ~173. Bot kademeli kolla '
+              'sürer; beceri işareti kestirmede (durak başına sapma) ve '
+              'kol temposunda.',
+        ),
+        'simit_catch': GameScoreProfile(
+          measuredPerMinute: 123,
+          scale: 0.84,
+          note:
+              'Flappy Dunk: simit başına 1, kenara değmeden geçişte seriyle '
+              '+2…+5 (seri dörtte durur, usta tavanı için). Simitler sık '
+              '(~1,5 sn\'de bir) ve TAM İSABET oranı yüksek; ham tempo orta '
+              'seviyede dakikada ~146. Bir simidi kaçırmak ya da denize '
+              'düşmek oyunu bitirir; orta seviye yolculuk başına ~17 kez '
+              'baştan başlıyor. Ölçekle acemi ~97, orta 123, usta ~137.',
+        ),
         'metro_quiz': GameScoreProfile(
           measuredPerMinute: 97,
           scale: 1.38,

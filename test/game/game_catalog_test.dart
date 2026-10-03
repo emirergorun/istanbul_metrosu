@@ -12,6 +12,7 @@ import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_
 import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_flight_controller.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
 import 'package:istanbul_metro_game/features/games/machinist/application/machinist_controller.dart';
+import 'package:istanbul_metro_game/features/games/simit_catch/application/simit_catch_controller.dart';
 import 'package:istanbul_metro_game/features/games/rail_lay/application/rail_lay_controller.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/tunnel_escape_controller.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
@@ -44,6 +45,7 @@ void main() {
         TunnelEscapeController.id,
         RailLayController.id,
         MachinistController.id,
+        SimitCatchController.id,
       };
       final playableIds = MiniGames.playable.map((MiniGame g) => g.id).toSet();
       expect(playableIds, controllerIds);
@@ -142,6 +144,7 @@ void main() {
         'metro_line',
         'rail_lay',
         'machinist',
+        'simit_catch',
       });
     });
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 import 'package:istanbul_metro_game/features/journey/services/route_service.dart';
 import 'package:istanbul_metro_game/features/session/scoring/game_score_profile.dart';
 
@@ -124,6 +125,31 @@ void main() {
         GameScoreProfiles.profiles.containsKey(entry.value.id),
         isTrue,
         reason: '${entry.key} (${entry.value.id}) ölçek tablosunda yok',
+      );
+    }
+  });
+
+  // Yukarıdaki testler yalnız bot listesine bakıyor. Makinist katalogda
+  // oynanabilirken ne botu ne ölçeği vardı: ham puanı ×1 geçiyordu ve hiçbir
+  // test bunu görmedi. Sonradan eklenen oyun artık sessizce kalamaz.
+  test('katalogdaki her oyun ölçülüyor ve ölçekli', () {
+    final measured = <String>{
+      for (final entry in botFactories.values) entry.id,
+    };
+    for (final game in MiniGames.playable) {
+      expect(
+        measured,
+        contains(game.id),
+        reason:
+            '${game.name} (${game.id}) için `test/balance/bots.dart` '
+            'içinde bot yok; puanı ortak tempoya göre ölçülmüyor.',
+      );
+      expect(
+        GameScoreProfiles.profiles.containsKey(game.id),
+        isTrue,
+        reason:
+            '${game.name} (${game.id}) ölçek tablosunda yok; ham puanı '
+            '×1 ile rota skoruna yazılıyor.',
       );
     }
   });

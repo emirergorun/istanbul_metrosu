@@ -20,6 +20,8 @@ import '../features/games/train_snake/application/train_snake_controller.dart';
 import '../features/games/train_snake/presentation/train_snake_screen.dart';
 import '../features/games/machinist/application/machinist_controller.dart';
 import '../features/games/machinist/presentation/machinist_screen.dart';
+import '../features/games/simit_catch/application/simit_catch_controller.dart';
+import '../features/games/simit_catch/presentation/simit_catch_screen.dart';
 import '../features/games/rail_lay/application/rail_lay_controller.dart';
 import '../features/games/rail_lay/presentation/rail_lay_screen.dart';
 import '../features/games/tunnel_escape/application/tunnel_escape_controller.dart';
@@ -211,6 +213,9 @@ class AppRoutes {
               }
               if (args.gameId == MachinistController.id) {
                 return MachinistScreen(journey: args.journey);
+              }
+              if (args.gameId == SimitCatchController.id) {
+                return SimitCatchScreen(journey: args.journey);
               }
               return GameScreen(
                 journey: args.journey,

@@ -7,6 +7,8 @@ import 'package:istanbul_metro_game/features/games/crossing/application/crossing
 import 'package:istanbul_metro_game/features/games/metro_line/application/metro_line_controller.dart';
 import 'package:istanbul_metro_game/features/games/crossing/domain/crossing_state.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/application/lane_runner_controller.dart';
+import 'package:istanbul_metro_game/features/games/machinist/application/machinist_controller.dart';
+import 'package:istanbul_metro_game/features/games/machinist/domain/machinist_rules.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/domain/lane_runner_state.dart';
 import 'package:istanbul_metro_game/features/games/merge_drop/application/merge_drop_controller.dart';
 import 'package:istanbul_metro_game/features/games/metro_merge/application/metro_merge_controller.dart';
@@ -15,6 +17,8 @@ import 'package:istanbul_metro_game/features/games/metro_quiz/application/metro_
 import 'package:istanbul_metro_game/features/games/metro_quiz/application/quiz_pool.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/application/rail_flight_controller.dart';
 import 'package:istanbul_metro_game/features/games/rail_flight/domain/rail_flight_state.dart';
+import 'package:istanbul_metro_game/features/games/simit_catch/application/simit_catch_controller.dart';
+import 'package:istanbul_metro_game/features/games/simit_catch/domain/simit_catch_state.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/application/train_snake_controller.dart';
 import 'package:istanbul_metro_game/features/games/train_snake/domain/train_snake_state.dart';
 import 'package:istanbul_metro_game/features/games/tunnel_escape/application/escape_hint_service.dart';
@@ -675,6 +679,164 @@ class CrossingBot extends GameBot {
   }
 }
 
+/// Makinist: kumanda koluyla sürer, durak işaretinde durmaya çalışır.
+///
+/// Beceri iki yerde: **mesafe kestirimi** (sürücü işareti kaç metre
+/// şaşırarak görüyor; durak başına bir kez çekilir) ve **kol temposu**
+/// (kolu kaç saniyede bir yeniden ayarlıyor). Kol gerçek ekrandaki gibi
+/// kademeli (P1–P4, B1–B4); sürekli bir değer orantılı frenle her duruşu
+/// kusursuz yapardı.
+class MachinistBot extends GameBot {
+  MachinistBot({required super.journey, required super.seed, super.skill});
+
+  @override
+  MachinistController create(JourneySession session, Random random) =>
+      MachinistController(
+        journey: journey,
+        recordToBeat: 0,
+        stationNames: const <String>[],
+        random: Random(seed),
+        session: session,
+      );
+
+  @override
+  void live(MachinistController controller, Random random) {
+    const dt = 1 / 60;
+    final sigma = 0.6 + _flaw(4.4, 0, skill);
+    final reaction = 0.15 + _flaw(0.45, 0, skill);
+    var guard = 0;
+    var target = -1;
+    var aim = 0.0;
+    var nextLook = 0.0;
+    var clock = 0.0;
+    while (controller.status == GameStatus.playing &&
+        guard++ < 400000 &&
+        !expired(controller)) {
+      clock += dt;
+      final index = controller.served + controller.misses;
+      if (index != target) {
+        target = index;
+        aim = _gauss(random) * sigma;
+      }
+      if (!controller.isDwelling && clock >= nextLook) {
+        nextLook = clock + reaction;
+        controller.setLever(_lever(controller, aim));
+      }
+      controller.debugAdvance(dt);
+    }
+    controller.setLever(0);
+  }
+
+  double _lever(MachinistController c, double aim) {
+    final v = c.speed;
+    if (v < 0.4 &&
+        c.distanceToStop > MachinistRules.stopTolerance &&
+        c.distanceToStop < 60) {
+      // İşaretten önce kaldı: bir kademe çekişle yanaş. Gerçek mesafeye
+      // bakılır — oyun "biraz daha ilerle" diyor; kestirim hatasıyla
+      // bakılsaydı bot işaretin birkaç metre gerisinde sonsuza dek
+      // beklerdi.
+      return 0.25;
+    }
+    final d = c.distanceToStop + aim;
+    if (d <= 0.3) return v > 0 ? -1 : 0;
+    // Tam fren mesafesi kalan yolun ~%80'ine geldi: frene geç.
+    final need = v * v / (2 * d);
+    if (need >= 0.8 * MachinistRules.brakeDecel || d < 25) {
+      final notch = (need / MachinistRules.brakeDecel * 4).ceil().clamp(0, 4);
+      return v == 0 ? 0 : -notch / 4;
+    }
+    return 1;
+  }
+}
+
+double _gauss(Random random) {
+  final u = 1 - random.nextDouble();
+  final v = random.nextDouble();
+  return sqrt(-2 * log(u)) * cos(2 * pi * v);
+}
+
+/// Simit Kap: kanat çırpmadan düşerse simidin hizasına ne zaman ineceğini
+/// kestirir; simit gelmeden ineceksen kanat çırpar.
+///
+/// Beceri iki yerde: **kestirim hatası** (simit başına çekilen zamanlama
+/// sapması — erken düşen önündeki kenara, geç düşen arkadaki kenara
+/// çarpar ya da simidi kaçırır) ve **dalgınlık** (Ray Uçuşu'ndaki gibi
+/// kanadın bir an gecikmesi).
+class SimitCatchBot extends GameBot {
+  SimitCatchBot({required super.journey, required super.seed, super.skill});
+
+  @override
+  SimitCatchController create(JourneySession session, Random random) =>
+      SimitCatchController(
+        journey: journey,
+        recordToBeat: 0,
+        random: Random(seed),
+        session: session,
+      );
+
+  @override
+  void live(SimitCatchController controller, Random random) {
+    const dt = 1 / 60;
+    final timing = 0.01 + _flaw(0.12, 0, skill);
+    var guard = 0;
+    var lapse = 0.0;
+    var aimed = -1;
+    var error = 0.0;
+    controller.flap();
+    while (controller.status == GameStatus.playing &&
+        guard++ < 400000 &&
+        !expired(controller)) {
+      lapse -= dt;
+      if (lapse <= 0 && random.nextDouble() < _flaw(0.35, -0.05, skill) * dt) {
+        lapse = 0.12 + random.nextDouble() * 0.2;
+      }
+      final next = controller.nextSimit;
+      if (next != null && next.id != aimed) {
+        aimed = next.id;
+        error = _gauss(random) * timing;
+      }
+      if (lapse <= 0 &&
+          controller.sinceFlap > 0.15 &&
+          _tooEarly(controller, next, error)) {
+        controller.flap();
+      }
+      controller.debugAdvance(dt);
+    }
+  }
+
+  /// Kanat çırpılmalı mı?
+  ///
+  /// Oyuncunun yaptığı: "şimdi çırparsam bir sonraki inişim simide denk
+  /// gelir mi?" Denk geliyorsa çırpar. Kanatsız düşüş zaten denk
+  /// geliyorsa bırakır. İkisi de değilse simidin biraz üstünde zıplayarak
+  /// bekler.
+  bool _tooEarly(SimitCatchController c, Simit? next, double error) {
+    final cfg = c.config;
+    if (next == null) return c.birdY > 0.5;
+    final drop = next.y - c.birdY;
+    // Simidin altına düştüyse hemen yukarı.
+    if (drop < -0.02) return true;
+    // Hizasına inmek üzere: düşüş artık kendi işini yapıyor.
+    if (drop < 0.02) return false;
+    double fallFrom(double v) =>
+        (-v + sqrt(v * v + 2 * cfg.gravity * drop)) / cfg.gravity;
+    final open = next.halfWidth - simitCatchRimRadius - simitCatchBirdRadius;
+    // Hedef simidin ortasının biraz gerisi: dik düşen martı öndeki kenara
+    // ortadan önce değiyor.
+    final arrive = (next.x - c.birdWorldX + 0.2 * open) / cfg.speed + error;
+    final window = 0.4 * open / cfg.speed;
+    final glide = arrive - fallFrom(c.velocity);
+    final flap = arrive - fallFrom(cfg.flapVelocity);
+    if (glide.abs() <= window) return false;
+    if (flap.abs() <= window) return true;
+    // Hiçbiri denk gelmiyor: geç kalındıysa bırak, erkense zıplayarak
+    // bekle. Simit artık yakınsa zıplamak yalnız simidi kaçırtır; kenara
+    // sürterek de olsa içinden geçmeyi dener.
+    return glide > window && drop < 0.06 && arrive > 0.6;
+  }
+}
+
 /// Bir oyunun bot fabrikası.
 typedef BotFactory =
     GameBot Function({
@@ -738,6 +900,16 @@ final Map<String, ({String id, BotFactory make})> botFactories =
         id: 'rail_lay',
         make: ({required journey, required seed, required skill}) =>
             RailLayBot(journey: journey, seed: seed, skill: skill),
+      ),
+      'Makinist': (
+        id: 'machinist',
+        make: ({required journey, required seed, required skill}) =>
+            MachinistBot(journey: journey, seed: seed, skill: skill),
+      ),
+      'Simit Kap': (
+        id: 'simit_catch',
+        make: ({required journey, required seed, required skill}) =>
+            SimitCatchBot(journey: journey, seed: seed, skill: skill),
       ),
       'Metro Bilgi': (
         id: 'metro_quiz',

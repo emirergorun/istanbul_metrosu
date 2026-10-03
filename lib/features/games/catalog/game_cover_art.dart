@@ -76,6 +76,14 @@ enum GameCoverScene {
   /// yüklenemezse devreye girer ve zemin gradyanıyla yetinir.
   machinist,
 
+  /// **Boş kapak** — Simit Kap.
+  ///
+  /// Karşıdan Karşıya ile aynı gerekçe (kullanıcı kararı): kapak ayrıca
+  /// tasarlanacak, o güne kadar kartta yalnız oyunun adı duruyor.
+  ///
+  /// TODO(GOR): Kapak sahnesi ya da `coverAsset` hazırlanınca değiştir.
+  simitCatch,
+
   /// Henüz açılmamış oyun.
   locked,
 }
@@ -319,6 +327,7 @@ class _ScenePainter extends CustomPainter {
       case GameCoverScene.tunnelEscape:
       case GameCoverScene.railLay:
       case GameCoverScene.machinist:
+      case GameCoverScene.simitCatch:
         // Sahne yok: zemin gradyanı ve başlık yeterli.
         break;
       case GameCoverScene.locked:

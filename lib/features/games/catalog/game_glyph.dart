@@ -62,6 +62,9 @@ enum GameGlyph {
   /// Arkadan görülen metro ve yanında fren pedalı — Makinist.
   machinist,
 
+  /// Eğik bir simit ve üstünde süzülen martı — Simit Kap.
+  simitCatch,
+
   /// Kilitli kart.
   locked,
 }
@@ -136,6 +139,8 @@ class GameGlyphPainter extends CustomPainter {
         _paintRailLay(canvas, s, fill);
       case GameGlyph.machinist:
         _paintMachinist(canvas, s, fill);
+      case GameGlyph.simitCatch:
+        _paintSimitCatch(canvas, s, stroke);
       case GameGlyph.locked:
         _paintLocked(canvas, s, fill, stroke);
     }
@@ -517,6 +522,25 @@ class GameGlyphPainter extends CustomPainter {
       ),
       fill,
     );
+  }
+
+  /// Altta yan yatık bir simit, üstünde kanatları açık martı: martı
+  /// simidin içine yukarıdan girecek.
+  void _paintSimitCatch(Canvas canvas, double s, Paint stroke) {
+    canvas.save();
+    canvas.translate(s * 0.52, s * 0.68);
+    canvas.rotate(-0.18);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset.zero, width: s * 0.66, height: s * 0.3),
+      stroke,
+    );
+    canvas.restore();
+    // Martı: iki kavisli kanat, ortada birleşen "m".
+    final gull = Path()
+      ..moveTo(s * 0.2, s * 0.3)
+      ..quadraticBezierTo(s * 0.32, s * 0.14, s * 0.46, s * 0.3)
+      ..quadraticBezierTo(s * 0.6, s * 0.14, s * 0.72, s * 0.3);
+    canvas.drawPath(gull, stroke);
   }
 
   /// Arkadan metro (kabin camı oyuk) ve sağ altta pedal. Oyunun tek

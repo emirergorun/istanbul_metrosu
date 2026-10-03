@@ -181,6 +181,12 @@ class AppColors {
   /// (195°) yakın; ayrımı glif (arkadan tren + fren pedalı) taşıyor.
   static const Color gameMachinist = Color(0xFF5EC8E5);
 
+  /// Ton açısı ~30°: fırından çıkmış simit kabuğunun turuncusu. Blok
+  /// Metro'ya (40°) ve Tünele Kaç'a (11°) yakın; 35° kuralı birkaç oyun
+  /// önce bırakıldı, ayrımı glif (simit + martı) taşıyor. Glif kutusunda
+  /// kontrast ~5:1.
+  static const Color gameSimitCatch = Color(0xFFFF9A3D);
+
   /// Metro Bilgi kategori simgelerinin renkleri.
   ///
   /// Hat renklerinden ve oyun kimlik renklerinden **bağımsız**: kategori

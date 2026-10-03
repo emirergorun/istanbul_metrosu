@@ -13,6 +13,7 @@ import 'package:istanbul_metro_game/features/games/catalog/game_detail_screen.da
 import 'package:istanbul_metro_game/features/games/catalog/game_select_screen.dart';
 import 'package:istanbul_metro_game/features/games/catalog/mini_game.dart';
 import 'package:istanbul_metro_game/features/games/crossing/presentation/crossing_screen.dart';
+import 'package:istanbul_metro_game/features/games/simit_catch/presentation/simit_catch_screen.dart';
 import 'package:istanbul_metro_game/features/games/metro_line/presentation/metro_line_screen.dart';
 import 'package:istanbul_metro_game/features/games/lane_runner/presentation/lane_runner_screen.dart';
 import 'package:istanbul_metro_game/features/games/merge_drop/presentation/merge_drop_screen.dart';
@@ -261,7 +262,7 @@ void main() {
       expect(find.text('Taksim → Levent'), findsOneWidget);
     });
 
-    testWidgets('on iki oynanabilir oyun OYNA ile doğru ekrana açılır', (
+    testWidgets('on üç oynanabilir oyun OYNA ile doğru ekrana açılır', (
       tester,
     ) async {
       final cases = <MiniGame, Type>{
@@ -277,6 +278,7 @@ void main() {
         MiniGames.tunnelEscape: TunnelEscapeScreen,
         MiniGames.railLay: RailLayScreen,
         MiniGames.machinist: MachinistScreen,
+        MiniGames.simitCatch: SimitCatchScreen,
       };
 
       for (final entry in cases.entries) {
